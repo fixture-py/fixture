@@ -1,9 +1,10 @@
 
 import os
-from nose.tools import eq_
+from nose.tools import eq_, raises
 import testtools
 from testtools.fixtures import affix
 from sqlobject import connectionForURI, SQLObject, StringCol, ForeignKey, sqlhub
+from fixture.generator import FixtureGenerator
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -57,6 +58,10 @@ def teardown():
     FxtProduct.dropTable(connection=realconn, cascade=True)
     FxtOffer.dropTable(connection=realconn, cascade=True)
 
+def get_code():    
+    generate = FixtureGenerator(query="name = 'super cash back!'")
+    return generate(FxtOffer)
+
 def get_code_old_way():
     """gets code from testools.console.genfix"""
     
@@ -69,13 +74,14 @@ def get_code_old_way():
     code = strout.getvalue()
     return code
 
-def test_generator():
+def test_so_generator():
     
     # sanity check :
     assert FxtProduct.select().count()
     assert not FxtProduct.select(connection=memconn).count()
     
-    code = get_code_old_way()
+    # code = get_code_old_way()
+    code = get_code()
     
     # print code
     e = {}
@@ -112,4 +118,13 @@ def test_generator():
     eq_(FxtCategory.get(fxt.P_fxt_product_1.category_id),   parkas)
     eq_(FxtCategory.get(fxt.P_fxt_offer_1.category_id),     rebates)
     
+@raises(ValueError)
+def test_unhandlable_object():
+    generate = FixtureGenerator()
+    
+    class Stranger(object):
+        """something that cannot produce data."""
+        pass
         
+    generate(Stranger())
+    

@@ -1,2 +1,2 @@
 
-from generator import main
+from generator import *
