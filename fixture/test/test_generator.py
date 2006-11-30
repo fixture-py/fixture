@@ -3,12 +3,13 @@ import os
 from nose.tools import eq_, raises
 import testtools
 from testtools.fixtures import affix
-from sqlobject import connectionForURI, SQLObject, StringCol, ForeignKey, sqlhub
 from fixture.generator import FixtureGenerator
 try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
+    
+from sqlobject import connectionForURI, SQLObject, StringCol, ForeignKey, sqlhub
     
 class FxtCategory(SQLObject):
     name = StringCol()

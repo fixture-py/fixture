@@ -1,15 +1,36 @@
 #!/usr/bin/env python
 
+"""query real data sources and generate python code to load that data.
+"""
+
 import sys
 import optparse
 import pprint
 handler_registry = []
+
+class FixtureCache(object):
+    """cache of Fixture objects and their data sets to be generatred.
+    
+    needs to store resulting fixture object with set IDs so that
+    foreign key data can accumulate without duplication.
+    
+    For example, if we have a product set that requires category foo 
+    and an offer set that requires category foo, the second one loaded 
+    needs to acknowledge that foo is already loaded and needs to obtain 
+    the key to that fixture too, to generate the right link.
+    """
+    def __init__(self):
+        self.registry = {}
+    
+    def get(self, fxtid, setid):
+        return self.registry.get((fxtid, setid), None)
 
 class FixtureGenerator(object):
     """produces a callable object that can generate fixture code.
     """
     def __init__(self, query=None):
         self.query = query
+        self.cache = FixtureCache()
     
     def get_handler(self, obj):
         handler = None
@@ -35,8 +56,6 @@ class FixtureGenerator(object):
         sets = [s for s in handler.sets()]
         for s in sets:
             print "set:", s
-            for subset in s.subsets():
-                print "  subset:", subset
     
         return code
 
@@ -59,54 +78,28 @@ class FixtureSet(object):
                 self.__class__.__name__, self.key, hex(id(self)), 
                 pprint.pformat(self.data_dict))
     
+    def fxtid(self):
+        """returns a unique value that identifies the class used
+        to generate this fixture.
+        
+        i.e. EmployeeData if this were a fixture object for employees
+        """
+        raise NotImplementedError
+    
+    def setid(self):
+        """returns a unique value that identifies this set
+        within its class.
+        
+        i.e. primary key for the row
+        """
+        raise NotImplementedError
+    
     def subsets(self):
         """yields FixtureSets belonging to this FixtureSet.
         
         i.e. foreign keyed rows linked to this row in the database.
         """
         raise NotImplementedError
-
-class SOFixtureSet(FixtureSet):
-    """a fixture set for a SQLObject row."""
-    
-    def getDbName(self, col):
-        if col.dbName is not None:
-            return col.dbName
-        else:
-            return self.meta.style.pythonAttrToDBColumn(col.name)
-    
-    def __init__(self, row, model):
-        FixtureSet.__init__(self, row)
-        self.model = model
-        self.meta = model.sqlmeta
-        self.fkey_dict = {}
-        self.primary_key = None
-        
-        self.understand_columns()
-    
-        cols = [self.meta.style.idForTable(self.meta.table)]
-        cols.extend([self.getDbName(c) for c in self.meta.columnList])
-    
-        vals = [row.id]
-        vals.extend([getattr(row, c.name) for c in self.meta.columnList])
-    
-        self.data_dict = dict(zip(cols, vals))
-    
-    def understand_columns(self):
-        """get an understanding of what columns are what, foreign keys, etc."""
-        pass
-    
-    def subsets(self):
-        from sqlobject.col import SOForeignKey
-        
-        fkeys = [] # fkeys in order of appearance
-        fkey_idmap = {} # col.name : list of ids
-        fkey_classmap = {}
-        
-        for name,col in self.meta.columns.items():
-            if isinstance(col, SOForeignKey):
-                dbcol = self.meta.style.pythonAttrToDBColumn(col.name)
-                yield (col.foreignKey, dbcol)
 
 class GeneratorHandler(object):
     """handles actual generation of code based on an object.
@@ -130,37 +123,6 @@ class GeneratorHandler(object):
     def sets(self):
         """yield a FixtureSet for each set in obj."""
         raise NotImplementedError
-
-class SOGeneratorHandler(GeneratorHandler):
-    def findall(self, query=None):
-        """gets record set for params."""
-        
-        ## was before ...
-        # if query is not None:
-        #     rs = model.select(query, clauseTables=clauseTables, 
-        #                                         orderBy=orderBy)
-        # else:
-        #     rs = model.select(orderBy=orderBy)
-        # if show_query_only:
-        #     print rs
-
-        self.rs = self.obj.select(query)
-    
-    @staticmethod
-    def recognizes(obj):
-        """returns True if obj is a SQLObject class.
-        """
-        from sqlobject.declarative import DeclarativeMeta
-        if type(obj) is DeclarativeMeta and obj.__name__ not in (
-                        'SQLObject', 'sqlmeta', 'ManyToMany', 'OneToMany'):
-            return True
-    
-    def sets(self):
-        """yields FixtureSet for each row in SQLObject."""
-        for row in self.rs:
-            yield SOFixtureSet(row, self.obj)
-            
-register_handler(SOGeneratorHandler)
 
 def main(argv=sys.argv[1:]):
     return 0
