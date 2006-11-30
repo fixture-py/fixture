@@ -21,10 +21,13 @@ class FixtureCache(object):
     """
     def __init__(self):
         self.registry = {}
+        self.order_of_appearence = []
     
     def add(self, set):
         fxtid = set.fxtid()
-        self.registry.setdefault(fxtid, {})
+        if not self.registry.has_key(fxtid):
+            self.order_of_appearence.append(fxtid)
+            self.registry[fxtid] = {}
         
         # we want to add a new set but
         # MERGE in the data if the set exists.
@@ -32,9 +35,6 @@ class FixtureCache(object):
         # the same id will always be identical 
         # (which should be true for db fixtures)
         self.registry[fxtid][set.setid()] = set
-    
-    def get(self, fxtid, setid):
-        return self.registry.get(fxtid, {}).get(setid, None)
 
 class FixtureGenerator(object):
     """produces a callable object that can generate fixture code.
@@ -65,13 +65,24 @@ class FixtureGenerator(object):
         handler.findall(query=self.query)
         
         # need to loop through all sets,
-        # then through all set items and add 
-        # foreign keys (which are handlers)
+        # then through all set items and add all sets of all 
+        # foreign keys and their foreign keys.
+        # got it???
         
-        for s in handler.sets():
-            print "caching set:", s
-            self.cache.add(s)
-    
+        def cache_handler(handler):        
+            for s in handler.sets():
+                self.cache.add(s)
+                for (k,v) in s.data_dict.items():
+                    if isinstance(v, GeneratorHandler):
+                        f_handler = v
+                        # this is sort of lame
+                        f_handler.find(f_handler.key_value)
+                        cache_handler(f_handler)
+        cache_handler(handler)
+        
+        pprint.pprint( self.cache.order_of_appearence)
+        pprint.pprint( self.cache.registry)
+        print code
         return code
 
 def register_handler(handler):
@@ -112,13 +123,15 @@ class FixtureSet(object):
 class GeneratorHandler(object):
     """handles actual generation of code based on an object.
     """
-    def __init__(self, obj):
+    def __init__(self, obj, key_value=None):
         self.obj = obj
+        self.key_value = key_value
     
-    def __repr__(self):
-        return "<SQLObject handler>"
+    def find(self, idval):
+        """finds a record set based on key, idval."""
+        raise NotImplementedError
     
-    def findall(self, query=None):
+    def findall(self, query):
         """finds all records based on parameters."""
         raise NotImplementedError
     

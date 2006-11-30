@@ -5,8 +5,15 @@ from fixture.generator.generator import (
             GeneratorHandler, FixtureSet, register_handler)
 
 class SOGeneratorHandler(GeneratorHandler):
-    def findall(self, query=None, record_set=None):
-        """gets record set for params or uses provided record set."""
+    
+    def __repr__(self):
+        return "<SQLObject GeneratorHandler>"
+    
+    def find(self, idval):
+        self.rs = [self.obj.get(idval)]
+        
+    def findall(self, query):
+        """gets record set for query."""
         
         ## was before ...
         # if query is not None:
@@ -17,10 +24,7 @@ class SOGeneratorHandler(GeneratorHandler):
         # if show_query_only:
         #     print rs
         
-        if not record_set:
-            self.rs = self.obj.select(query)
-        else:
-            self.rs = record_set
+        self.rs = self.obj.select(query)
     
     @staticmethod
     def recognizes(obj):
@@ -51,7 +55,7 @@ class SOFixtureSet(FixtureSet):
         FixtureSet.__init__(self, row)
         self.model = model
         self.meta = model.sqlmeta
-        self.fkey_dict = {}
+        self.foreign_key_class = {}
         self.primary_key = None
         
         self.understand_columns()
@@ -74,11 +78,11 @@ class SOFixtureSet(FixtureSet):
         """transform column name into a value or a
         new handler if it's a foreign key (recursion).
         """
+        from sqlobject.classregistry import findClass
         value = getattr(self.data, colname)
-        if self.fkey_dict.has_key(colname):
-            model = self.fkey_dict[colname]
-            rs = model.get(value)
-            return SOGeneratorHandler(model, record_set=rs)
+        if self.foreign_key_class.has_key(colname):
+            model = findClass(self.foreign_key_class[colname])
+            return SOGeneratorHandler(model, key_value=value)
         else:
             return value
     
@@ -96,8 +100,8 @@ class SOFixtureSet(FixtureSet):
         
         for name,col in self.meta.columns.items():
             if isinstance(col, SOForeignKey):
-                dbcol = self.meta.style.pythonAttrToDBColumn(col.name)
-                self.fkey_dict[dbcol] = col.foreignKey
+                #dbcol = self.meta.style.pythonAttrToDBColumn(col.name)
+                self.foreign_key_class[col.name] = col.foreignKey
                 
                 
 # OUCH!
