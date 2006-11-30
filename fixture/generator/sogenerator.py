@@ -5,8 +5,8 @@ from fixture.generator.generator import (
             GeneratorHandler, FixtureSet, register_handler)
 
 class SOGeneratorHandler(GeneratorHandler):
-    def findall(self, query=None):
-        """gets record set for params."""
+    def findall(self, query=None, record_set=None):
+        """gets record set for params or uses provided record set."""
         
         ## was before ...
         # if query is not None:
@@ -16,8 +16,11 @@ class SOGeneratorHandler(GeneratorHandler):
         #     rs = model.select(orderBy=orderBy)
         # if show_query_only:
         #     print rs
-
-        self.rs = self.obj.select(query)
+        
+        if not record_set:
+            self.rs = self.obj.select(query)
+        else:
+            self.rs = record_set
     
     @staticmethod
     def recognizes(obj):
@@ -52,14 +55,36 @@ class SOFixtureSet(FixtureSet):
         self.primary_key = None
         
         self.understand_columns()
-    
+        
+        # NOTE: primary keys are not included in columnList ...
+        
         cols = [self.meta.style.idForTable(self.meta.table)]
         cols.extend([self.getDbName(c) for c in self.meta.columnList])
     
-        vals = [row.id]
-        vals.extend([getattr(row, c.name) for c in self.meta.columnList])
+        vals = [getattr(row, self.meta.idName)]
+        vals.extend([self.get_col_value(c.name) for c in self.meta.columnList])
     
         self.data_dict = dict(zip(cols, vals))
+    
+    def fxtid(self):
+        """returns id of this fixture (the class name)."""
+        return self.model.__name__
+    
+    def get_col_value(self, colname):
+        """transform column name into a value or a
+        new handler if it's a foreign key (recursion).
+        """
+        value = getattr(self.data, colname)
+        if self.fkey_dict.has_key(colname):
+            model = self.fkey_dict[colname]
+            rs = model.get(value)
+            return SOGeneratorHandler(model, record_set=rs)
+        else:
+            return value
+    
+    def setid(self):
+        """returns id of this set (the primary key value)."""
+        return getattr(self.data, self.meta.idName)
     
     def understand_columns(self):
         """get an understanding of what columns are what, foreign keys, etc."""
@@ -75,11 +100,12 @@ class SOFixtureSet(FixtureSet):
                 self.fkey_dict[dbcol] = col.foreignKey
                 
                 
-# OUCH! refactor me (code in genfix and genmodel)
+# OUCH!
 # prepare for sqlobject monkey patch :( ...
 # this is so that foreign key lookups work right when 
 # there are multiple schemas having the same table 
-# (perfectly legal, but sqlobject only finds the first primary key)
+# (perfectly legal, but sqlobject was only finding the primary key 
+# from the first schema)
 import re
 def columnsFromSchema(self, tableName, soClass):
 

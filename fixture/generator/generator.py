@@ -22,8 +22,19 @@ class FixtureCache(object):
     def __init__(self):
         self.registry = {}
     
+    def add(self, set):
+        fxtid = set.fxtid()
+        self.registry.setdefault(fxtid, {})
+        
+        # we want to add a new set but
+        # MERGE in the data if the set exists.
+        # this merge is done assuming that sets of
+        # the same id will always be identical 
+        # (which should be true for db fixtures)
+        self.registry[fxtid][set.setid()] = set
+    
     def get(self, fxtid, setid):
-        return self.registry.get((fxtid, setid), None)
+        return self.registry.get(fxtid, {}).get(setid, None)
 
 class FixtureGenerator(object):
     """produces a callable object that can generate fixture code.
@@ -53,9 +64,13 @@ class FixtureGenerator(object):
         code = ''
         handler.findall(query=self.query)
         
-        sets = [s for s in handler.sets()]
-        for s in sets:
-            print "set:", s
+        # need to loop through all sets,
+        # then through all set items and add 
+        # foreign keys (which are handlers)
+        
+        for s in handler.sets():
+            print "caching set:", s
+            self.cache.add(s)
     
         return code
 
@@ -91,13 +106,6 @@ class FixtureSet(object):
         within its class.
         
         i.e. primary key for the row
-        """
-        raise NotImplementedError
-    
-    def subsets(self):
-        """yields FixtureSets belonging to this FixtureSet.
-        
-        i.e. foreign keyed rows linked to this row in the database.
         """
         raise NotImplementedError
 
