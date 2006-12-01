@@ -136,7 +136,6 @@ class FixtureSet(object):
         return "<%s at %s for data %s>" % (
                 self.__class__.__name__, hex(id(self)), 
                 pprint.pformat(self.data_dict))
-        raise NotImplementedError
     
     def fxtid(self):
         """returns a unique value that identifies the class used
