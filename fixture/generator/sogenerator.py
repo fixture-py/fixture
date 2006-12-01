@@ -2,12 +2,12 @@
 """fixture generators for SQLObjects"""
 
 from fixture.generator.generator import (
-            GeneratorHandler, FixtureSet, register_handler)
+            DataHandler, FixtureSet, register_handler)
 
-class SOGeneratorHandler(GeneratorHandler):
+class SODataHandler(DataHandler):
     
     def __repr__(self):
-        return "<SQLObject GeneratorHandler>"
+        return "<SQLObject DataHandler>"
     
     def find(self, idval):
         self.rs = [self.obj.get(idval)]
@@ -26,6 +26,13 @@ class SOGeneratorHandler(GeneratorHandler):
         
         self.rs = self.obj.select(query)
     
+    def fxt_type(self):
+        return 'SOFixture'
+    
+    def meta(self, fxt_kls):
+        # move to template?  what other vars?  part of fixture set?
+        return "so_class = %s" % fxt_kls
+    
     @staticmethod
     def recognizes(obj):
         """returns True if obj is a SQLObject class.
@@ -35,12 +42,24 @@ class SOGeneratorHandler(GeneratorHandler):
                         'SQLObject', 'sqlmeta', 'ManyToMany', 'OneToMany'):
             return True
     
+    def resolve_data_dict(self, fset):
+        """given a fixture set, resolve the linked sets
+        in the data_dict and log any necessary headers.
+        
+        return the data_dict
+        """
+        # lazy init, per resolution. hmm
+        self.data_header = []
+        self.add_data_header('r = self.meta.req')
+        
+        return fset.data_dict
+    
     def sets(self):
         """yields FixtureSet for each row in SQLObject."""
         for row in self.rs:
             yield SOFixtureSet(row, self.obj)
             
-register_handler(SOGeneratorHandler)
+register_handler(SODataHandler)
 
 class SOFixtureSet(FixtureSet):
     """a fixture set for a SQLObject row."""
@@ -51,8 +70,8 @@ class SOFixtureSet(FixtureSet):
         else:
             return self.meta.style.pythonAttrToDBColumn(col.name)
     
-    def __init__(self, row, model):
-        FixtureSet.__init__(self, row)
+    def __init__(self, data, model):
+        FixtureSet.__init__(self, data)
         self.model = model
         self.meta = model.sqlmeta
         self.foreign_key_class = {}
@@ -65,7 +84,7 @@ class SOFixtureSet(FixtureSet):
         cols = [self.meta.style.idForTable(self.meta.table)]
         cols.extend([self.getDbName(c) for c in self.meta.columnList])
     
-        vals = [getattr(row, self.meta.idName)]
+        vals = [getattr(self.data, self.meta.idName)]
         vals.extend([self.get_col_value(c.name) for c in self.meta.columnList])
     
         self.data_dict = dict(zip(cols, vals))
@@ -76,13 +95,14 @@ class SOFixtureSet(FixtureSet):
     
     def get_col_value(self, colname):
         """transform column name into a value or a
-        new handler if it's a foreign key (recursion).
+        new set if it's a foreign key (recursion).
         """
         from sqlobject.classregistry import findClass
         value = getattr(self.data, colname)
         if self.foreign_key_class.has_key(colname):
             model = findClass(self.foreign_key_class[colname])
-            return SOGeneratorHandler(model, key_value=value)
+            rs = model.get(value)
+            return SOFixtureSet(rs, model)
         else:
             return value
     
@@ -93,10 +113,6 @@ class SOFixtureSet(FixtureSet):
     def understand_columns(self):
         """get an understanding of what columns are what, foreign keys, etc."""
         from sqlobject.col import SOForeignKey
-        
-        # fkeys = [] # fkeys in order of appearance
-        # fkey_idmap = {} # col.name : list of ids
-        # fkey_classmap = {}
         
         for name,col in self.meta.columns.items():
             if isinstance(col, SOForeignKey):

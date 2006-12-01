@@ -39,7 +39,20 @@ class FixtureCache(object):
 class FixtureGenerator(object):
     """produces a callable object that can generate fixture code.
     """
+    basemeta_template = """
+class basemeta:
+    pass
+"""
+    fxt_template = """
+class %(fxt_class)s(%(fxt_type)s):
+    class meta(basemeta):
+        %(meta)s
+    def data(self):
+        %(data_header)s
+        return %(data)s
+"""
     def __init__(self, query=None):
+        self.handler = None
         self.query = query
         self.cache = FixtureCache()
     
@@ -55,35 +68,56 @@ class FixtureGenerator(object):
                                 ", ".join([str(h) for h in handler_registry])))
         return handler
     
+    def code(self):
+        """buidls and returns code string.
+        """
+        tpl = {'fxt_type': self.handler.fxt_type()}
+        
+        code = [self.basemeta_template]
+        o = [k for k in self.cache.order_of_appearence]
+        o.reverse()
+        for kls in o:
+            tpl['data'] = []
+            tpl['fxt_class'] = 'P_%s' % kls
+            tpl['meta'] = self.handler.meta(kls)
+            
+            val_dict = self.cache.registry[kls]
+            for k,fset in val_dict.items():
+                key = "prefix_%s" % k
+                data = self.handler.resolve_data_dict(fset)
+                tpl['data'].append((key, data))
+                
+            tpl['data_header'] = self.handler.data_header
+            tpl['data'] = pprint.pformat(tuple(tpl['data']))
+            code.append(self.fxt_template % tpl)
+            
+        code = "\n".join(code)
+        print code
+        return code
+    
     def __call__(self, obj):
         """uses data obj to generate code for a fixture.
     
         returns code string.
         """
-        handler = self.get_handler(obj)
-        code = ''
-        handler.findall(query=self.query)
+        self.handler = self.get_handler(obj)
+        self.handler.findall(query=self.query)
         
         # need to loop through all sets,
         # then through all set items and add all sets of all 
         # foreign keys and their foreign keys.
         # got it???
         
-        def cache_handler(handler):        
-            for s in handler.sets():
-                self.cache.add(s)
-                for (k,v) in s.data_dict.items():
-                    if isinstance(v, GeneratorHandler):
-                        f_handler = v
-                        # this is sort of lame
-                        f_handler.find(f_handler.key_value)
-                        cache_handler(f_handler)
-        cache_handler(handler)
+        def cache_set(s):        
+            self.cache.add(s)
+            for (k,v) in s.data_dict.items():
+                if isinstance(v, FixtureSet):
+                    f_set = v
+                    cache_set(f_set)
+        for s in self.handler.sets():
+            cache_set(s)
         
-        pprint.pprint( self.cache.order_of_appearence)
-        pprint.pprint( self.cache.registry)
-        print code
-        return code
+        return self.code()
 
 def register_handler(handler):
     handler_registry.append(handler)
@@ -95,14 +129,14 @@ class FixtureSet(object):
     """
     
     def __init__(self, data):
-        self.key = None
         self.data = data
         self.data_dict = {}
     
     def __repr__(self):
-        return "<%s '%s' at %s for data %s>" % (
-                self.__class__.__name__, self.key, hex(id(self)), 
+        return "<%s at %s for data %s>" % (
+                self.__class__.__name__, hex(id(self)), 
                 pprint.pformat(self.data_dict))
+        raise NotImplementedError
     
     def fxtid(self):
         """returns a unique value that identifies the class used
@@ -120,12 +154,17 @@ class FixtureSet(object):
         """
         raise NotImplementedError
 
-class GeneratorHandler(object):
-    """handles actual generation of code based on an object.
+class DataHandler(object):
+    """handles an object that can provide fixture data.
     """
-    def __init__(self, obj, key_value=None):
+    def __init__(self, obj):
         self.obj = obj
-        self.key_value = key_value
+        self.data_header = [] # vars at top of data() method
+        self.imports = [] # imports to put at top of file
+    
+    def add_data_header(self, hdr):
+        if hdr not in self.data_header:
+            self.data_header.append(hdr)
     
     def find(self, idval):
         """finds a record set based on key, idval."""
@@ -134,6 +173,9 @@ class GeneratorHandler(object):
     def findall(self, query):
         """finds all records based on parameters."""
         raise NotImplementedError
+    
+    def fxt_type(self):
+        """returns name of the type of Fixture class for this data object."""
     
     @staticmethod
     def recognizes(obj):
