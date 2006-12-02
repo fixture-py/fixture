@@ -8,6 +8,13 @@ import optparse
 import pprint
 handler_registry = []
 
+class code_str(str):
+    """string that reproduces without quotes.
+    
+    """
+    def __repr__(self):
+        return str.__repr__(self)[1:-1]
+
 class FixtureCache(object):
     """cache of Fixture objects and their data sets to be generatred.
     
@@ -39,18 +46,18 @@ class FixtureCache(object):
 class FixtureGenerator(object):
     """produces a callable object that can generate fixture code.
     """
-    basemeta_template = """
+    basemeta_tpl = """
 class basemeta:
-    pass
-"""
-    fxt_template = """
+    pass"""
+    
+    fixture_class_tpl = """
 class %(fxt_class)s(%(fxt_type)s):
     class meta(basemeta):
         %(meta)s
     def data(self):
         %(data_header)s
-        return %(data)s
-"""
+        return %(data)s"""
+        
     def __init__(self, query=None):
         self.handler = None
         self.query = query
@@ -73,13 +80,13 @@ class %(fxt_class)s(%(fxt_type)s):
         """
         tpl = {'fxt_type': self.handler.fxt_type()}
         
-        code = [self.basemeta_template]
+        code = [self.basemeta_tpl]
         o = [k for k in self.cache.order_of_appearence]
         o.reverse()
         for kls in o:
             tpl['data'] = []
             tpl['fxt_class'] = 'P_%s' % kls
-            tpl['meta'] = self.handler.meta(kls)
+            tpl['meta'] = "\n        ".join(self.handler.meta(kls))
             
             val_dict = self.cache.registry[kls]
             for k,fset in val_dict.items():
@@ -87,9 +94,10 @@ class %(fxt_class)s(%(fxt_type)s):
                 data = self.handler.resolve_data_dict(fset)
                 tpl['data'].append((key, data))
                 
-            tpl['data_header'] = self.handler.data_header
+            tpl['data_header'] = "\n        ".join(
+                                    self.handler.data_header) + "\n"
             tpl['data'] = pprint.pformat(tuple(tpl['data']))
-            code.append(self.fxt_template % tpl)
+            code.append(self.fixture_class_tpl % tpl)
             
         code = "\n".join(code)
         print code
@@ -176,12 +184,24 @@ class DataHandler(object):
     def fxt_type(self):
         """returns name of the type of Fixture class for this data object."""
     
+    def meta(self, fxt_kls):
+        """returns list of lines to add to the fixture class's meta.
+        """
+        return ['pass']
+    
     @staticmethod
     def recognizes(obj):
         """return True if self can handle this object.
         """
         raise NotImplementedError
-    
+        
+    def resolve_data_dict(self, fset):
+        """make any resolutions to a fixture set's data_dict.
+        
+        return the data_dict
+        """
+        raise NotImplementedError
+        
     def sets(self):
         """yield a FixtureSet for each set in obj."""
         raise NotImplementedError

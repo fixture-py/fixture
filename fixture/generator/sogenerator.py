@@ -2,7 +2,7 @@
 """fixture generators for SQLObjects"""
 
 from fixture.generator.generator import (
-            DataHandler, FixtureSet, register_handler)
+            DataHandler, FixtureSet, register_handler, code_str)
 
 class SODataHandler(DataHandler):
     
@@ -30,8 +30,9 @@ class SODataHandler(DataHandler):
         return 'SOFixture'
     
     def meta(self, fxt_kls):
-        # move to template?  what other vars?  part of fixture set?
-        return "so_class = %s" % fxt_kls
+        """returns list of lines to add to the fixture class's meta.
+        """
+        return ["so_class = %s" % fxt_kls]
     
     @staticmethod
     def recognizes(obj):
@@ -52,6 +53,20 @@ class SODataHandler(DataHandler):
         self.data_header = []
         self.add_data_header('r = self.meta.req')
         
+        for k,v in fset.data_dict.items():
+            if isinstance(v, FixtureSet):
+                # then it's a foreign key link
+                f_set = v
+                meta = f_set.meta
+                # FIXME! add data header for import statement
+                fxt_class = f_set.fxtid()
+                fxt_var = meta.style.pythonAttrToDBColumn(fxt_class)
+                self.add_data_header("r.%s = %s()" % (
+                                            fxt_var, 
+                                            fxt_class))
+                fset.data_dict[k] = code_str("r.%s.%s" % (
+                                            fxt_var, 
+                                            meta.style.idForTable(meta.table)))
         return fset.data_dict
     
     def sets(self):
