@@ -9,6 +9,12 @@ class SODataHandler(DataHandler):
     def __repr__(self):
         return "<SQLObject DataHandler>"
     
+    def begin(self):
+        """called once when starting to build a fixture.
+        """
+        self.add_import('from datetime import datetime')
+        self.add_import('from testtools.fixtures import SOFixture')
+    
     def find(self, idval):
         self.rs = [self.obj.get(idval)]
         
@@ -34,6 +40,35 @@ class SODataHandler(DataHandler):
         """
         return ["so_class = %s" % fxt_kls]
     
+    def mk_key(self, fset):
+        """return a unique key for this fixture set.
+        
+        this is the so class name + primary key value
+        """
+        so_class = fset.obj_id()
+        return "_".join(str(s) for s in (
+                        self.mk_var_name(so_class), fset.set_id()))
+    
+    def mk_var_name(self, fxt_cls_name):
+        """returns a variable name for the instance of the fixture class.
+        """
+        def camelToUnders(s):
+            chunks = []
+            chkid = None
+            def newchunk():
+                chunks.append('')
+                return len(chunks)-1
+            for ltr in s:
+                if ord(ltr) < 97:
+                    # capital letter :
+                    chkid = newchunk()
+                if chkid is None:
+                    chkid = newchunk()
+                    
+                chunks[chkid] = chunks[chkid] + ltr
+            return '_'.join([c.lower() for c in chunks])
+        return "_".join([camelToUnders(n) for n in fxt_cls_name.split('_')])
+    
     @staticmethod
     def recognizes(obj):
         """returns True if obj is a SQLObject class.
@@ -49,23 +84,32 @@ class SODataHandler(DataHandler):
         
         return the data_dict
         """
-        # lazy init, per resolution. hmm
+        # need to clean header per resolution. hmm
         self.data_header = []
         self.add_data_header('r = self.meta.req')
+        
+        def add_import_class(so_class=None):
+            if not so_class:
+                so_class = fset.obj_id()
+            self.add_import("from %s import %s" % (
+                                self.obj.__module__, so_class))
+        add_import_class()
         
         for k,v in fset.data_dict.items():
             if isinstance(v, FixtureSet):
                 # then it's a foreign key link
-                f_set = v
-                meta = f_set.meta
-                # FIXME! add data header for import statement
-                fxt_class = f_set.fxtid()
-                fxt_var = meta.style.pythonAttrToDBColumn(fxt_class)
+                linked_fset = v
+                meta = linked_fset.meta
+                so_class = linked_fset.obj_id()
+                add_import_class(so_class)
+                fxt_class = self.mk_class_name(so_class)
+                fxt_var = self.mk_var_name(so_class)
                 self.add_data_header("r.%s = %s()" % (
                                             fxt_var, 
                                             fxt_class))
-                fset.data_dict[k] = code_str("r.%s.%s" % (
+                fset.data_dict[k] = code_str("r.%s.%s.%s" % (
                                             fxt_var, 
+                                            self.mk_key(linked_fset),
                                             meta.style.idForTable(meta.table)))
         return fset.data_dict
     
@@ -94,7 +138,8 @@ class SOFixtureSet(FixtureSet):
         
         self.understand_columns()
         
-        # NOTE: primary keys are not included in columnList ...
+        # NOTE: primary keys are not included in columnList
+        # so we need to find it ...
         
         cols = [self.meta.style.idForTable(self.meta.table)]
         cols.extend([self.getDbName(c) for c in self.meta.columnList])
@@ -104,8 +149,8 @@ class SOFixtureSet(FixtureSet):
     
         self.data_dict = dict(zip(cols, vals))
     
-    def fxtid(self):
-        """returns id of this fixture (the class name)."""
+    def obj_id(self):
+        """returns id of this data object (the model name)."""
         return self.model.__name__
     
     def get_col_value(self, colname):
@@ -121,7 +166,7 @@ class SOFixtureSet(FixtureSet):
         else:
             return value
     
-    def setid(self):
+    def set_id(self):
         """returns id of this set (the primary key value)."""
         return getattr(self.data, self.meta.idName)
     

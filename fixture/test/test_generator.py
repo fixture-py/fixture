@@ -3,7 +3,7 @@ import os
 from nose.tools import eq_, raises
 import testtools
 from testtools.fixtures import affix
-from fixture.generator import FixtureGenerator
+from fixture.generator import FixtureGenerator, run_generator
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -59,9 +59,10 @@ def teardown():
     FxtProduct.dropTable(connection=realconn, cascade=True)
     FxtOffer.dropTable(connection=realconn, cascade=True)
 
-def get_code():    
-    generate = FixtureGenerator(query="name = 'super cash back!'")
-    return generate(FxtOffer)
+def get_code():
+    code = run_generator([  'fixture.test.test_generator.FxtOffer', 
+                            '-q', "name = 'super cash back!'"])
+    return code
 
 def get_code_old_way():
     """gets code from testools.console.genfix"""
@@ -87,9 +88,9 @@ def test_so_generator():
     # print code
     e = {}
     eval(compile(code, 'stdout', 'exec'), e)
-    P_FxtCategory = e['P_FxtCategory']
-    P_FxtProduct = e['P_FxtProduct']
-    P_FxtOffer = e['P_FxtOffer']
+    FxtCategoryData = e['FxtCategoryData']
+    FxtProductData = e['FxtProductData']
+    FxtOfferData = e['FxtOfferData']
     
     # another sanity check, wipe out the source data
     FxtOffer.clearTable()
@@ -98,7 +99,7 @@ def test_so_generator():
     
     # hmm, set it back to memory then load the fixture :
     sqlhub.processConnection = memconn
-    fxt = affix(P_FxtCategory(), P_FxtProduct(), P_FxtOffer())
+    fxt = affix(FxtCategoryData(), FxtProductData(), FxtOfferData())
     
     rs =  FxtCategory.select()
     eq_(rs.count(), 2)
@@ -116,8 +117,8 @@ def test_so_generator():
     eq_(rs[0].name, "super cash back!")
     
     # here was the problem with the old merge code :
-    eq_(FxtCategory.get(fxt.P_fxt_product_1.category_id),   parkas)
-    eq_(FxtCategory.get(fxt.P_fxt_offer_1.category_id),     rebates)
+    eq_(FxtCategory.get(fxt.fxt_product_1.category_id),   parkas)
+    eq_(FxtCategory.get(fxt.fxt_offer_1.category_id),     rebates)
     
 @raises(ValueError)
 def test_unhandlable_object():
