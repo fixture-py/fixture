@@ -10,91 +10,84 @@ try:
     import sqlobject
 except ImportError:
     sqlobject = None
+from fixture.examples.db.sqlobject_fixtures import (
+                    F_Category, F_Product, F_Offer, setup_db, teardown_db)
 
 sqlhub = None
 realconn = None
 memconn = None
 
-FxtCategory = None
-FxtProduct = None
-FxtOffer = None
-
 def setup():
-    global memconn, realconn, sqlhub, FxtCategory, FxtProduct, FxtOffer
+    global memconn, realconn, sqlhub
     if not sqlobject:
         raise SkipTest
     from sqlobject import connectionForURI, sqlhub
-    from data.sodata import FxtCategory, FxtProduct, FxtOffer
     
     realconn = connectionForURI(os.environ['FIXTURE_TEST_DSN_PG'])
     
-    sqlhub.processConnection = realconn
-    FxtCategory.createTable()
-    FxtProduct.createTable()
-    FxtOffer.createTable()
+    setup_db(realconn)
     
+    sqlhub.processConnection = realconn
     # yes, I've been working in marketing too long ...
-    parkas = FxtCategory(name="parkas")
-    jersey = FxtProduct(name="jersey", category=parkas)
-    rebates = FxtCategory(name="rebates")
-    super_cashback = FxtOffer(  name="super cash back!", 
+    parkas = F_Category(name="parkas")
+    jersey = F_Product(name="jersey", category=parkas)
+    rebates = F_Category(name="rebates")
+    super_cashback = F_Offer(  name="super cash back!", 
                                 product=jersey, category=rebates)
     sqlhub.processConnection = None
     
     # now get the loading db as a sqlite mem connection :
     memconn = connectionForURI("sqlite:/:memory:")
-    FxtCategory.createTable(connection=memconn)
-    FxtProduct.createTable(connection=memconn)
-    FxtOffer.createTable(connection=memconn)
+    F_Category.createTable(connection=memconn)
+    F_Product.createTable(connection=memconn)
+    F_Offer.createTable(connection=memconn)
 
 def teardown():
-    FxtCategory.dropTable(connection=realconn, cascade=True)
-    FxtProduct.dropTable(connection=realconn, cascade=True)
-    FxtOffer.dropTable(connection=realconn, cascade=True)
+    teardown_db(realconn)
 
 def test_query():
     
     # sanity check :
-    assert FxtProduct.select(connection=realconn).count()
-    assert not FxtProduct.select(connection=memconn).count()
+    assert F_Product.select(connection=realconn).count()
+    assert not F_Product.select(connection=memconn).count()
     
     # generate code w/ data from realconn :
-    code = run_generator([  'fixture.test.test_generator.data.sodata.FxtOffer', 
+    code = run_generator([  'fixture.examples.db.sqlobject_fixtures.F_Offer', 
                             '-q', "name = 'super cash back!'",
                             "--dsn", str(os.environ['FIXTURE_TEST_DSN_PG'])])
     print code
     e = compile_(code)
-    FxtCategoryData = e['FxtCategoryData']
-    FxtProductData = e['FxtProductData']
-    FxtOfferData = e['FxtOfferData']
+    F_CategoryData = e['F_CategoryData']
+    F_ProductData = e['F_ProductData']
+    F_OfferData = e['F_OfferData']
     
     # another sanity check, wipe out the source data
-    FxtOffer.clearTable(connection=realconn)
-    FxtProduct.clearTable(connection=realconn)
-    FxtCategory.clearTable(connection=realconn)
+    F_Offer.clearTable(connection=realconn)
+    F_Product.clearTable(connection=realconn)
+    F_Category.clearTable(connection=realconn)
     
     # set our conn back to memory then load the fixture.
     # hmm, seems hoky
     sqlhub.processConnection = memconn
-    fxt = affix(FxtCategoryData(), FxtProductData(), FxtOfferData())
+    fxt = affix(F_CategoryData(), F_ProductData(), F_OfferData())
     
-    rs =  FxtCategory.select()
+    rs =  F_Category.select()
     eq_(rs.count(), 2)
     parkas = rs[0]
     rebates = rs[1]
     eq_(parkas.name, "parkas")
     eq_(rebates.name, "rebates")
     
-    rs = FxtProduct.select()
+    rs = F_Product.select()
     eq_(rs.count(), 1)
     eq_(rs[0].name, "jersey")
     
-    rs = FxtOffer.select()
+    rs = F_Offer.select()
     eq_(rs.count(), 1)
     eq_(rs[0].name, "super cash back!")
     
     # note that here we test that colliding fixture key links 
     # got resolved correctly :
-    eq_(FxtCategory.get(fxt.fxt_product_1.category_id),   parkas)
-    eq_(FxtCategory.get(fxt.fxt_offer_1.category_id),     rebates)
+    eq_(F_Category.get(fxt.f_product_1.category_id),   parkas)
+    eq_(F_Category.get(fxt.f_offer_1.category_id),     rebates)
     

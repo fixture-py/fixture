@@ -31,20 +31,44 @@ class LoaderTest:
         """test @with_fixtures
         """
         from fixture import with_fixtures
+        
+        @with_fixtures(*self.datasets())
+        def test_loaded_data(fxt):
+            self.assert_fixture_loaded(fxt)
+        test_loaded_data()
+        self.assert_fixture_torn_down()
+        
+        @raises(RuntimeError)
+        @with_fixtures(*self.datasets())
+        def test_atomic_load(fxt):
+            fixture_loaded(fxt)
+            raise RuntimeError
+        test_atomic_load()
+        self.assert_fixture_torn_down()
+    
+    def test_fixtures_using_with(self):
+        """test with: fixtures() as f"""
+        from fixture import fixtures
         try:
-            @with_fixtures(*self.datasets(), affixer=self.affixer)
-            def test_loaded_data(fxt):
-                assert_fixture_loaded(fxt)
-            test_loaded_data()
-            assert_fixture_torn_down()
-            
-            @raises(RuntimeError)
-            @with_fixtures(*self.datasets(), affixer=self.affixer)
-            def test_atomic_load(fxt):
-                fixture_loaded(fxt)
-                raise RuntimeError
-            test_atomic_load()
-            assert_fixture_torn_down()
-                
-        except SyntaxError:
+            with
+        except NameError:
             raise SkipTest
+        
+        c = """    
+        with fixtures(*self.datasets()) as fxt:
+            self.assert_fixture_loaded(fxt)
+        self.assert_fixture_torn_down()
+        """
+        eval(c)
+        
+        @raises(RuntimeError)
+        def doomed_with_statement():
+            c = """
+            with fixtures(*self.datasets()) as fxt:
+                self.assert_fixture_loaded(fxt)
+                raise RuntimeError
+            """
+            eval(c)
+        doomed_with_statement()
+        self.assert_fixture_torn_down()
+            
