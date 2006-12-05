@@ -1,6 +1,6 @@
 
 """
-python module for installing and reading test data
+module for installing and reading test data
 
 fixture provides an interface for loading tabular data into
 various storage media such as a database, CSV file, XML file, et
@@ -24,6 +24,12 @@ or if you have the easy_install command:
     
     easy_install fixture
 
+SOURCE
+------
+
+http://fixture.googlecode.com/svn/trunk/#egg=fixture-dev
+
 """
 
 __version__ = "1.0"
+from components import *
