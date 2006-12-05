@@ -4,7 +4,7 @@ from fixture.generator import FixtureGenerator
     
 @raises(ValueError)
 def test_unhandlable_object():
-    generate = FixtureGenerator()
+    generate = FixtureGenerator({})
     
     class Stranger(object):
         """something that cannot produce data."""

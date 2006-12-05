@@ -2,8 +2,8 @@
 """fixture generators for SQLObjects"""
 
 from fixture.generator import (
-            UnsupportedHandler, DataHandler, FixtureSet, 
-            register_handler, code_str)
+    DataHandler, FixtureSet, register_handler, code_str, 
+    UnsupportedHandler, MisconfiguredHandler, )
             
 try:
     import sqlobject
@@ -17,8 +17,14 @@ class SOHandlerType(type):
 class SODataHandler(DataHandler):
     __metaclass__ = SOHandlerType
     
-    def __repr__(self):
-        return "<%s at %s>" % (self.__class__, hex(id(self)))
+    def __init__(self, *a,**kw):
+        DataHandler.__init__(self, *a,**kw)
+        from sqlobject import sqlhub, connectionForURI
+        if self.options.dsn:
+            self.connection = connectionForURI(self.options.dsn)
+        else:
+            raise MisconfiguredHandler(
+                    "--dsn option is required by %s" % self.__class__)
     
     def begin(self):
         """called once when starting to build a fixture.
@@ -30,18 +36,8 @@ class SODataHandler(DataHandler):
         self.rs = [self.obj.get(idval)]
         
     def findall(self, query):
-        """gets record set for query."""
-        
-        ## was before ...
-        # if query is not None:
-        #     rs = model.select(query, clauseTables=clauseTables, 
-        #                                         orderBy=orderBy)
-        # else:
-        #     rs = model.select(orderBy=orderBy)
-        # if show_query_only:
-        #     print rs
-        
-        self.rs = self.obj.select(query)
+        """gets record set for query."""        
+        self.rs = self.obj.select(query, connection=self.connection)
     
     def fxt_type(self):
         return 'SOFixture'
@@ -129,7 +125,7 @@ class SODataHandler(DataHandler):
     def sets(self):
         """yields FixtureSet for each row in SQLObject."""
         for row in self.rs:
-            yield SOFixtureSet(row, self.obj)
+            yield SOFixtureSet(row, self.obj, connection=self.connection)
             
 register_handler(SODataHandler)
 
@@ -142,8 +138,9 @@ class SOFixtureSet(FixtureSet):
         else:
             return self.meta.style.pythonAttrToDBColumn(col.name)
     
-    def __init__(self, data, model):
+    def __init__(self, data, model, connection=None):
         FixtureSet.__init__(self, data)
+        self.connection = connection
         self.model = model
         self.meta = model.sqlmeta
         self.foreign_key_class = {}
@@ -174,8 +171,8 @@ class SOFixtureSet(FixtureSet):
         value = getattr(self.data, colname)
         if self.foreign_key_class.has_key(colname):
             model = findClass(self.foreign_key_class[colname])
-            rs = model.get(value)
-            return SOFixtureSet(rs, model)
+            rs = model.get(value, connection=self.connection)
+            return SOFixtureSet(rs, model, connection=self.connection)
         else:
             return value
     

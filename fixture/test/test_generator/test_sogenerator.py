@@ -39,6 +39,7 @@ def setup():
     rebates = FxtCategory(name="rebates")
     super_cashback = FxtOffer(  name="super cash back!", 
                                 product=jersey, category=rebates)
+    sqlhub.processConnection = None
     
     # now get the loading db as a sqlite mem connection :
     memconn = connectionForURI("sqlite:/:memory:")
@@ -59,16 +60,17 @@ def test_query():
     
     # generate code w/ data from realconn :
     code = run_generator([  'fixture.test.test_generator.data.sodata.FxtOffer', 
-                            '-q', "name = 'super cash back!'"])
+                            '-q', "name = 'super cash back!'",
+                            "--dsn", str(os.environ['FIXTURE_TEST_DSN_PG'])])
     e = compile_(code)
     FxtCategoryData = e['FxtCategoryData']
     FxtProductData = e['FxtProductData']
     FxtOfferData = e['FxtOfferData']
     
     # another sanity check, wipe out the source data
-    FxtOffer.clearTable()
-    FxtProduct.clearTable()
-    FxtCategory.clearTable()
+    FxtOffer.clearTable(connection=realconn)
+    FxtProduct.clearTable(connection=realconn)
+    FxtCategory.clearTable(connection=realconn)
     
     # set our conn back to memory then load the fixture.
     # hmm, seems hoky
