@@ -9,19 +9,8 @@ try:
 except ImportError:
     from StringIO import StringIO
     
-from sqlobject import connectionForURI, SQLObject, StringCol, ForeignKey, sqlhub
-    
-class FxtCategory(SQLObject):
-    name = StringCol()
-
-class FxtProduct(SQLObject):
-    name = StringCol()
-    category = ForeignKey('FxtCategory')
-
-class FxtOffer(SQLObject):
-    name = StringCol()
-    category = ForeignKey('FxtCategory')
-    product = ForeignKey('FxtProduct')
+from sqlobject import connectionForURI, sqlhub
+from data.sodata import FxtCategory, FxtProduct, FxtOffer
 
 realconn = None
 memconn = None
@@ -65,7 +54,7 @@ def test_so_generator():
     assert FxtProduct.select().count()
     assert not FxtProduct.select(connection=memconn).count()
     
-    code = run_generator([  'fixture.test.test_generator.FxtOffer', 
+    code = run_generator([  'fixture.test.test_generator.data.sodata.FxtOffer', 
                             '-q', "name = 'super cash back!'"])
     print code
     
