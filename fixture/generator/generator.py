@@ -8,7 +8,11 @@ import os
 import optparse
 import inspect
 import pprint
+from warnings import warn
 handler_registry = []
+
+class UnsupportedHandler(Exception):
+    pass
 
 class code_str(str):
     """string that reproduces without quotes.
@@ -77,7 +81,12 @@ class %(fxt_class)s(%(fxt_type)s):
     def get_handler(self, obj):
         handler = None
         for h in handler_registry:
-            if h.recognizes(obj):
+            try:
+                recognizes_obj = h.recognizes(obj)
+            except UnsupportedHandler, e:
+                warn("%s is unsupported (%s)" % (h, e))
+                continue
+            if recognizes_obj:
                 handler = h(obj)
                 break
         if handler is None:
@@ -87,7 +96,7 @@ class %(fxt_class)s(%(fxt_type)s):
         return handler
     
     def code(self):
-        """buidls and returns code string.
+        """builds and returns code string.
         """
         tpl = {'fxt_type': self.handler.fxt_type()}
         
