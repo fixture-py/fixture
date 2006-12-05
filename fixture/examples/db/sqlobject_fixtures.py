@@ -24,11 +24,13 @@ if sqlobject:
         product = ForeignKey('F_Product')
 
 def setup_db(conn):
+    assert conn is not None
     F_Category.createTable(connection=conn)
     F_Product.createTable(connection=conn)
     F_Offer.createTable(connection=conn)
 
 def teardown_db(conn):
+    assert conn is not None
     F_Category.dropTable(connection=conn, cascade=True)
     F_Product.dropTable(connection=conn, cascade=True)
     F_Offer.dropTable(connection=conn, cascade=True)

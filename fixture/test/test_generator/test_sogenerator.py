@@ -38,12 +38,11 @@ def setup():
     
     # now get the loading db as a sqlite mem connection :
     memconn = connectionForURI("sqlite:/:memory:")
-    F_Category.createTable(connection=memconn)
-    F_Product.createTable(connection=memconn)
-    F_Offer.createTable(connection=memconn)
+    setup_db(memconn)
 
 def teardown():
     teardown_db(realconn)
+    teardown_db(memconn)
 
 def test_query():
     
