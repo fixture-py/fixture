@@ -15,6 +15,15 @@ from data.sodata import FxtCategory, FxtProduct, FxtOffer
 realconn = None
 memconn = None
 
+def compile_(code):
+    """compiles code string for a module.
+    
+    returns dict w/ attributes of that module.
+    """
+    mod = {}
+    eval(compile(code, 'stdout', 'exec'), mod)
+    return mod
+
 def setup():
     global memconn, realconn
     assert os.environ.has_key("FIXTURE_TEST_DSN_PG"), (
@@ -48,7 +57,7 @@ def teardown():
     FxtProduct.dropTable(connection=realconn, cascade=True)
     FxtOffer.dropTable(connection=realconn, cascade=True)
 
-def test_so_generator():
+def test_query():
     
     # sanity check :
     assert FxtProduct.select().count()
@@ -56,10 +65,8 @@ def test_so_generator():
     
     code = run_generator([  'fixture.test.test_generator.data.sodata.FxtOffer', 
                             '-q', "name = 'super cash back!'"])
-    print code
+    e = compile_(code)
     
-    e = {}
-    eval(compile(code, 'stdout', 'exec'), e)
     FxtCategoryData = e['FxtCategoryData']
     FxtProductData = e['FxtProductData']
     FxtOfferData = e['FxtOfferData']
