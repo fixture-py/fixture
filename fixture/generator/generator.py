@@ -9,6 +9,7 @@ import optparse
 import inspect
 import pprint
 from warnings import warn
+from fixture.generator.template import MetaStyleFixture
 handler_registry = []
 
 class HandlerException(Exception):
@@ -65,17 +66,8 @@ class FixtureCache(object):
 class FixtureGenerator(object):
     """produces a callable object that can generate fixture code.
     """
-    basemeta_tpl = """
-class basemeta:
-    pass"""
-    
-    fixture_class_tpl = """
-class %(fxt_class)s(%(fxt_type)s):
-    class meta(basemeta):
-        %(meta)s
-    def data(self):
-        %(data_header)s
-        return %(data)s"""
+        
+    template = MetaStyleFixture()
         
     def __init__(self, options):
         self.handler = None
@@ -104,7 +96,7 @@ class %(fxt_class)s(%(fxt_type)s):
         """
         tpl = {'fxt_type': self.handler.fxt_type()}
         
-        code = [self.basemeta_tpl]
+        code = [self.template.header()]
         o = [k for k in self.cache.order_of_appearence]
         o.reverse()
         for kls in o:
@@ -121,7 +113,7 @@ class %(fxt_class)s(%(fxt_type)s):
             tpl['data_header'] = "\n        ".join(
                                     self.handler.data_header) + "\n"
             tpl['data'] = pprint.pformat(tuple(tpl['data']))
-            code.append(self.fixture_class_tpl % tpl)
+            code.append(self.template.render(tpl))
             
         code = "\n".join(self.handler.import_header + code)
         return code

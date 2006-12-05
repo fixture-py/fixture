@@ -98,10 +98,13 @@ class SODataHandler(DataHandler):
         self.add_data_header('r = self.meta.req')
         
         def add_import_class(so_class=None):
+            from sqlobject.classregistry import findClass
             if not so_class:
                 so_class = fset.obj_id()
+            kls = findClass(so_class)
+            # this probably isn't very flexible ...
             self.add_import("from %s import %s" % (
-                                self.obj.__module__, so_class))
+                                kls.__module__, so_class))
         add_import_class()
         
         for k,v in fset.data_dict.items():

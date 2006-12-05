@@ -62,6 +62,7 @@ def test_query():
     code = run_generator([  'fixture.test.test_generator.data.sodata.FxtOffer', 
                             '-q', "name = 'super cash back!'",
                             "--dsn", str(os.environ['FIXTURE_TEST_DSN_PG'])])
+    print code
     e = compile_(code)
     FxtCategoryData = e['FxtCategoryData']
     FxtProductData = e['FxtProductData']
