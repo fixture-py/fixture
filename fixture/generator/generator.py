@@ -111,7 +111,6 @@ class %(fxt_class)s(%(fxt_type)s):
             code.append(self.fixture_class_tpl % tpl)
             
         code = "\n".join(self.handler.import_header + code)
-        print code
         return code
     
     def __call__(self, obj):
