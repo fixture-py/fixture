@@ -7,16 +7,16 @@ class LoaderTest:
     """
     loader = None
     
-    def assert_dataset_loaded(self, dataset):
+    def assert_fixture_loaded(self, dataset):
         """assert that the dataset was loaded."""
         raise NotImplementedError
     
-    def assert_dataset_torn_down(self, dataset):
+    def assert_fixture_torn_down(self, dataset):
         """assert that the dataset was torn down."""
         raise NotImplementedError
         
-    def dataset(self):
-        """returns some dataset."""
+    def datasets(self):
+        """returns some datasets."""
         raise NotImplementedError
         
     def setup(self):
@@ -32,17 +32,19 @@ class LoaderTest:
         """
         from fixture import with_fixtures
         try:
-            @with_fixtures(self.dataset(), affixer=self.affixer)
+            @with_fixtures(*self.datasets(), affixer=self.affixer)
             def test_loaded_data(fxt):
-                assert_dataset_loaded(fxt)
+                assert_fixture_loaded(fxt)
             test_loaded_data()
+            assert_fixture_torn_down()
             
-            @with_fixtures(self.dataset(), affixer=self.affixer)
+            @raises(RuntimeError)
+            @with_fixtures(*self.datasets(), affixer=self.affixer)
             def test_atomic_load(fxt):
-                assert_dataset_loaded(fxt)
+                fixture_loaded(fxt)
                 raise RuntimeError
-            run_test = raises(RuntimeError)(test_atomic_load)
-            run_test()
+            test_atomic_load()
+            assert_fixture_torn_down()
                 
         except SyntaxError:
             raise SkipTest
