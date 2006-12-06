@@ -33,38 +33,9 @@ http://fixture.googlecode.com/svn/trunk/#egg=fixture-dev
 
 __version__ = "1.0"
 
-# probably change this ...
-#from fixture.loader import Loader as _defaultloader
-_defaultloader = None
+from fixture.util import DefaultContainer
 
-from fixture.exc import UninitializedError
-
-
-def getdefault(key):
-    def _getdefault(self):
-        if len(self.values[key]) == 0:
-            raise UninitializedError("your default %s has not been set" % key)
-        return self.values[key][-1]
-    return _getdefault
-
-def setdefault(key):
-    def _setdefault(self, newval):
-        if newval is None:
-            if len(self.values[key]) <= 1:
-                # can't overwrite default
-                return
-            self.values[key].pop()
-        else:
-            self.values[key].append(newval)
-    return _setdefault
-
-class DefaultContainer(object):
-    values = {
-        'loader': [] # default val here
-    }
-    loader = property(getdefault('loader'), setdefault('loader'))
 defaults = DefaultContainer()
-
     
 from components import *
 from dataset import DataSet

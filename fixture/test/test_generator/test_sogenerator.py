@@ -6,10 +6,7 @@ from nose.exc import SkipTest
 from testtools.fixtures import affix
 from fixture.generator import FixtureGenerator, run_generator
 from fixture.test.test_generator import compile_
-try:
-    import sqlobject
-except ImportError:
-    sqlobject = None
+from fixture.test import env_supports
 from fixture.examples.db.sqlobject_fixtures import (
                     F_Category, F_Product, F_Offer, setup_db, teardown_db)
 
@@ -19,7 +16,7 @@ memconn = None
 
 def setup():
     global memconn, realconn, sqlhub
-    if not sqlobject:
+    if not env_supports.sqlobject:
         raise SkipTest
     from sqlobject import connectionForURI, sqlhub
     

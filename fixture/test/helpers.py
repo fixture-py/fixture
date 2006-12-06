@@ -1,9 +1,10 @@
 
 """helper tools for the fixture.test suite."""
 
-import fixture
 from nose.tools import raises
 from nose.exc import SkipTest
+import fixture
+from fixture.test import env_supports
 
 class LoaderTest:
     """given any data set, tests that the loader can handle it.
@@ -25,7 +26,6 @@ class LoaderTest:
     def setup(self):
         """should load the dataset"""
         fixture.defaults.loader = self.loader
-        # print fixture.defaults.loader
     
     def teardown(self):
         """should unload the dataset."""
@@ -52,9 +52,7 @@ class LoaderTest:
     def test_fixtures_using_with(self):
         """test with: fixtures() as f"""
         from fixture import fixtures
-        try:
-            with
-        except NameError:
+        if not env_supports.with_statement:
             raise SkipTest
         
         c = """    
