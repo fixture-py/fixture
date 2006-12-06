@@ -36,13 +36,14 @@ class test_SOLoader_can_load_one(LoaderTest):
         class CategoryData(DataSet):
             def data(self):
                 return (
-                    ('gray_stuff', dict(name=gray)),
-                    ('yellow_stuff', dict(name=yellow)),
+                    ('gray_stuff', dict(id=1, name=gray)),
+                    ('yellow_stuff', dict(id=2, name=yellow)),
                 )
         return [CategoryData]
         
     def setup(self):
         """should load the dataset"""
+        LoaderTest.setup(self)
         from sqlobject import connectionForURI
         self.conn = connectionForURI("sqlite:/:memory:")
         setup_db(self.conn)
@@ -52,6 +53,7 @@ class test_SOLoader_can_load_one(LoaderTest):
     
     def teardown(self):
         """should unload the dataset."""
+        LoaderTest.teardown(self)
         teardown_db(self.conn)
         from sqlobject import sqlhub
         sqlhub.processConnection = None

@@ -1,5 +1,5 @@
 
-from fixture.loader import LazyLoader
+from fixture import defaults
 
 class DataSet(object):
     """a set of dictionaries.
@@ -7,7 +7,7 @@ class DataSet(object):
     each attribute/key is a dictionary.
     """
     data = None
-    loader = LazyLoader()
+    loader = None
     
     def data(self):
         """returns iterable key/dict pairs.
@@ -44,7 +44,8 @@ class SuperSet(object):
     
     each attribute/key is a DataSet.
     """
-    pass
+    def __init__(self, *datasets):
+        self.datasets = datasets
 
 class MergedSuperSet(object):
     """a collection of data sets.

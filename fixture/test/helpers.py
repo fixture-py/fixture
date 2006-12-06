@@ -1,6 +1,7 @@
 
 """helper tools for the fixture.test suite."""
 
+import fixture
 from nose.tools import raises
 from nose.exc import SkipTest
 
@@ -23,15 +24,15 @@ class LoaderTest:
         
     def setup(self):
         """should load the dataset"""
-        raise NotImplementedError
+        fixture.defaults.loader = self.loader
+        # print fixture.defaults.loader
     
     def teardown(self):
         """should unload the dataset."""
-        raise NotImplementedError
+        fixture.defaults.loader = None
     
     def test_with_fixtures(self):
-        """test @with_fixtures
-        """
+        """test @with_fixtures"""
         from fixture import with_fixtures
         
         @with_fixtures(*self.datasets())
