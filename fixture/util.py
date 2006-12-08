@@ -26,9 +26,9 @@ def setdefault(key):
 class DefaultContainer(object):
     
     values = {
-        'loaderclass': [] # default val
+        'loader': [] # default val
     }        
-    loaderclass = property(getdefault('loaderclass'), setdefault('loaderclass'))
+    loader = property(getdefault('loader'), setdefault('loader'))
     
     def __init__(self):
         self.tmp_vars = None

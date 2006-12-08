@@ -19,11 +19,29 @@ class DataRow(object):
         for k in self.__dict__:
             yield k
     
+    def __repr__(self):
+        return "<%s at %s for %s>" % (
+                self.__class__.__name__, hex(id(self)), self.__dict__)
+    
     def items(self):
         for k,v in self.__dict__.items():
             yield (k,v)
 
-class DataSet(object):
+class DataSetAccessor(object):
+    """iterface for for DataSet-like objects."""
+    def __getattr__(self, key):
+        """self.key returns a dict for 'key'"""
+        raise NotImplementedError
+    
+    def __getitem__(self, key):
+        """self['key'] returns a dict for 'key'"""
+        raise NotImplementedError
+    
+    def __iter__(self):
+        """yield (key, dict) pairs, in order."""
+        raise NotImplementedError
+
+class DataSet(DataSetAccessor):
     """a set of dictionaries.
     
     each attribute/key is a dictionary.
@@ -33,12 +51,18 @@ class DataSet(object):
     row = DataRow
     
     def __init__(self):
+        self.keys = []
         for key, data in self.data():
             if self.__dict__.get(key, False):
                 raise ValueError(
                     "data() cannot redeclare key '%s' "
                     "(this already an attribute)" % key)
+            self.keys.append(key)
             self.__dict__[key] = self.row(data)
+    
+    def __iter__(self):
+        for key in self.keys:
+            yield (key, getattr(self, key))
     
     def __getitem__(self, k):
         return self.__dict__[k]
@@ -77,7 +101,21 @@ class DataSet(object):
         """
         raise NotImplementedError
 
-class SuperSet(object):
+class SuperSetAccessor(object):
+    """iterface for for SuperSet-like objects."""
+    def __getattr__(self, key):
+        """self.key returns a DataSet for 'key'."""
+        raise NotImplementedError
+    
+    def __getitem__(self, key):
+        """self['key'] returns a DataSet for 'key'."""
+        raise NotImplementedError
+    
+    def __iter__(self):
+        """yields each DataSet, in order."""
+        raise NotImplementedError
+
+class SuperSet(SuperSetAccessor):
     """a set of data sets.
     
     each attribute/key is a DataSet.
@@ -85,7 +123,7 @@ class SuperSet(object):
     def __init__(self, *datasets):
         self.datasets = datasets
 
-class MergedSuperSet(object):
+class MergedSuperSet(SuperSet, DataSetAccessor):
     """a collection of data sets.
     
     all attributes of all data sets are merged together.
