@@ -28,15 +28,16 @@ class fixtures(object):
       
       - Class to store data sets in.  Default is fixture.dataset.SuperSet
     
-    - loader
+    - loaderclass
       
-      - Style of fixture.loader to load data sets with.  
+      - fixture.loader class to instantiate and load data sets with.  
         Defaults to fixture.defaults.loader
     
     """
     def __init__(self, *datasets, **kw):
         self.datasets = datasets
-        self.loader =  kw.get('loader', defaults.loader)
+        self.loaderclass =  kw.get('loaderclass', defaults.loaderclass)
+        self.loader = None
         self.setclass = kw.get('metaset', SuperSet)
         self.superset = None
     
@@ -52,12 +53,13 @@ class fixtures(object):
     
     def setup(self):
         self.superset = self.setclass(*self.datasets)
-        self.loader.load(self.superset)
+        self.loader = self.loaderclass()
+        self.loader.setup(self.superset)
         return self.superset
     
     def teardown(self):
         if self.loader.is_loaded:
-            self.loader.unload()
+            self.loader.teardown(self.superset)
 
 def with_fixtures(*datasets, **cfg):
     """decorates method with loaded fixtures.
