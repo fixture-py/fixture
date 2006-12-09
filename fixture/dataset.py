@@ -112,7 +112,7 @@ class SuperSetAccessor(object):
         raise NotImplementedError
     
     def __iter__(self):
-        """yields each DataSet, in order."""
+        """yields (key, DataSet) pairs, in order."""
         raise NotImplementedError
 
 class SuperSet(SuperSetAccessor):
@@ -120,8 +120,26 @@ class SuperSet(SuperSetAccessor):
     
     each attribute/key is a DataSet.
     """
+    def dataset_to_key(self, dataset):
+        return dataset.__class__.__name__
+    
+    def __getattr__(self, key):
+        return self.datasets[key]
+    
+    def __getitem__(self, key):
+        return self.datasets[key]
+        
     def __init__(self, *datasets):
-        self.datasets = datasets
+        self.datasets = {}
+        self.keys = []
+        for d in datasets:
+            k = self.dataset_to_key(d)
+            self.keys.append(k)
+            self.datasets[k] = d
+    
+    def __iter__(self):
+        for k in self.keys:
+            yield (k, self.datasets[k])
 
 class MergedSuperSet(SuperSet, DataSetAccessor):
     """a collection of data sets.
@@ -129,3 +147,14 @@ class MergedSuperSet(SuperSet, DataSetAccessor):
     all attributes of all data sets are merged together.
     """
     pass
+    #     
+    # def __init__(self, *datasets):
+    #     # merge w/ parent
+    #     self.datasets = {}
+    #     self.dataset_keys = []
+    #     self.keys = []
+    #     for d in datasets:
+    #         k = self.dataset_to_key(d)
+    #         self.dataset_keys.append(k)
+    #         # self.keys.append(k)
+    #         # self.datasets[k] = d

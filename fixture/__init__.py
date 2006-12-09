@@ -38,4 +38,4 @@ from fixture.util import DefaultContainer
 defaults = DefaultContainer()
     
 from components import *
-from dataset import DataSet, DataRow
+from dataset import DataSet, DataRow, MergedSuperSet
