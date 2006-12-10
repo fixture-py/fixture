@@ -1,6 +1,4 @@
 
-from fixture import defaults
-
 class DataRow(object):
     def __init__(self, data):
         self.__dict__ = data
@@ -145,16 +143,22 @@ class MergedSuperSet(SuperSet, DataSetAccessor):
     """a collection of data sets.
     
     all attributes of all data sets are merged together.
-    """
-    pass
-    #     
-    # def __init__(self, *datasets):
-    #     # merge w/ parent
-    #     self.datasets = {}
-    #     self.dataset_keys = []
-    #     self.keys = []
-    #     for d in datasets:
-    #         k = self.dataset_to_key(d)
-    #         self.dataset_keys.append(k)
-    #         # self.keys.append(k)
-    #         # self.datasets[k] = d
+    """        
+    def __init__(self, *datasets):
+        # merge all datasets together ...
+        self.datasets = {}
+        self.keys_to_datasets = {}
+        self.keys = []
+        for dataset in datasets:
+            dkey = self.dataset_to_key(dataset)
+            
+            for k,row in dataset:
+                if k in self.keys_to_datasets:
+                    raise ValueError(
+                        "cannot add key '%s' because it was "
+                        "already added by %s" % (
+                            k, self.keys_to_datasets[k]))
+                self.keys.append(k)
+                self.datasets[k] = row
+                self.keys_to_datasets[k] = dataset
+                
