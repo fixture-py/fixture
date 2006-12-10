@@ -32,10 +32,6 @@ http://fixture.googlecode.com/svn/trunk/#egg=fixture-dev
 """
 
 __version__ = "1.0"
-
-from fixture.util import DefaultContainer
-
-defaults = DefaultContainer()
     
 from components import *
 from dataset import DataSet, DataRow, MergedSuperSet

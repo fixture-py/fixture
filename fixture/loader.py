@@ -12,4 +12,9 @@ class Loader(object):
         raise NotImplementedError
 
 class SOLoader(Loader):
-    is_loaded = False
+    def __init__(self, dsn=None, connection=None):
+        from sqlobject import connectionForURI
+        if not connection:
+            self.connection = connectionForURI(dsn)
+        else:
+            self.connection = connection

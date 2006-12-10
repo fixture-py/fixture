@@ -1,6 +1,7 @@
 
 from nose.tools import eq_
 from nose.exc import SkipTest
+from fixture import Fixture
 from fixture.test.helpers import LoaderTest
 try:
     from fixture.loader import SOLoader
@@ -12,20 +13,22 @@ except ImportError:
     sqlobject = None
 from fixture.examples.db.sqlobject_fixtures import *
 
+DSN = 'sqlite:/:memory:'
+
 def setup():
     if not sqlobject: raise SkipTest
 
-class test_SOLoader_can_load_one(LoaderTest):
-    loader = SOLoader    
+class test_SOLoader_can_load(LoaderTest):
+    fixture = Fixture(loader=SOLoader(DSN))    
     
-    def assert_fixture_loaded(self, dataset):
+    def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""
         eq_(F_Category.get( dataset.gray_stuff.id).name, 
                             dataset.gray_stuff.name)
         eq_(F_Category.get( dataset.yellow_stuff.id).name, 
                             dataset.yellow_stuff.name)
     
-    def assert_fixture_torn_down(self, dataset):
+    def assert_data_torndown(self, dataset):
         """assert that the dataset was torn down."""
         eq_(F_Category.select().count(), 0)
         
@@ -43,9 +46,8 @@ class test_SOLoader_can_load_one(LoaderTest):
         
     def setup(self):
         """should load the dataset"""
-        LoaderTest.setup(self)
         from sqlobject import connectionForURI
-        self.conn = connectionForURI("sqlite:/:memory:")
+        self.conn = connectionForURI(DSN)
         setup_db(self.conn)
         
         from sqlobject import sqlhub
@@ -53,7 +55,6 @@ class test_SOLoader_can_load_one(LoaderTest):
     
     def teardown(self):
         """should unload the dataset."""
-        LoaderTest.teardown(self)
         teardown_db(self.conn)
         from sqlobject import sqlhub
         sqlhub.processConnection = None

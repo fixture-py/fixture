@@ -3,73 +3,62 @@
 
 from nose.tools import raises
 from nose.exc import SkipTest
-import fixture
 from fixture.test import env_supports
 
 class LoaderTest:
     """given any data set, tests that the loader can handle it.
     """
-    loader = None
+    fixture = None
     
-    def assert_fixture_loaded(self, dataset):
+    def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""
         raise NotImplementedError
     
-    def assert_fixture_torn_down(self, dataset):
+    def assert_data_torndown(self, dataset):
         """assert that the dataset was torn down."""
         raise NotImplementedError
         
     def datasets(self):
         """returns some datasets."""
         raise NotImplementedError
-        
-    def setup(self):
-        """should load the dataset"""
-        fixture.defaults.loader = self.loader
     
-    def teardown(self):
-        """should unload the dataset."""
-        fixture.defaults.loader = None
-    
-    def test_with_fixtures(self):
-        """test @with_fixtures"""
-        from fixture import with_fixtures
+    def test_with_data(self):
+        """test @with_data"""
         
-        @with_fixtures(*self.datasets())
-        def test_loaded_data(fxt):
-            self.assert_fixture_loaded(fxt)
+        @self.fixture.with_data(*self.datasets())
+        def test_loaded_data(data):
+            self.assert_data_loaded(data)
         test_loaded_data()
-        self.assert_fixture_torn_down()
+        self.assert_data_torndown()
         
         @raises(RuntimeError)
-        @with_fixtures(*self.datasets())
+        @self.fixture.with_data(*self.datasets())
         def test_atomic_load(fxt):
-            fixture_loaded(fxt)
+            self.assert_data_loaded(fxt)
             raise RuntimeError
         test_atomic_load()
-        self.assert_fixture_torn_down()
+        self.assert_data_torndown()
     
-    def test_fixtures_using_with(self):
-        """test with: fixtures() as f"""
-        from fixture import fixtures
+    def test_with_data_as_f(self):
+        """test with: fixture() as f"""
         if not env_supports.with_statement:
             raise SkipTest
         
         c = """    
-        with fixtures(*self.datasets()) as fxt:
-            self.assert_fixture_loaded(fxt)
-        self.assert_fixture_torn_down()
+        with self.fixture.data(*self.datasets()) as d:
+            self.assert_data_loaded(d)
+        self.assert_data_torndown()
         """
         eval(c)
         
         @raises(RuntimeError)
         def doomed_with_statement():
             c = """
-            with fixtures(*self.datasets()) as fxt:
-                self.assert_fixture_loaded(fxt)
+            with self.fixture.data(*self.datasets()) as d:
+                self.assert_data_loaded(d)
                 raise RuntimeError
             """
             eval(c)
         doomed_with_statement()
-        self.assert_fixture_torn_down()
-            
+        self.assert_data_torndown()
+        
