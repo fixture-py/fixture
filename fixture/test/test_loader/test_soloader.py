@@ -2,7 +2,7 @@
 from nose.tools import eq_
 from nose.exc import SkipTest
 from fixture import Fixture
-from fixture.test.helpers import LoaderTest
+from fixture.test.test_loader import LoaderTest
 try:
     from fixture.loader import SOLoader
 except ImportError:

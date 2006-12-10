@@ -1,6 +1,4 @@
 
-"""helper tools for the fixture.test suite."""
-
 from nose.tools import raises
 from nose.exc import SkipTest
 from fixture.test import env_supports
