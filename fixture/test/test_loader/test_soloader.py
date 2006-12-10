@@ -2,24 +2,20 @@
 from nose.tools import eq_
 from nose.exc import SkipTest
 from fixture import Fixture
+from fixture.test import env_supports
 from fixture.test.test_loader import LoaderTest
-try:
-    from fixture.loader import SOLoader
-except ImportError:
-    SOLoader = None
-try:
-    import sqlobject
-except ImportError:
-    sqlobject = None
+from fixture.loader import SOLoader
+from fixture.style import NamedDataStyle, ClassToAttrStyle
 from fixture.examples.db.sqlobject_fixtures import *
 
 DSN = 'sqlite:/:memory:'
 
 def setup():
-    if not sqlobject: raise SkipTest
+    if not env_supports.sqlobject: raise SkipTest
 
 class test_SOLoader_can_load(LoaderTest):
-    fixture = Fixture(loader=SOLoader(DSN))    
+    fixture = Fixture(  loader=SOLoader(dsn=DSN, create=True, env=globals()), 
+                        style=(NamedDataStyle + ClassToAttrStyle) )
     
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""

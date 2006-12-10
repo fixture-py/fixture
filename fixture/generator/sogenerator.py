@@ -1,6 +1,7 @@
 
 """fixture generators for SQLObjects"""
 
+from fixture.style import camel_to_under
 from fixture.generator import (
     DataHandler, FixtureSet, register_handler, code_str, 
     UnsupportedHandler, MisconfiguredHandler, )
@@ -59,22 +60,7 @@ class SODataHandler(DataHandler):
     def mk_var_name(self, fxt_cls_name):
         """returns a variable name for the instance of the fixture class.
         """
-        def camelToUnders(s):
-            chunks = []
-            chkid = None
-            def newchunk():
-                chunks.append('')
-                return len(chunks)-1
-            for ltr in s:
-                if ord(ltr) < 97:
-                    # capital letter :
-                    chkid = newchunk()
-                if chkid is None:
-                    chkid = newchunk()
-                    
-                chunks[chkid] = chunks[chkid] + ltr
-            return '_'.join([c.lower() for c in chunks])
-        return "_".join([camelToUnders(n) for n in fxt_cls_name.split('_')])
+        return "_".join([camel_to_under(n) for n in fxt_cls_name.split('_')])
     
     @staticmethod
     def recognizes(obj):
