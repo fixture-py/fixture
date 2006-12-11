@@ -26,18 +26,23 @@ class Fixture(object):
     receive all bound keywords by default.  for example, if you
     wanted a database type of fixture ...
     
-    >>> from fixture import Fixture, SOLoader, DataSet
-    >>> db = Fixture(loader=SOLoader('sqlite:/:memory:'))
-    >>> class Books(DataSet):
-    ...     def data(self):
-    ...         return (('lolita', dict(title='lolita')))
+    >>> from sqlobject import StringCol, SQLObject
+    >>> class Books(SQLObject):
+    ...     title = StringCol()
     ... 
-    >>> @db.with_data(Books)
+    >>> from fixture import Fixture, DataSet
+    >>> from fixture.loader import SOLoader
+    >>> db = Fixture(loader=SOLoader('sqlite:/:memory:', env=globals()))
+    >>> class BooksData(DataSet):
+    ...     def data(self):
+    ...         return (('lolita', dict(title='lolita')),)
+    ... 
+    >>> @db.with_data(BooksData)
     ... def test_with_books(books):
-    ...     print books.lolita
+    ...     print books.lolita.title
     ... 
     >>> test_with_books()
-    <DataRow {'title': 'lolita'}>
+    'lolita'
     
     Keywords
     --------
