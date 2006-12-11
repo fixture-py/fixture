@@ -5,7 +5,8 @@ from fixture import Fixture
 from fixture.test import env_supports
 from fixture.test.test_loader import LoaderTest
 from fixture.loader import SOLoader
-from fixture.style import NamedDataStyle, ClassToAttrStyle
+from fixture.dataset import MergedSuperSet
+from fixture.style import NamedDataStyle, PaddedNameStyle, CamelAndUndersStyle
 from fixture.examples.db.sqlobject_fixtures import *
 
 DSN = 'sqlite:/:memory:'
@@ -14,8 +15,11 @@ def setup():
     if not env_supports.sqlobject: raise SkipTest
 
 class test_SOLoader_can_load(LoaderTest):
-    fixture = Fixture(  loader=SOLoader(dsn=DSN, create=True, env=globals()), 
-                        style=(NamedDataStyle + ClassToAttrStyle) )
+    fixture = Fixture(  loader=SOLoader(dsn=DSN, create=True, env=globals()),
+                        dataclass=MergedSuperSet,
+                        style=( NamedDataStyle() + 
+                                PaddedNameStyle(prefix="F_") +
+                                CamelAndUndersStyle()) )
     
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""
@@ -24,7 +28,7 @@ class test_SOLoader_can_load(LoaderTest):
         eq_(F_Category.get( dataset.yellow_stuff.id).name, 
                             dataset.yellow_stuff.name)
     
-    def assert_data_torndown(self, dataset):
+    def assert_data_torndown(self):
         """assert that the dataset was torn down."""
         eq_(F_Category.select().count(), 0)
         
@@ -35,8 +39,8 @@ class test_SOLoader_can_load(LoaderTest):
         class CategoryData(DataSet):
             def data(self):
                 return (
-                    ('gray_stuff', dict(id=1, name=gray)),
-                    ('yellow_stuff', dict(id=2, name=yellow)),
+                    ('gray_stuff', dict(id=1, name='gray')),
+                    ('yellow_stuff', dict(id=2, name='yellow')),
                 )
         return [CategoryData]
         

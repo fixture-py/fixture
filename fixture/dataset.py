@@ -1,73 +1,61 @@
 
-class DataRow(object):
-    def __init__(self, data):
-        self.__dict__ = data
+class DataContainer(object):
+    _data = {}
+    _keys = []
     
     def __getitem__(self, key):
-        return self.__dict__[key]
+        return self._data[key]
         
     def __getattr__(self, name):
         try:
-            return self.__dict__[name]
+            return self._data[name]
         except KeyError:
-            raise AttributeError("%s %s has no attribute '%s'" % (
-                                    self.__class__.__name__, self, name))
-    
-    def __iter__(self):
-        for k in self.__dict__:
-            yield k
+            raise AttributeError("%s has no attribute '%s'" % (self, name))
     
     def __repr__(self):
-        return "<%s at %s for %s>" % (
-                self.__class__.__name__, hex(id(self)), self.__dict__)
-    
-    def items(self):
-        for k,v in self.__dict__.items():
-            yield (k,v)
+        return "<%s at %s with keys %s>" % (
+                self.__class__.__name__, hex(id(self)), self._keys)
 
-class DataSetAccessor(object):
-    """iterface for for DataSet-like objects."""
-    def __getattr__(self, key):
-        """self.key returns a dict for 'key'"""
-        raise NotImplementedError
+class DataRow(DataContainer):
+    _data = {}
     
-    def __getitem__(self, key):
-        """self['key'] returns a dict for 'key'"""
-        raise NotImplementedError
+    def __init__(self, data):
+        self._data = data
+        self._keys = [k for k in data]
     
     def __iter__(self):
-        """yield (key, dict) pairs, in order."""
-        raise NotImplementedError
+        for k in self._data:
+            yield k
+    
+    def items(self):
+        for k,v in self._data.items():
+            yield (k,v)
 
-class DataSet(DataSetAccessor):
+class DataSet(DataContainer):
     """a set of dictionaries.
     
     each attribute/key is a dictionary.
     """
-    data = None
-    loader = None
-    row = DataRow
+    _loader = None
+    _storage = None
+    _storage_medium = None
+    _row = DataRow
+    _data = {}
     
     def __init__(self):
-        self.keys = []
+        self._data = {}
+        self._keys = []
         for key, data in self.data():
-            if self.__dict__.get(key, False):
+            if self._data.get(key, False):
                 raise ValueError(
                     "data() cannot redeclare key '%s' "
                     "(this already an attribute)" % key)
-            self.keys.append(key)
-            self.__dict__[key] = self.row(data)
+            self._keys.append(key)
+            self._data[key] = self._row(data)
     
     def __iter__(self):
-        for key in self.keys:
+        for key in self._keys:
             yield (key, getattr(self, key))
-    
-    def __getitem__(self, k):
-        return self.__dict__[k]
-    
-    def __repr__(self):
-        return "<%s at %s for %s>" % (
-                self.__class__.__name__, hex(id(self)), self.__dict__)
     
     def data(self):
         """returns iterable key/dict pairs.
@@ -99,66 +87,56 @@ class DataSet(DataSetAccessor):
         """
         raise NotImplementedError
 
-class SuperSetAccessor(object):
-    """iterface for for SuperSet-like objects."""
-    def __getattr__(self, key):
-        """self.key returns a DataSet for 'key'."""
-        raise NotImplementedError
-    
-    def __getitem__(self, key):
-        """self['key'] returns a DataSet for 'key'."""
-        raise NotImplementedError
-    
-    def __iter__(self):
-        """yields (key, DataSet) pairs, in order."""
-        raise NotImplementedError
-
-class SuperSet(SuperSetAccessor):
+class SuperSet(DataContainer):
     """a set of data sets.
     
     each attribute/key is a DataSet.
     """
+    _data = {}
     def dataset_to_key(self, dataset):
         return dataset.__class__.__name__
-    
-    def __getattr__(self, key):
-        return self.datasets[key]
-    
-    def __getitem__(self, key):
-        return self.datasets[key]
         
     def __init__(self, *datasets):
-        self.datasets = {}
-        self.keys = []
+        self._data = {}
+        self._keys = []
+        self._datasets = {}
+        self._dataset_keys = []
         for d in datasets:
             k = self.dataset_to_key(d)
-            self.keys.append(k)
-            self.datasets[k] = d
+            self._keys.append(k)
+            self._dataset_keys.append(k)
+            self._data[k] = d
+            self._datasets[k] = d
     
     def __iter__(self):
-        for k in self.keys:
-            yield (k, self.datasets[k])
+        for k in self._dataset_keys:
+            yield self._datasets[k]
 
-class MergedSuperSet(SuperSet, DataSetAccessor):
+class MergedSuperSet(SuperSet):
     """a collection of data sets.
     
     all attributes of all data sets are merged together.
-    """        
+    """
+    _data = {}
     def __init__(self, *datasets):
         # merge all datasets together ...
-        self.datasets = {}
-        self.keys_to_datasets = {}
-        self.keys = []
+        self._data = {}
+        self._keys = []
+        self._datasets = {}
+        self._dataset_keys = []
+        self._keys_to_datasets = {}
         for dataset in datasets:
             dkey = self.dataset_to_key(dataset)
+            self._dataset_keys.append(dkey)
+            self._datasets[dkey] = dataset
             
             for k,row in dataset:
-                if k in self.keys_to_datasets:
+                if k in self._keys_to_datasets:
                     raise ValueError(
                         "cannot add key '%s' because it was "
                         "already added by %s" % (
-                            k, self.keys_to_datasets[k]))
-                self.keys.append(k)
-                self.datasets[k] = row
-                self.keys_to_datasets[k] = dataset
+                            k, self._keys_to_datasets[k]))
+                self._keys.append(k)
+                self._data[k] = row
+                self._keys_to_datasets[k] = dataset
                 

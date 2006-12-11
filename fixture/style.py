@@ -1,41 +1,83 @@
 
-"""utilities for deriving names from datasets."""
+"""utilities for deriving new names from existing names."""
 
-class ChainableStyle(type):
-    def __add__(orig_style, other_style):
-        class ChainedStyles(object):
-            __metaclass__ = ChainableStyle
-            def translate(self, name):
-                return other_style.translate(orig_style.translate(name))
-        return ChainedStyles
-
-class DefaultStyle(object):
-    """utility for deriving names from datasets.
+class Style(object):
+    """utility for deriving new names from existing names.
     
-    default is to return all names in original form.
+    each method receives a name and returns a new name.
     """
-    __metaclass__ = ChainableStyle
+    def __add__(self, newstyle):
+        return ChainedStyle(self, newstyle)
+        
+    def to_attr(self, name):
+        """converts name to a new name suitable for an attribute."""
+        raise NotImplementedError
     
-    def translate(self, name):
+    def guess_storage(self, name):
+        """converts a dataset class name to a storage class name."""
+        return name
+    
+    def __repr__(self):
+        return "<%s at %s>" % (self.__class__.__name__, hex(id(self)))
+
+class ChainedStyle(Style):
+    """combination of two styles, piping first translation 
+    into second translation.
+    """
+    def __init__(self, first_style, next_style):
+        self.first_style = first_style
+        self.next_style = next_style
+    
+    def __getattribute__(self, c):
+        def assert_callable(attr):
+            if not callable(attr):
+                raise AttributeError(
+                    "%s cannot chain %s" % (self.__class__, attr))
+        def chained_call(name):
+            f = object.__getattribute__(self, 'first_style')
+            first_call = getattr(f, c)
+            assert_callable(first_call)
+            
+            n = object.__getattribute__(self, 'next_style')
+            next_call = getattr(n, c)
+            assert_callable(next_call)
+            
+            return next_call(first_call(name))
+        return chained_call
+    
+    def __repr__(self):
+        return "%s + %s" % (self.first_style, self.next_style)
+
+class OriginalStyle(Style):
+    """style that honors all original names."""
+    def to_attr(self, name):
+        return name
+    def guess_storage(self, name):
         return name
 
-class ClassToAttrStyle(DefaultStyle):
-    """derives lower case, underscored names from camel case class names.
+class CamelAndUndersStyle(Style):
+    def to_attr(self, name):        
+        """derives lower case, underscored names from camel case class names.
     
-    i.e. EmployeeData translates to employee_data
-    """
-    def translate(self, name):
+        i.e. EmployeeData translates to employee_data
+        """
         return camel_to_under(name)
+    
+    def guess_storage(self, name):
+        """assume a storage name is the same as original.
+        
+        i.e. Employee becomes Employee
+        """
+        return name
 
-class ConfigurableStyle(DefaultStyle):
-    """derives names from datasets with configurable prefixes/suffixes.
+class TrimmedNameStyle(Style):
+    """derives new names from trimming off prefixes/suffixes.
     """
-    def __init__(self, dataset, prefix=None, suffix=None):
-        DefaultStyle.__init__(self, dataset)
+    def __init__(self, prefix=None, suffix=None):
         self.prefix = prefix
         self.suffix = suffix
     
-    def translate(self, name):
+    def _trim(self, name):
         def assert_s(s, name_contains):
             assert name_contains(s), (
                 "%s expected that '%s' %s '%s'" % (
@@ -48,14 +90,39 @@ class ConfigurableStyle(DefaultStyle):
             name = name[0:-len(self.suffix)]
         
         return name
+    
+    def to_attr(self, name):
+        return self._trim(name)
+    
+    def guess_storage(self, name):
+        return self._trim(name)
 
-class NamedDataStyle(ConfigurableStyle):
+class PaddedNameStyle(Style):
+    """derives new names from padding names with prefixes/suffixes."""
+    def __init__(self, prefix=None, suffix=None):
+        self.prefix = prefix
+        self.suffix = suffix
+    
+    def _pad(self, name):
+        if self.prefix:
+            name = "%s%s" % (self.prefix, name)
+        if self.suffix:
+            name = "%s%s" % (name, self.suffix)
+        return name
+        
+    def to_attr(self, name):
+        return self._pad(name)
+    
+    def guess_storage(self, name):
+        return self._pad(name)
+
+class NamedDataStyle(TrimmedNameStyle):
     """derives names from datasets assuming Data as a suffix.
     
     i.e. EmployeeData translates to Employee
     """
-    def __init__(self, dataset):
-        ConfigurableStyle.__init__(self, dataset, suffix='Data')
+    def __init__(self):
+        TrimmedNameStyle.__init__(self, suffix='Data')
 
 def camel_to_under(s):
     chunks = []

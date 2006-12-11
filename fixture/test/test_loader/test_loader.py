@@ -12,7 +12,7 @@ class LoaderTest:
         """assert that the dataset was loaded."""
         raise NotImplementedError
     
-    def assert_data_torndown(self, dataset):
+    def assert_data_torndown(self):
         """assert that the dataset was torn down."""
         raise NotImplementedError
         
