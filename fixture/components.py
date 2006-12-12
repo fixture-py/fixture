@@ -17,7 +17,7 @@ except ImportError:
         return wrap_with_f
         
 from fixture.dataset import SuperSet
-from fixture.style import OriginalStyle
+from fixture.style import NamedDataStyle
 
 class Fixture(object):
     """loads and provides an interface to data.
@@ -25,24 +25,6 @@ class Fixture(object):
     each attribute on the returned object is a method wrapped to  
     receive all bound keywords by default.  for example, if you
     wanted a database type of fixture ...
-    
-    >>> from sqlobject import StringCol, SQLObject
-    >>> class Books(SQLObject):
-    ...     title = StringCol()
-    ... 
-    >>> from fixture import Fixture, DataSet
-    >>> from fixture.loader import SOLoader
-    >>> db = Fixture(loader=SOLoader('sqlite:/:memory:', env=globals()))
-    >>> class BooksData(DataSet):
-    ...     def data(self):
-    ...         return (('lolita', dict(title='lolita')),)
-    ... 
-    >>> @db.with_data(BooksData)
-    ... def test_with_books(books):
-    ...     print books.lolita.title
-    ... 
-    >>> test_with_books()
-    'lolita'
     
     Keywords
     --------
@@ -57,16 +39,16 @@ class Fixture(object):
     """
     dataclass = SuperSet
     loader = None
-    style = None
+    style = NamedDataStyle()
     
     class Data(object):
         """loads one or more data sets and provides an interface to that data.    
         """
         def __init__(self, *datasets, **kw):
             self.datasets = datasets
-            self.loader = kw.get('loader')
-            self.style = kw.get('style', OriginalStyle())
-            self.dataclass = kw.get('dataclass', SuperSet)
+            self.loader = kw.get('loader', None)
+            self.style = kw.get('style', None)
+            self.dataclass = kw.get('dataclass', None)
             self.data = None # instance of dataclass
     
         def __enter__(self):
@@ -115,22 +97,8 @@ class Fixture(object):
           - a callable to be executed before test
      
         - teardown
-
-        For example :
-
-        >>> from fixture import with_data, DataSet, CsvLoader
-        >>> class MyBooks(DataSet):
-        ...     lolita = dict(title='lolita')
-        ...     pi = dict(title='life of pi')
-        ... 
-        >>> @with_data(MyBooks, loader=CsvLoader)
-        ... def test_with_books(fxt):
-        ...     print fxt.lolita
-        ...     # test something ...
-        ... 
-        >>> test_with_books()
-        <DataRow {'title': 'lolita'}>
-        >>> 
+        
+          - a callable to be executed (finally) after test
 
         """
 

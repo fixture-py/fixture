@@ -8,7 +8,7 @@ class Loader(object):
         pass
 
 class SOLoader(Loader):
-    def __init__(self,  dsn=None, connection=None, create=False, 
+    def __init__(self,  dsn=None, connection=None, 
                         env=None, style=None):
         from sqlobject import connectionForURI
         if not connection:
@@ -16,7 +16,6 @@ class SOLoader(Loader):
         else:
             self.connection = connection
         
-        self.create = create
         self.env = env
         self.style = style
         self.transaction = None
@@ -44,6 +43,7 @@ class SOLoader(Loader):
                     if hasattr(self.env, dataset._storage):
                         dataset._storage_medium = getattr(
                                                     self.env, dataset._storage)
+                
             if not dataset._storage_medium:
                 repr_env = repr(type(self.env))
                 if hasattr(self.env, '__module__'):
@@ -64,7 +64,7 @@ class SOLoader(Loader):
             # make this abstract for mixing media ?
             dbvals = dict([(so_style.dbColumnToPythonAttr(k), v) 
                                                     for k,v in row.items()])
-            # print list(dataset._storage_medium.select())
+            dbvals['connection'] = self.transaction
             try:
                 dataset._storage_medium(**dbvals)
             except:

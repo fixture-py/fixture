@@ -15,7 +15,7 @@ def setup():
     if not env_supports.sqlobject: raise SkipTest
 
 class test_SOLoader_can_load(LoaderTest):
-    fixture = Fixture(  loader=SOLoader(dsn=DSN, create=True, env=globals()),
+    fixture = Fixture(  loader=SOLoader(dsn=DSN, env=globals()),
                         dataclass=MergedSuperSet,
                         style=( NamedDataStyle() + 
                                 PaddedNameStyle(prefix="F_") +
