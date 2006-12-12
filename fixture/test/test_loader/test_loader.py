@@ -4,7 +4,9 @@ from nose.exc import SkipTest
 from fixture.test import env_supports
 
 class LoaderTest:
-    """given any data set, tests that the loader can handle it.
+    """tests the behavior of fixture.loader.Loader object.
+    
+    to test combinations of loaders and datasets, implement this base tester.
     """
     fixture = None
     

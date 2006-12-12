@@ -66,19 +66,22 @@ class DataSet(DataContainer):
         """returns iterable key/dict pairs.
         
         >>> from fixture import DataSet
-        >>> class flowers(DataSet):
+        >>> class Flowers(DataSet):
         ...     def data(self):
         ...         return (
-        ...             ('violet', dict(color='blue')), 
-        ...             ('rose', dict(color='red')))
+        ...             ('violets', dict(color='blue')), 
+        ...             ('roses', dict(color='red')))
         ... 
-        >>> f = flowers()
-        >>> f.violet.color
+        >>> f = Flowers()
+        >>> f.violets.color
         'blue'
-        >>> f.violet['color']
+        >>> f.violets['color']
         'blue'
-        >>> f.rose.color
-        'red'
+        >>> for key, row in f:
+        ...     print key, 'are', row.color
+        ... 
+        violets are blue
+        roses are red
                      
         """
         raise NotImplementedError
