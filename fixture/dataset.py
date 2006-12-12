@@ -4,62 +4,85 @@ class DataContainer(object):
     
     names/keys starting with an underscore are reserved for internal use.
     """
+    class Conf:
+        data = None
+        keys = None
+        
     def __init__(self, data=None, keys=None):
+        if not hasattr(self, 'conf'):
+            self.conf = self.Conf()
         if not data: 
             data = {}
-        self._data = data
+        self.conf.data = data
         if not keys: 
             keys = []
-        self._keys = keys
+        self.conf.keys = keys
     
     def __getitem__(self, key):
-        return self._data[key]
+        return self.conf.data[key]
         
     def __getattr__(self, name):
         try:
-            return self._data[name]
+            return self.conf.data[name]
         except KeyError:
             raise AttributeError("%s has no attribute '%s'" % (self, name))
     
     def __repr__(self):
+        if hasattr(self, 'conf'):
+            keys = self.conf.keys
+        else:
+            keys = None
         return "<%s at %s with keys %s>" % (
-                self.__class__.__name__, hex(id(self)), self._keys)
+                self.__class__.__class__.__name__, 
+                hex(id(self)), keys)
     
     def _setdata(self, key, value):
-        self._keys.append(key)
-        self._data[key] = value
+        self.conf.keys.append(key)
+        self.conf.data[key] = value
 
 class DataRow(DataContainer):
     """a key/attribute accessible dictionary."""
+    class Conf(DataContainer.Conf):
+        pass
     def __init__(self, data):
         DataContainer.__init__(self, data=data, keys=[k for k in data])
     
     def __iter__(self):
-        for k in self._data:
+        for k in self.conf.data:
             yield k
     
     def items(self):
-        for k,v in self._data.items():
+        for k,v in self.conf.data.items():
             yield (k,v)
 
 class DataSet(DataContainer):
     """a set of row objects."""
-    _loader = None
-    _storage = None
-    _storage_medium = None
-    _row = DataRow
+    class Conf(DataContainer.Conf):
+        loader = None
+        storage = None
+        storage_medium = None
+        row = DataRow
     
     def __init__(self):
         DataContainer.__init__(self)
+        
+        # this might need rethinking.  we want the convenience
+        # of not inheriting DataSet.Conf ...
+        if not isinstance(self.conf, DataSet.Conf):
+            defaults = DataSet.Conf()
+            for name in dir(defaults):
+                if not hasattr(self.conf, name):
+                    setattr(self.conf, name, getattr(defaults, name))
+        
         for key, data in self.data():
             if hasattr(self, key):
                 raise ValueError(
                     "data() cannot redeclare key '%s' "
                     "(this is already an attribute)" % key)
-            self._setdata(key, self._row(data))
+            self._setdata(key, self.conf.row(data))
     
     def __iter__(self):
-        for key in self._keys:
+        for key in self.conf.keys:
             yield (key, getattr(self, key))
     
     def data(self):
@@ -88,13 +111,19 @@ class DataSet(DataContainer):
 
 class DataSetContainer(object):
     """yields datasets when itered over."""
+    class Conf:
+        datasets = None
+        dataset_keys = None
+        
     def __init__(self):
-        self._datasets = {}
-        self._dataset_keys = []
+        if not hasattr(self, 'conf'):
+            self.conf = self.Conf()
+        self.conf.datasets = {}
+        self.conf.dataset_keys = []
     
     def __iter__(self):
-        for k in self._dataset_keys:
-            yield self._datasets[k]
+        for k in self.conf.dataset_keys:
+            yield self.conf.datasets[k]
         
     def _dataset_to_key(self, dataset):
         return dataset.__class__.__name__
@@ -102,14 +131,16 @@ class DataSetContainer(object):
     def _setdataset(self, dataset, key=None):
         if key is None:
             key = self._dataset_to_key(dataset)
-        self._dataset_keys.append(key)
-        self._datasets[key] = dataset
+        self.conf.dataset_keys.append(key)
+        self.conf.datasets[key] = dataset
 
 class SuperSet(DataContainer, DataSetContainer):
     """a set of data sets.
     
     each attribute/key is a DataSet.
     """
+    class Conf(DataContainer.Conf, DataSetContainer.Conf):
+        pass
         
     def __init__(self, *datasets):
         DataContainer.__init__(self)
@@ -127,8 +158,12 @@ class MergedSuperSet(SuperSet):
     
     all attributes of all data sets are merged together.
     """
+    class Conf(SuperSet.Conf):
+        pass
     def __init__(self, *datasets):
-        self._keys_to_datasets = {}
+        if not hasattr(self, 'conf'):
+            self.conf = self.Conf()
+        self.conf.keys_to_datasets = {}
         SuperSet.__init__(self, *datasets)
     
     def _store_datasets(self, datasets):
@@ -136,11 +171,11 @@ class MergedSuperSet(SuperSet):
             self._setdataset(dataset)
             
             for k,row in dataset:
-                if k in self._keys_to_datasets:
+                if k in self.conf.keys_to_datasets:
                     raise ValueError(
                         "cannot add key '%s' because it was "
                         "already added by %s" % (
-                            k, self._keys_to_datasets[k]))
+                            k, self.conf.keys_to_datasets[k]))
                 self._setdata(k, row)
-                self._keys_to_datasets[k] = dataset
+                self.conf.keys_to_datasets[k] = dataset
                 

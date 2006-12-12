@@ -30,21 +30,20 @@ class SOLoader(Loader):
         self.transaction.commit()
     
     def load(self, data):
-        for dataset in data:
-            # print key, dataset
-            dataset_name = dataset.__class__.__name__
-            if not dataset._storage:
-                dataset._storage = self.style.guess_storage(dataset_name)
-            if not dataset._storage_medium:
+        for ds in data:
+            ds_name = ds.__class__.__name__
+            if not ds.conf.storage:
+                ds.conf.storage = self.style.guess_storage(ds_name)
+            if not ds.conf.storage_medium:
                 if hasattr(self.env, 'get'):
-                    dataset._storage_medium = self.env.get(
-                                                    dataset._storage, None)
-                if not dataset._storage_medium:
-                    if hasattr(self.env, dataset._storage):
-                        dataset._storage_medium = getattr(
-                                                    self.env, dataset._storage)
+                    ds.conf.storage_medium = self.env.get(
+                                                    ds.conf.storage, None)
+                if not ds.conf.storage_medium:
+                    if hasattr(self.env, ds.conf.storage):
+                        ds.conf.storage_medium = getattr(
+                                                self.env, ds.conf.storage)
                 
-            if not dataset._storage_medium:
+            if not ds.conf.storage_medium:
                 repr_env = repr(type(self.env))
                 if hasattr(self.env, '__module__'):
                     repr_env = "%s from '%s'" % (repr_env, repr_env.__module__)
@@ -52,21 +51,21 @@ class SOLoader(Loader):
                 raise self.StorageMediaNotFound(
                     "could not find SQLObject '%s' for "
                     "dataset '%s' in self.env (%s)" % (
-                        dataset._storage, dataset_name, repr_env))
+                        ds.conf.storage, ds_name, repr_env))
             
-            self.load_dataset(dataset)
+            self.load_dataset(ds)
     
     def load_dataset(self, dataset):
         from sqlobject.styles import getStyle
         
-        so_style = getStyle(dataset._storage_medium)
+        so_style = getStyle(dataset.conf.storage_medium)
         for key, row in dataset:
             # make this abstract for mixing media ?
             dbvals = dict([(so_style.dbColumnToPythonAttr(k), v) 
                                                     for k,v in row.items()])
             dbvals['connection'] = self.transaction
             try:
-                dataset._storage_medium(**dbvals)
+                dataset.conf.storage_medium(**dbvals)
             except:
                 etype, val, tb = sys.exc_info()
                 raise etype, (
@@ -77,5 +76,5 @@ class SOLoader(Loader):
         datasets = [d for d in data]
         datasets.reverse()
         for dataset in datasets:
-            dataset._storage_medium.clearTable()
+            dataset.conf.storage_medium.clearTable()
             

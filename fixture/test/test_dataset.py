@@ -16,29 +16,81 @@ class Movies(DataSet):
             ('aquatic', dict(director='cant remember his name')),
         )
 
-class TestDataSet:
-    def setUp(self):
-        self.dataset = Books()
+class DataSetTest:
+    """tests behavior of a DataSet object."""
+    def assert_access(self, dataset):
+        raise NotImplementedError
+    def assert_row_dict_for_iter(self, items, count):
+        raise NotImplementedError
+    def assert_itered_n_times(count):
+        raise NotImplementedError
     
     def test_access(self):
-        eq_(self.dataset.lolita.title, 'lolita')
-        eq_(self.dataset.pi.title, 'life of pi')
-        eq_(self.dataset['lolita'].title, 'lolita')
-        eq_(self.dataset['pi'].title, 'life of pi')
+        self.assert_access(self.dataset)
 
     def test_iter_yields_keys_rows(self):
         count=0
         for k, row in self.dataset:
             count += 1
             items = dict([(k,v) for k,v in row.items()])
-            if count == 1:
-                eq_(items, {'title': 'lolita'})
-            elif count == 2:
-                eq_(items, {'title': 'life of pi'})
-            else:
-                raise ValueError("unexpected row %s, count %s" % (row, count))
+            self.assert_row_dict_for_iter(items, count)
+        
+        self.assert_itered_n_times(count)
+
+class TestDataSet(DataSetTest):
+    def setUp(self):
+        self.dataset = Books()
     
+    def assert_access(self, dataset):
+        eq_(dataset.lolita.title, 'lolita')
+        eq_(dataset.pi.title, 'life of pi')
+        eq_(dataset['lolita'].title, 'lolita')
+        eq_(dataset['pi'].title, 'life of pi')
+    
+    def assert_itered_n_times(self, count):
         eq_(count, 2)
+    
+    def assert_row_dict_for_iter(self, items, count):        
+        if count == 1:
+            eq_(items, {'title': 'lolita'})
+        elif count == 2:
+            eq_(items, {'title': 'life of pi'})
+        else:
+            raise ValueError("unexpected row %s, count %s" % (items, count))
+
+class TestDataSetCustomConfig(DataSetTest):
+    def setUp(self):
+        # a dataset with a config that doesn't inherit from
+        # the default config.  should be ok
+        class Chairs(DataSet):
+            class Conf:
+                storage = 'PretendStorage'
+            def data(self):
+                return (
+                    ('recliner', dict(type='recliner')),
+                    ('Lazy-boy', dict(type='Lazy-boy'))
+                )
+        self.dataset = Chairs()
+    
+    def assert_access(self, dataset):
+        eq_(dataset.recliner.type, 'recliner')
+        eq_(dataset['Lazy-boy'].type, 'Lazy-boy')
+        
+        # should also have the same defaults as DataSet :
+        eq_(dataset.conf.storage, 'PretendStorage')
+        eq_(dataset.conf.row, DataSet.Conf.row)
+        eq_(dataset.conf.loader, DataSet.Conf.loader)
+    
+    def assert_itered_n_times(self, count):
+        eq_(count, 2)
+    
+    def assert_row_dict_for_iter(self, items, count):        
+        if count == 1:
+            eq_(items, {'type': 'recliner'})
+        elif count == 2:
+            eq_(items, {'type': 'Lazy-boy'})
+        else:
+            raise ValueError("unexpected row %s, count %s" % (items, count))
     
 class SuperSetTest:
     """tests common behavior of SuperSet like objects."""
