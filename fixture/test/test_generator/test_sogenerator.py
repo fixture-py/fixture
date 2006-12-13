@@ -7,7 +7,7 @@ from testtools.fixtures import affix
 from fixture.generator import FixtureGenerator, run_generator
 from fixture.test.test_generator import compile_
 from fixture.test import env_supports
-from fixture.examples.db.sqlobject_fixtures import (
+from fixture.examples.db.sqlobject_examples import (
                     F_Category, F_Product, F_Offer, setup_db, teardown_db)
 
 sqlhub = None
@@ -17,6 +17,8 @@ memconn = None
 def setup():
     global memconn, realconn, sqlhub
     if not env_supports.sqlobject:
+        raise SkipTest
+    if os.environ.get('FIXTURE_TEST_DSN_PG'):
         raise SkipTest
     from sqlobject import connectionForURI, sqlhub
     
@@ -48,7 +50,7 @@ def test_query():
     assert not F_Product.select(connection=memconn).count()
     
     # generate code w/ data from realconn :
-    code = run_generator([  'fixture.examples.db.sqlobject_fixtures.F_Offer', 
+    code = run_generator([  'fixture.examples.db.sqlobject_examples.F_Offer', 
                             '-q', "name = 'super cash back!'",
                             "--dsn", str(os.environ['FIXTURE_TEST_DSN_PG'])])
     print code
