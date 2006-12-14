@@ -63,7 +63,7 @@ class TestDataSetCustomConfig(DataSetTest):
         # a dataset with a config that doesn't inherit from
         # the default config.  should be ok
         class Chairs(DataSet):
-            class Conf:
+            class Config:
                 storage = 'PretendStorage'
             def data(self):
                 return (
@@ -78,8 +78,8 @@ class TestDataSetCustomConfig(DataSetTest):
         
         # should also have the same defaults as DataSet :
         eq_(dataset.conf.storage, 'PretendStorage')
-        eq_(dataset.conf.row, DataSet.Conf.row)
-        eq_(dataset.conf.loader, DataSet.Conf.loader)
+        eq_(dataset.conf.row, DataSet.Config.row)
+        eq_(dataset.conf.loader, DataSet.Config.loader)
     
     def assert_itered_n_times(self, count):
         eq_(count, 2)

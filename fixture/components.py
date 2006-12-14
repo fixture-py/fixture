@@ -40,6 +40,7 @@ class Fixture(object):
     dataclass = SuperSet
     loader = None
     style = NamedDataStyle()
+    expose_refs = False
     
     class Data(object):
         """loads one or more data sets and provides an interface to that data.    
@@ -68,14 +69,10 @@ class Fixture(object):
         def setup(self):
             self.data = self.dataclass(*[d() for d in self.datasets])
             self.loader.style = self.style # fixme
-            self.loader.begin()
             self.loader.load(self.data)
-            self.loader.commit()
     
         def teardown(self):
-            self.loader.begin()
-            self.loader.unload(self.data)
-            self.loader.commit()
+            self.loader.unload()
                 
     def __init__(self, **attr):
         for k,v in attr.items():

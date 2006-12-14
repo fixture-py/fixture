@@ -69,7 +69,20 @@ class TestSOLoaderForeignKeys(SOLoaderTest):
     
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""
-        eq_(F_Offer.get(dataset.on_sale.id).name, dataset.on_sale.name)
+        eq_(F_Offer.get(dataset.free_truck.id).name, dataset.free_truck.name)
+        
+        eq_(F_Product.get(
+                dataset.truck.id).name,
+                dataset.truck.name)
+                
+        eq_(F_Category.get(
+                dataset.cars.id).name,
+                dataset.cars.name)
+        eq_(F_Category.get(
+                dataset.free_stuff.id).name,
+                dataset.free_stuff.name)
+        
+        eq_(dataset.just_some_widget.type, 'foobar')
     
     def assert_data_torndown(self):
         """assert that the dataset was torn down."""
@@ -80,31 +93,37 @@ class TestSOLoaderForeignKeys(SOLoaderTest):
     def datasets(self):
         """returns some datasets."""
         
+        class WidgetData(DataSet):
+            def data(self):
+                return (('just_some_widget', dict(type='foobar')),)
+        
         class CategoryData(DataSet):
             def data(self):
                 return (
                     ('cars', dict(id=1, name='cars')),
-                    ('free_stuff', dict(id=1, name='get free stuff')),)
+                    ('free_stuff', dict(id=2, name='get free stuff')),)
         
         class ProductData(DataSet):
-            class Conf:
-                requires = (CategoryData)
+            class Config:
+                requires = (CategoryData,)
             def data(self):
                 return (('truck', dict(
                             id=1, 
                             name='truck', 
-                            category_id=self.ref.category.cars.id)),)
+                            category_id=self.ref.CategoryData.cars.id)),)
         
         class OfferData(DataSet):
-            class Conf:
+            class Config:
                 requires = (CategoryData, ProductData)
+                references = (WidgetData,)
             def data(self):
                 return (
                     ('free_truck', dict(
                             id=1, 
-                            premium='free truck!',
-                            product_id=self.ref.product.truck.id,
-                            category_id=self.ref.category.free_stuff.id)),
+                            name=('free truck by %s' % 
+                                    self.ref.WidgetData.just_some_widget.type),
+                            product_id=self.ref.ProductData.truck.id,
+                            category_id=self.ref.CategoryData.free_stuff.id)),
                 )
-        return [OfferData]
+        return [OfferData, ProductData]
             
