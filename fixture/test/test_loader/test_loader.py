@@ -1,7 +1,10 @@
 
 from nose.tools import raises
 from nose.exc import SkipTest
+from fixture import DataSet
 from fixture.test import env_supports
+
+__all__ = ['LoaderTest', 'MixinCategoryData', 'MixinOfferProductData']
 
 class LoaderTest:
     """tests the behavior of fixture.loader.Loader object.
@@ -61,4 +64,56 @@ class LoaderTest:
             eval(c)
         doomed_with_statement()
         self.assert_data_torndown()
+
+
+class MixinCategoryData:
+    """mixin that adds data to a LoaderTest."""
+    def datasets(self):
+        """returns a single category data set."""
         
+        class CategoryData(DataSet):
+            def data(self):
+                return (
+                    ('gray_stuff', dict(id=1, name='gray')),
+                    ('yellow_stuff', dict(id=2, name='yellow')),
+                )
+        return [CategoryData]
+        
+class MixinOfferProductData:  
+    """mixin that adds data to a LoaderTest."""
+    def datasets(self):
+        """returns some datasets."""
+        
+        class WidgetData(DataSet):
+            def data(self):
+                return (('just_some_widget', dict(type='foobar')),)
+        
+        class CategoryData(DataSet):
+            def data(self):
+                return (
+                    ('cars', dict(id=1, name='cars')),
+                    ('free_stuff', dict(id=2, name='get free stuff')),)
+        
+        class ProductData(DataSet):
+            class Config:
+                requires = (CategoryData,)
+            def data(self):
+                return (('truck', dict(
+                            id=1, 
+                            name='truck', 
+                            category_id=self.ref.CategoryData.cars.id)),)
+        
+        class OfferData(DataSet):
+            class Config:
+                requires = (CategoryData, ProductData)
+                references = (WidgetData,)
+            def data(self):
+                return (
+                    ('free_truck', dict(
+                            id=1, 
+                            name=('free truck by %s' % 
+                                    self.ref.WidgetData.just_some_widget.type),
+                            product_id=self.ref.ProductData.truck.id,
+                            category_id=self.ref.CategoryData.free_stuff.id)),
+                )
+        return [OfferData, ProductData]

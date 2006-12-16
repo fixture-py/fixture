@@ -1,2 +1,2 @@
 
-from test_loader import LoaderTest
+from test_loader import *

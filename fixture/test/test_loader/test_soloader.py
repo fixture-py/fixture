@@ -4,7 +4,8 @@ from nose.tools import eq_
 from nose.exc import SkipTest
 from fixture import Fixture
 from fixture.test import env_supports
-from fixture.test.test_loader import LoaderTest
+from fixture.test.test_loader import (  
+    LoaderTest, MixinCategoryData, MixinOfferProductData)
 from fixture.loader import SOLoader
 from fixture.dataset import MergedSuperSet, DataSet
 from fixture.style import NamedDataStyle, PaddedNameStyle, CamelAndUndersStyle
@@ -36,7 +37,7 @@ class SOLoaderTest(LoaderTest):
         from sqlobject import sqlhub
         sqlhub.processConnection = None
 
-class TestSOLoader(SOLoaderTest):
+class TestSOLoader(MixinCategoryData, SOLoaderTest):
     
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""
@@ -48,19 +49,8 @@ class TestSOLoader(SOLoaderTest):
     def assert_data_torndown(self):
         """assert that the dataset was torn down."""
         eq_(F_Category.select().count(), 0)
-        
-    def datasets(self):
-        """returns some datasets."""
-        
-        class CategoryData(DataSet):
-            def data(self):
-                return (
-                    ('gray_stuff', dict(id=1, name='gray')),
-                    ('yellow_stuff', dict(id=2, name='yellow')),
-                )
-        return [CategoryData]
 
-class TestSOLoaderForeignKeys(SOLoaderTest):
+class TestSOLoaderForeignKeys(MixinOfferProductData, SOLoaderTest):
     def setUp(self):
         if not conf.POSTGRES_DSN:
             raise SkipTest
@@ -89,41 +79,4 @@ class TestSOLoaderForeignKeys(SOLoaderTest):
         eq_(F_Category.select().count(), 0)
         eq_(F_Offer.select().count(), 0)
         eq_(F_Product.select().count(), 0)
-        
-    def datasets(self):
-        """returns some datasets."""
-        
-        class WidgetData(DataSet):
-            def data(self):
-                return (('just_some_widget', dict(type='foobar')),)
-        
-        class CategoryData(DataSet):
-            def data(self):
-                return (
-                    ('cars', dict(id=1, name='cars')),
-                    ('free_stuff', dict(id=2, name='get free stuff')),)
-        
-        class ProductData(DataSet):
-            class Config:
-                requires = (CategoryData,)
-            def data(self):
-                return (('truck', dict(
-                            id=1, 
-                            name='truck', 
-                            category_id=self.ref.CategoryData.cars.id)),)
-        
-        class OfferData(DataSet):
-            class Config:
-                requires = (CategoryData, ProductData)
-                references = (WidgetData,)
-            def data(self):
-                return (
-                    ('free_truck', dict(
-                            id=1, 
-                            name=('free truck by %s' % 
-                                    self.ref.WidgetData.just_some_widget.type),
-                            product_id=self.ref.ProductData.truck.id,
-                            category_id=self.ref.CategoryData.free_stuff.id)),
-                )
-        return [OfferData, ProductData]
             
