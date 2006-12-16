@@ -1,12 +1,11 @@
 
 import os
+from nose.exc import SkipTest
+from fixture.test import conf
 
 def setup():
-    assert os.environ.has_key("FIXTURE_TEST_DSN_PG"), (
-            "you need to define a postgres dsn in an environment var named "
-            "FIXTURE_TEST_DSN_PG to run this test.  WARNING!  The DB user must "
-            "be able to create tables and note that the tables will be deleted "
-            "at teardown.")
+    if not conf.POSTGRES_DSN:
+        raise SkipTest
 
 def compile_(code):
     """compiles code string for a module.

@@ -9,20 +9,19 @@ from fixture.loader import SOLoader
 from fixture.dataset import MergedSuperSet, DataSet
 from fixture.style import NamedDataStyle, PaddedNameStyle, CamelAndUndersStyle
 from fixture.examples.db.sqlobject_examples import *
-
-DSN = 'sqlite:///:memory:'
+from fixture.test.conf import MEM_DSN
 
 def setup():
     if not env_supports.sqlobject: raise SkipTest
 
 class SOLoaderTest(LoaderTest):
-    fixture = Fixture(  loader=SOLoader(dsn=DSN, env=globals()),
+    fixture = Fixture(  loader=SOLoader(dsn=MEM_DSN, env=globals()),
                         dataclass=MergedSuperSet,
                         style=( NamedDataStyle() + 
                                 PaddedNameStyle(prefix="F_") +
                                 CamelAndUndersStyle()) )
         
-    def setup(self, dsn=DSN):
+    def setup(self, dsn=MEM_DSN):
         """should load the dataset"""
         from sqlobject import connectionForURI
         self.conn = connectionForURI(dsn)
@@ -63,9 +62,10 @@ class TestSOLoader(SOLoaderTest):
 
 class TestSOLoaderForeignKeys(SOLoaderTest):
     def setUp(self):
-        if not os.environ.get('FIXTURE_TEST_DSN_PG'):
+        if not conf.POSTGRES_DSN:
             raise SkipTest
-        SOLoaderTest.setUp(self, dsn=os.environ['FIXTURE_TEST_DSN_PG'])
+            
+        SOLoaderTest.setUp(self, dsn=conf.POSTGRES_DSN)
     
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""
