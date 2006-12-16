@@ -40,16 +40,16 @@ class LoaderTest:
         self.assert_data_torndown()
     
     def test_with_data_as_f(self):
-        """test with: fixture() as f"""
+        """test with: fixture.data() as d"""
         if not env_supports.with_statement:
             raise SkipTest
         
         c = """    
         with self.fixture.data(*self.datasets()) as d:
             self.assert_data_loaded(d)
-        self.assert_data_torndown()
         """
         eval(c)
+        self.assert_data_torndown()
         
         @raises(RuntimeError)
         def doomed_with_statement():

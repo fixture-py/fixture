@@ -10,7 +10,7 @@ from fixture.dataset import MergedSuperSet, DataSet
 from fixture.style import NamedDataStyle, PaddedNameStyle, CamelAndUndersStyle
 from fixture.examples.db.sqlobject_examples import *
 
-DSN = 'sqlite:/:memory:'
+DSN = 'sqlite:///:memory:'
 
 def setup():
     if not env_supports.sqlobject: raise SkipTest
