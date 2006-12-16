@@ -18,7 +18,7 @@ def setup():
     global memconn, realconn, sqlhub
     if not env_supports.sqlobject:
         raise SkipTest
-    if os.environ.get('FIXTURE_TEST_DSN_PG'):
+    if not os.environ.get('FIXTURE_TEST_DSN_PG'):
         raise SkipTest
     from sqlobject import connectionForURI, sqlhub
     
