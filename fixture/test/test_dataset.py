@@ -1,6 +1,7 @@
 
 from nose.tools import with_setup, eq_
-from fixture import DataSet, DataRow, SuperSet, MergedSuperSet
+from fixture import DataSet
+from fixture.dataset import DataRow, SuperSet, MergedSuperSet
 
 class Books(DataSet):
     def data(self):

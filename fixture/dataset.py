@@ -1,4 +1,6 @@
 
+from fixture.util import ObjRegistry
+
 class DataContainer(object):
     """contains data accessible by attribute and/or key.
     
@@ -66,7 +68,7 @@ class DataSetContainer(object):
             self.conf = self.Config()
         self.conf.datasets = {}
         self.conf.dataset_keys = []
-        self.conf._cache = {}
+        self.conf._cache = ObjRegistry()
     
     def __iter__(self):
         for k in self.conf.dataset_keys:
@@ -78,8 +80,7 @@ class DataSetContainer(object):
     def _setdataset(self, dataset, key=None, isref=False):
         
         # due to reference resolution we might get colliding data sets...
-        cache_id = id(dataset.__class__)
-        if cache_id in self.conf._cache:
+        if self.conf._cache.has(dataset):
             return False
             
         if key is None:
@@ -89,7 +90,8 @@ class DataSetContainer(object):
             self.conf.dataset_keys.append(key)
             
         self.conf.datasets[key] = dataset
-        self.conf._cache[cache_id] = 1
+        
+        self.conf._cache.register(dataset)
         return True
 
 class SuperSet(DataContainer, DataSetContainer):

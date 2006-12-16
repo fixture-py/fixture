@@ -33,5 +33,5 @@ http://fixture.googlecode.com/svn/trunk/#egg=fixture-dev
 
 __version__ = "1.0"
     
-from components import *
-from dataset import DataSet, DataRow, MergedSuperSet
+from components import Fixture
+from dataset import DataSet

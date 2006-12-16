@@ -1,5 +1,6 @@
 
 import sys
+from fixture.util import ObjRegistry
 
 class Loader(object):
     """knows how to load and unload a DataSet.
@@ -26,7 +27,7 @@ class SOLoader(Loader):
     
     def begin(self, unloading=False):
         self.transaction = self.connection.transaction()
-        self.loaded_cache = {}
+        self.loaded_cache = ObjRegistry()
         if not unloading:
             self.loaded_requirements = {}
             self.data = []
@@ -84,9 +85,7 @@ class SOLoader(Loader):
         
         
         # due to reference resolution we might get colliding data sets...
-        cache_id = id(ds.__class__)
-        
-        if cache_id in self.loaded_cache:
+        if self.loaded_cache.has(ds):
             return
             
         self.init_dataset(ds)
@@ -105,7 +104,7 @@ class SOLoader(Loader):
                         "%s (while loading key '%s' of %s, db values %s)" % (
                                                 val, key, ds, dbvals)), tb
         
-        self.loaded_cache[cache_id] = 1
+        self.loaded_cache.register(ds)
         self.data.append(ds)
     
     def unload(self):
