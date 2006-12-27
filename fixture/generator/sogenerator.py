@@ -158,6 +158,11 @@ class SOFixtureSet(FixtureSet):
         """
         from sqlobject.classregistry import findClass
         value = getattr(self.data, colname)
+        if value is None:
+            # this means that we are in a NULL foreign key
+            # which could be perfectly legal.
+            return None
+            
         if self.foreign_key_class.has_key(colname):
             model = findClass(self.foreign_key_class[colname])
             rs = model.get(value, connection=self.connection)

@@ -28,16 +28,18 @@ class SqlAlchemyLoader(DatabaseLoader):
         DatabaseLoader.__init__(self,   style=style, dsn=dsn, 
                                         env=env, medium=medium)
         self.meta = meta
+        self.session = None
+    
+    def begin(self, unloading=False):
         
         if not session_context:
             import sqlalchemy
             from sqlalchemy.ext.sessioncontext import SessionContext
             session_context = SessionContext(
-                    lambda: sqlalchemy.create_session(bind_to=self.meta.engine))
-            
+                lambda: sqlalchemy.create_session(bind_to=self.meta.engine))
+        
         self.session = session_context.current
-    
-    def begin(self, unloading=False):
+        
         DatabaseLoader.begin(self, unloading=unloading)
         if not unloading:
             self.session.clear()
