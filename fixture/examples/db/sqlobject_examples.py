@@ -6,31 +6,37 @@ try:
 except ImportError:
     sqlobject = None
 
-F_Category, F_Product, F_Offer = None, None, None
+Category, Product, Offer = None, None, None
 
 if sqlobject:
     from sqlobject import *
     
-    class F_Category(SQLObject):
+    class Category(SQLObject):
+        class sqlmeta:
+            table = 'fixture_sqlobject_category'
         name = StringCol()
 
-    class F_Product(SQLObject):
+    class Product(SQLObject):
+        class sqlmeta:
+            table = 'fixture_sqlobject_product'
         name = StringCol()
-        category = ForeignKey('F_Category')
+        category = ForeignKey('Category')
 
-    class F_Offer(SQLObject):
+    class Offer(SQLObject):
+        class sqlmeta:
+            table = 'fixture_sqlobject_offer'
         name = StringCol()
-        category = ForeignKey('F_Category')
-        product = ForeignKey('F_Product')
+        category = ForeignKey('Category')
+        product = ForeignKey('Product')
 
 def setup_db(conn):
     assert conn is not None
-    F_Category.createTable(connection=conn)
-    F_Product.createTable(connection=conn)
-    F_Offer.createTable(connection=conn)
+    Category.createTable(connection=conn)
+    Product.createTable(connection=conn)
+    Offer.createTable(connection=conn)
 
 def teardown_db(conn):
     assert conn is not None
-    F_Category.dropTable(connection=conn, cascade=True)
-    F_Product.dropTable(connection=conn, cascade=True)
-    F_Offer.dropTable(connection=conn, cascade=True)
+    Category.dropTable(connection=conn, cascade=True)
+    Product.dropTable(connection=conn, cascade=True)
+    Offer.dropTable(connection=conn, cascade=True)

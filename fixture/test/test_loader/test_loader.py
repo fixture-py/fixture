@@ -4,7 +4,7 @@ from nose.exc import SkipTest
 from fixture import DataSet
 from fixture.test import env_supports
 
-__all__ = ['LoaderTest', 'MixinCategoryData', 'MixinOfferProductData']
+__all__ = ['LoaderTest', 'HavingCategoryData', 'HavingOfferProductData']
 
 class LoaderTest:
     """tests the behavior of fixture.loader.Loader object.
@@ -66,7 +66,7 @@ class LoaderTest:
         self.assert_data_torndown()
 
 
-class MixinCategoryData:
+class HavingCategoryData:
     """mixin that adds data to a LoaderTest."""
     def datasets(self):
         """returns a single category data set."""
@@ -79,7 +79,7 @@ class MixinCategoryData:
                 )
         return [CategoryData]
         
-class MixinOfferProductData:  
+class HavingOfferProductData:  
     """mixin that adds data to a LoaderTest."""
     def datasets(self):
         """returns some datasets."""

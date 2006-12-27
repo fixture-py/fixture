@@ -1,10 +1,16 @@
 
 """each attribute indicates a supported module or feature."""
 
-try:
-    import sqlobject
-except ImportError:
-    sqlobject = None
+def supported(mod):
+    try:
+        __import__(mod)
+    except ImportError:
+        return False
+    else:
+        return True
+
+sqlobject = supported('sqlobject')
+sqlalchemy = supported('sqlalchemy')
 
 class b:
     def __enter__(): pass

@@ -80,7 +80,7 @@ class DataSetContainer(object):
     def _setdataset(self, dataset, key=None, isref=False):
         
         # due to reference resolution we might get colliding data sets...
-        if self.conf._cache.has(dataset):
+        if dataset in self.conf._cache:
             return False
             
         if key is None:
@@ -156,6 +156,7 @@ class DataSet(DataContainer):
         loader = None
         storage = None
         storage_medium = None
+        stored_objects = []
         requires = []
         references = []
         row = DataRow
@@ -171,6 +172,8 @@ class DataSet(DataContainer):
             for name in dir(defaults):
                 if not hasattr(self.conf, name):
                     setattr(self.conf, name, getattr(defaults, name))
+        
+        self.conf.stored_objects = []
         
         self.ref = self.conf.refclass(*(
             [s() for s in self.conf.requires] + 
