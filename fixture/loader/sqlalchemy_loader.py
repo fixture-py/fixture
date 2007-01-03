@@ -2,6 +2,14 @@
 from fixture.loader import DatabaseLoader
 session_context = None
 
+def create_session_context(meta):
+    global session_context
+    import sqlalchemy    
+    from sqlalchemy.ext.sessioncontext import SessionContext
+    session_context = SessionContext(
+        lambda: sqlalchemy.create_session(bind_to=meta.engine))
+                
+
 class SqlAlchemyLoader(DatabaseLoader):
     
     class AssignedMapperMedium(DatabaseLoader.StorageMediumAdapter):
@@ -24,7 +32,6 @@ class SqlAlchemyLoader(DatabaseLoader):
     
     def __init__(self,  style=None, dsn=None, medium=None, 
                         meta=None, env=None):
-        global session_context
         DatabaseLoader.__init__(self,   style=style, dsn=dsn, 
                                         env=env, medium=medium)
         self.meta = meta
@@ -33,10 +40,7 @@ class SqlAlchemyLoader(DatabaseLoader):
     def begin(self, unloading=False):
         
         if not session_context:
-            import sqlalchemy
-            from sqlalchemy.ext.sessioncontext import SessionContext
-            session_context = SessionContext(
-                lambda: sqlalchemy.create_session(bind_to=self.meta.engine))
+            create_session_context(self.meta)
         
         self.session = session_context.current
         

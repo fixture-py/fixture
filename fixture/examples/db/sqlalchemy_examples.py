@@ -6,6 +6,8 @@ try:
 except ImportError:
     sqlalchemy = None
 
+from fixture.loader.sqlalchemy_loader import create_session_context
+
 Category, Product, Offer = None, None, None
 
 if sqlalchemy:
@@ -43,8 +45,10 @@ if sqlalchemy:
 
 mappers_assigned = False
 
-def setup_db(dsn):
+def setup_db(meta):
     assert sqlalchemy
+    if not sqlalchemy_loader.session_context:
+        create_session_context(meta)
     global mappers_assigned
     if not mappers_assigned:
         ctx = sqlalchemy_loader.session_context
@@ -56,7 +60,7 @@ def setup_db(dsn):
         assign_mapper(ctx, Offer, offers)
         mappers_assigned = True
         
-    meta.connect(dsn)
+    # meta.connect(dsn)
     categories.create()
     products.create()
     offers.create()
@@ -64,9 +68,11 @@ def setup_db(dsn):
     session.flush()
     session.clear()
 
-def teardown_db(dsn):
+def teardown_db(meta):
     assert sqlalchemy
-    meta.connect(dsn)
+    if not sqlalchemy_loader.session_context:
+        create_session_context(meta)
+    # meta.connect(dsn)
     categories.drop()
     products.drop()
     offers.drop()

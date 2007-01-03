@@ -26,11 +26,11 @@ class SqlAlchemyLoaderTest(LoaderTest):
                         style=(NamedDataStyle() + CamelAndUndersStyle()) )
         
     def setup(self, dsn=conf.MEM_DSN):
-        meta.connect(dsn) 
-        setup_db(dsn)
+        meta.connect(dsn)
+        setup_db(meta)
     
     def teardown(self):
-        teardown_db(conf.MEM_DSN)
+        teardown_db(meta)
 
 class TestSqlAlchemy(HavingCategoryData, SqlAlchemyLoaderTest):
     def assert_data_loaded(self, dataset):
