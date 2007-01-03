@@ -20,11 +20,9 @@ from fixture.dataset import SuperSet
 from fixture.style import NamedDataStyle
 
 class Fixture(object):
-    """loads and provides an interface to data.
+    """defines an environment for loading data.
     
-    each attribute on the returned object is a method wrapped to  
-    receive all bound keywords by default.  for example, if you
-    wanted a database type of fixture ...
+    An instance of this class can safely be a module-level object.
     
     Keywords
     --------
@@ -40,7 +38,6 @@ class Fixture(object):
     dataclass = SuperSet
     loader = None
     style = NamedDataStyle()
-    expose_refs = False
     
     class Data(object):
         """loads one or more data sets and provides an interface to that data.    
@@ -91,11 +88,11 @@ class Fixture(object):
         --------
         - setup
     
-          - a callable to be executed before test
+          - optional callable to be executed before test
      
         - teardown
         
-          - a callable to be executed (finally) after test
+          - optional callable to be executed (finally) after test
 
         """
 
@@ -123,7 +120,6 @@ class Fixture(object):
     
             @wraps(routine)
             def iter_routine():
-                # wow, this could use a rewrite
                 for stack in routine():
                     fn = stack[0]
                     try:

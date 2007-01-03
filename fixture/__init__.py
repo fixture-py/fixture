@@ -1,6 +1,6 @@
 
 """
-module for installing and reading test data
+python module for installing and reading test data
 
 fixture provides an interface for loading tabular data into
 various storage media such as a database, CSV file, XML file, et

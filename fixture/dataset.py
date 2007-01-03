@@ -1,10 +1,12 @@
 
+"""representations of data."""
+
 from fixture.util import ObjRegistry
 
 class DataContainer(object):
     """contains data accessible by attribute and/or key.
     
-    names/keys starting with an underscore are reserved for internal use.
+    for all configurable attributes, use the inner class Config.
     """
     class Config:
         data = None
@@ -150,7 +152,30 @@ class MergedSuperSet(SuperSet):
                 self._setdataset(d, isref=True)
 
 class DataSet(DataContainer):
-    """a set of row objects."""
+    """a set of row objects.
+    
+    a loader will typically want to load a dataset into a 
+    single storage medium.  I.E. a table in a database.
+    
+    >>> from fixture import DataSet
+    >>> class Flowers(DataSet):
+    ...     def data(self):
+    ...         return (
+    ...             ('violets', dict(color='blue')), 
+    ...             ('roses', dict(color='red')))
+    ... 
+    >>> f = Flowers()
+    >>> f.violets.color
+    'blue'
+    >>> f.violets['color']
+    'blue'
+    >>> for key, row in f:
+    ...     print key, 'are', row.color
+    ... 
+    violets are blue
+    roses are red
+    
+    """
     ref = None
     class Config(DataContainer.Config):
         loader = None
@@ -191,26 +216,7 @@ class DataSet(DataContainer):
             yield (key, getattr(self, key))
     
     def data(self):
-        """returns iterable key/dict pairs.
-        
-        >>> from fixture import DataSet
-        >>> class Flowers(DataSet):
-        ...     def data(self):
-        ...         return (
-        ...             ('violets', dict(color='blue')), 
-        ...             ('roses', dict(color='red')))
-        ... 
-        >>> f = Flowers()
-        >>> f.violets.color
-        'blue'
-        >>> f.violets['color']
-        'blue'
-        >>> for key, row in f:
-        ...     print key, 'are', row.color
-        ... 
-        violets are blue
-        roses are red
-                     
+        """returns iterable key/dict pairs.                     
         """
         raise NotImplementedError
                 
