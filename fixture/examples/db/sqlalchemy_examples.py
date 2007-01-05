@@ -61,9 +61,10 @@ def setup_db(meta):
         mappers_assigned = True
         
     # meta.connect(dsn)
-    categories.create()
-    products.create()
-    offers.create()
+    engine = meta.get_engine()
+    categories.create(engine)
+    products.create(engine)
+    offers.create(engine)
     session = sqlalchemy_loader.session_context.current
     session.flush()
     session.clear()
@@ -73,9 +74,10 @@ def teardown_db(meta):
     if not sqlalchemy_loader.session_context:
         create_session_context(meta)
     # meta.connect(dsn)
-    categories.drop()
-    products.drop()
-    offers.drop()
+    engine = meta.get_engine()
+    categories.drop(engine)
+    products.drop(engine)
+    offers.drop(engine)
     session = sqlalchemy_loader.session_context.current
     session.flush()
     session.clear()
