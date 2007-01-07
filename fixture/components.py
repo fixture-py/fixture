@@ -27,11 +27,11 @@ class Fixture(object):
     --------
     - dataclass
       
-      - class to instantiate for datasets.  Default is fixture.dataset.SuperSet
+      - class to instantiate with datasets.  Default is fixture.dataset.SuperSet
     
     - loader
       
-      - callable to instantiate and load data sets with.
+      - class to instantiate and load data sets with.
       
     """
     dataclass = SuperSet
@@ -97,7 +97,7 @@ class Fixture(object):
 
         def decorate_with_data(routine):
             def setup_data():
-                data = self.Data(datasets, self.dataclass, self.loader)
+                data = self.data(*datasets)
                 data.setup()
                 return data
             def teardown_data(data):
