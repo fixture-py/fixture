@@ -9,28 +9,29 @@ from fixture.test.test_loader import (
 from fixture.style import NamedDataStyle, CamelAndUndersStyle
 from fixture.test import conf, env_supports
 from fixture.examples.db.sqlalchemy_examples import *
-
-try:
-    from sqlalchemy import DynamicMetaData
-except ImportError:
-    meta = None
-else:
-    meta = DynamicMetaData()
     
 def setup():
     if not env_supports.sqlalchemy: raise SkipTest
 
 class SqlAlchemyLoaderTest(LoaderTest):
-    fixture = Fixture(  loader=SqlAlchemyLoader(meta=meta, env=globals()),
+    fixture = Fixture(  loader=SqlAlchemyLoader(env=globals()),
                         dataclass=MergedSuperSet,
                         style=(NamedDataStyle() + CamelAndUndersStyle()) )
         
     def setup(self, dsn=conf.MEM_DSN):
-        meta.connect(dsn)
-        setup_db(meta)
+        from sqlalchemy import BoundMetaData
+        
+        self.meta = BoundMetaData(dsn)
+        self.fixture.loader.meta = self.meta
+        
+        self.session_context = SessionContext(
+            lambda: sqlalchemy.create_session(bind_to=self.meta.engine))
+        self.fixture.loader.session_context = self.session_context
+        
+        setup_db(self.meta, self.session_context)
     
     def teardown(self):
-        teardown_db(meta)
+        teardown_db(self.meta, self.session_context)
 
 class TestSqlAlchemy(HavingCategoryData, SqlAlchemyLoaderTest):
     def assert_data_loaded(self, dataset):

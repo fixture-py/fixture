@@ -6,8 +6,6 @@ try:
 except ImportError:
     sqlalchemy = None
 
-from fixture.loader.sqlalchemy_loader import create_session_context
-
 Category, Product, Offer = None, None, None
 
 if sqlalchemy:
@@ -15,69 +13,57 @@ if sqlalchemy:
     from sqlalchemy.orm.mapper import global_extensions
     from sqlalchemy.ext.sessioncontext import SessionContext
     from sqlalchemy.ext.assignmapper import assign_mapper
-    from fixture.loader import sqlalchemy_loader
     
-    meta = DynamicMetaData()
-    
-    categories = Table("fixture_sqlalchemy_category", meta,
+    categories = Table("fixture_sqlalchemy_category",
         Column("id", INT, primary_key=True),
         Column("name", String )
     )
     class Category(object):
         pass
     
-    products = Table("fixture_sqlalchemy_product", meta,
+    products = Table("fixture_sqlalchemy_product",
         Column("id", INT, primary_key=True),
         Column("name", String ),
-        Column("category_id", INT, ForeignKey("fixture_sqlalchemy_category.id")),
+        Column("category_id", INT, 
+                ForeignKey("fixture_sqlalchemy_category.id")),
     )
     class Product(object):
         pass
     
-    offers = Table("fixture_sqlalchemy_offer", meta,
+    offers = Table("fixture_sqlalchemy_offer",
         Column("id", INT, primary_key=True),
         Column("name", String ),
-        Column("category_id", INT, ForeignKey("fixture_sqlalchemy_category.id")),
+        Column("category_id", INT, 
+                ForeignKey("fixture_sqlalchemy_category.id")),
         Column("product_id", INT, ForeignKey("fixture_sqlalchemy_product.id")),
     )
     class Offer(object):
         pass
 
-mappers_assigned = False
-
-def setup_db(meta):
+def setup_db(meta, session_context):
     assert sqlalchemy
-    if not sqlalchemy_loader.session_context:
-        create_session_context(meta)
-    global mappers_assigned
-    if not mappers_assigned:
-        ctx = sqlalchemy_loader.session_context
-        # this was the old way??
-        # global_extensions.append(ctx.mapper_extension)
-        
-        assign_mapper(ctx, Category, categories)
-        assign_mapper(ctx, Product, products)
-        assign_mapper(ctx, Offer, offers)
-        mappers_assigned = True
-        
-    # meta.connect(dsn)
-    engine = meta.get_engine()
-    categories.create(engine)
-    products.create(engine)
-    offers.create(engine)
-    session = sqlalchemy_loader.session_context.current
+    
+    def assign_and_create(obj, table):
+        table.tometadata(meta)
+        assign_mapper(session_context, obj, table)
+        table.create(meta.engine)
+    
+    session = session_context.current
+    
+    assign_and_create(Category, categories)
+    assign_and_create(Product, products)
+    assign_and_create(Offer, offers)
+    
     session.flush()
     session.clear()
 
-def teardown_db(meta):
+def teardown_db(meta, session_context):
     assert sqlalchemy
-    if not sqlalchemy_loader.session_context:
-        create_session_context(meta)
-    # meta.connect(dsn)
-    engine = meta.get_engine()
-    categories.drop(engine)
-    products.drop(engine)
-    offers.drop(engine)
-    session = sqlalchemy_loader.session_context.current
+    meta.drop_all()
+    
+    session = session_context.current
     session.flush()
-    session.clear()
+    
+    sqlalchemy.orm.clear_mappers()
+    
+    

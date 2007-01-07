@@ -36,10 +36,10 @@ class LoaderTest:
         
         @raises(RuntimeError)
         @self.fixture.with_data(*self.datasets())
-        def test_atomic_load(fxt):
+        def test_exception_tears_down(fxt):
             self.assert_data_loaded(fxt)
             raise RuntimeError
-        test_atomic_load()
+        test_exception_tears_down()
         self.assert_data_torndown()
     
     def test_with_data_as_f(self):

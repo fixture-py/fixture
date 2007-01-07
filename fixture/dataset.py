@@ -37,7 +37,7 @@ class DataContainer(object):
         else:
             keys = None
         return "<%s at %s with keys %s>" % (
-                self.__class__.__name__, 
+                self.__class__.__name__,
                 hex(id(self)), keys)
     
     def _setdata(self, key, value):

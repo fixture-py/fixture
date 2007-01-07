@@ -21,8 +21,8 @@ class Loader(object):
         def save(self, row):
             raise NotImplementedError
             
-        def share_transaction(self, transaction):
-            self.transaction = transaction
+        def visit_loader(self, loader):
+            pass
             
     Medium = StorageMediumAdapter
             
@@ -72,13 +72,13 @@ class Loader(object):
             self.loaded_requirements[k].append(req)
             self.load_dataset(req, parent=parent)
         
-        # due to reference resolution we might get colliding data sets...
+        # due to reference resolution we might get duplicate data sets...
         if ds in self.loaded_cache:
             return
             
         self.attach_storage_medium(ds)
         for key, row in ds:
-            ds.conf.storage_medium.share_transaction(self.transaction)
+            ds.conf.storage_medium.visit_loader(self)
             try:
                 obj = ds.conf.storage_medium.save(row)
                 ds.conf.stored_objects.append(obj)

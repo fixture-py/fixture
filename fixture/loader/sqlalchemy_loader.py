@@ -1,62 +1,54 @@
 
 from fixture.loader import DatabaseLoader
-session_context = None
-
-def create_session_context(meta):
-    global session_context
-    import sqlalchemy    
-    from sqlalchemy.ext.sessioncontext import SessionContext
-    session_context = SessionContext(
-        lambda: sqlalchemy.create_session(bind_to=meta.engine))
-                
 
 class SqlAlchemyLoader(DatabaseLoader):
     
     class AssignedMapperMedium(DatabaseLoader.StorageMediumAdapter):
         def __init__(self, *a,**kw):
             DatabaseLoader.StorageMediumAdapter.__init__(self, *a,**kw)
-            self.session = session_context.current
             
         def clear(self, obj):
             obj.delete()
+        
+        def visit_loader(self, loader):
+            self.session = loader.session
             
         def save(self, row):
             obj = self.medium()
             for attname, val in row.items():
                 setattr(obj, attname, val)
             
-            obj.save()
+            self.session.save(obj)
             return obj
             
     Medium = AssignedMapperMedium
     
     def __init__(self,  style=None, dsn=None, medium=None, 
-                        meta=None, env=None):
+                        env=None, session_context=None):
         DatabaseLoader.__init__(self,   style=style, dsn=dsn, 
                                         env=env, medium=medium)
-        self.meta = meta
+        self.session_context = session_context
         self.session = None
     
     def begin(self, unloading=False):
         
-        if not session_context:
-            create_session_context(self.meta)
+        if self.session_context is None:            
+            import sqlalchemy
+            from sqlalchemy.ext.sessioncontext import SessionContext
+            self.session_context = SessionContext(sqlalchemy.create_session)
         
-        self.session = session_context.current
+        self.session = self.session_context.current
         
         DatabaseLoader.begin(self, unloading=unloading)
-        if not unloading:
-            self.session.clear()
     
     def commit(self):
         self.session.flush()
         DatabaseLoader.commit(self)
     
     def start_transaction(self):
-        self.connection = self.meta.engine.contextual_connect()
-        transaction = self.connection.begin()
+        transaction = self.session.create_transaction()
         return transaction
     
     def rollback(self):
-        self.session.clear()
+        # self.session.clear()
         DatabaseLoader.rollback(self)

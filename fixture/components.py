@@ -65,7 +65,7 @@ class Fixture(object):
     
         def setup(self):
             self.data = self.dataclass(*[d() for d in self.datasets])
-            self.loader.style = self.style # fixme
+            self.loader.style = self.style # hmmm
             self.loader.load(self.data)
     
         def teardown(self):
@@ -82,7 +82,7 @@ class Fixture(object):
     def with_data(self, *datasets, **cfg):
         """returns a decorator to wrap data around a method.
     
-        the method will receive a new first argument, a data instance.
+        the method will receive a new first argument, the Fixture.Data instance.
     
         Keywords
         --------

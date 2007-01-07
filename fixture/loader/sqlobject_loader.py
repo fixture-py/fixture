@@ -17,6 +17,9 @@ class SQLObjectLoader(DatabaseLoader):
                                                     for k,v in row.items()])
             dbvals['connection'] = self.transaction
             return self.medium(**dbvals)
+        
+        def visit_loader(self, loader):
+            self.transaction = loader.transaction
             
     Medium = SQLObjectMedium
             
