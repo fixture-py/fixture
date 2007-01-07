@@ -1,10 +1,13 @@
 
 import sys
 from fixture.util import ObjRegistry
+from fixture.style import NamedDataStyle
 
 class Loader(object):
     """knows how to load and unload a DataSet.
     """
+    style = NamedDataStyle()
+    
     class StorageMediumAdapter(object):
         def __init__(self, medium, dataset):
             self.medium = medium
@@ -30,7 +33,8 @@ class Loader(object):
         pass
     
     def __init__(self, style=None, medium=None):
-        self.style = style
+        if style:
+            self.style = style
         if medium:
             self.Medium = medium
         self.data = []

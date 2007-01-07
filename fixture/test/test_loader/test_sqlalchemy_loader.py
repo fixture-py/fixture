@@ -14,9 +14,10 @@ def setup():
     if not env_supports.sqlalchemy: raise SkipTest
 
 class SqlAlchemyLoaderTest(LoaderTest):
-    fixture = Fixture(  loader=SqlAlchemyLoader(env=globals()),
-                        dataclass=MergedSuperSet,
-                        style=(NamedDataStyle() + CamelAndUndersStyle()) )
+    fixture = Fixture(  loader=SqlAlchemyLoader(
+                            style=(NamedDataStyle() + CamelAndUndersStyle()),
+                            env=globals()),
+                        dataclass=MergedSuperSet )
         
     def setup(self, dsn=conf.MEM_DSN):
         from sqlalchemy import BoundMetaData

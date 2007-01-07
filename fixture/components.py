@@ -17,7 +17,6 @@ except ImportError:
         return wrap_with_f
         
 from fixture.dataset import SuperSet
-from fixture.style import NamedDataStyle
 
 class Fixture(object):
     """defines an environment for loading data.
@@ -37,16 +36,14 @@ class Fixture(object):
     """
     dataclass = SuperSet
     loader = None
-    style = NamedDataStyle()
     
     class Data(object):
         """loads one or more data sets and provides an interface to that data.    
         """
-        def __init__(self, *datasets, **kw):
+        def __init__(self, datasets, dataclass, loader):
             self.datasets = datasets
-            self.loader = kw.get('loader', None)
-            self.style = kw.get('style', None)
-            self.dataclass = kw.get('dataclass', None)
+            self.dataclass = dataclass
+            self.loader = loader
             self.data = None # instance of dataclass
     
         def __enter__(self):
@@ -65,7 +62,6 @@ class Fixture(object):
     
         def setup(self):
             self.data = self.dataclass(*[d() for d in self.datasets])
-            self.loader.style = self.style # hmmm
             self.loader.load(self.data)
     
         def teardown(self):
@@ -98,12 +94,10 @@ class Fixture(object):
 
         setup = cfg.get('setup', None)
         teardown = cfg.get('teardown', None)
-        data_kw = { 'loader': self.loader, 'dataclass': self.dataclass, 
-                    'style':self.style }
 
         def decorate_with_data(routine):
             def setup_data():
-                data = self.Data(*datasets, **data_kw)
+                data = self.Data(datasets, self.dataclass, self.loader)
                 data.setup()
                 return data
             def teardown_data(data):
@@ -152,5 +146,5 @@ class Fixture(object):
     
     def data(self, *datasets):
         """returns a Data object for datasets."""
-        return self.Data(*datasets, **self.__dict__)
+        return self.Data(datasets, self.dataclass, self.loader)
         

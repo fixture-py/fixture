@@ -16,10 +16,10 @@ def setup():
     if not env_supports.sqlobject: raise SkipTest
 
 class SQLObjectLoaderTest(LoaderTest):
-    fixture = Fixture(  loader=SQLObjectLoader(dsn=MEM_DSN, env=globals()),
-                        dataclass=MergedSuperSet,
-                        style=( NamedDataStyle() + 
-                                CamelAndUndersStyle()) )
+    fixture = Fixture(  loader=SQLObjectLoader(
+                            style=( NamedDataStyle() + CamelAndUndersStyle()),
+                            dsn=MEM_DSN, env=globals()),
+                        dataclass=MergedSuperSet )
         
     def setup(self, dsn=MEM_DSN):
         """should load the dataset"""
