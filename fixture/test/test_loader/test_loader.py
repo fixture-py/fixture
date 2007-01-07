@@ -1,6 +1,8 @@
 
+import nose
 from nose.tools import raises
 from nose.exc import SkipTest
+import unittest
 from fixture import DataSet
 from fixture.test import env_supports
 
@@ -29,9 +31,23 @@ class LoaderTest:
         """test @with_data"""
         
         @self.fixture.with_data(*self.datasets())
-        def test_loaded_data(data):
+        def test_data_test(data):
             self.assert_data_loaded(data)
-        test_loaded_data()
+        test_data_test()
+        self.assert_data_torndown()
+        
+        @self.fixture.with_data(*self.datasets())
+        def test_generate_data_tests():
+            def test_x(data, x):
+                self.assert_data_loaded(data)
+            for x in range(2):
+                yield test_x, x
+        
+        # fixme: use nose's interface for running generator tests...
+        for stack in test_generate_data_tests():
+            stack = list(stack)
+            func = stack.pop(0)
+            func(*stack) 
         self.assert_data_torndown()
         
         @raises(RuntimeError)
