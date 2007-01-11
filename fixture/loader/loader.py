@@ -32,6 +32,55 @@ class Loader(object):
     class StorageMediaNotFound(LookupError): 
         pass
     
+    class LoadQueue(ObjRegistry):
+        """keeps track of what class instances were loaded
+        
+        >>> class Foo: 
+        ...     name = 'foo'
+        ...
+        >>> class Bar: 
+        ...     name = 'bar'
+        ...
+        >>> q = Loader.LoadQueue()
+        >>> assert q.register(Foo()) is not None
+        >>> Foo() in q
+        True
+        >>> assert q.register(Bar()) is not None
+        >>> [ o.name for o in q.to_unload() ]
+        ['bar', 'foo']
+        >>> q.referenced(Foo())
+        >>> [ o.name for o in q.to_unload() ]
+        ['foo', 'bar']
+        
+        """
+        def __init__(self):
+            ObjRegistry.__init__(self)
+            self.queue = []
+        
+        def register(self, obj):
+            """register this object as "loaded"  
+            """
+            id = ObjRegistry.register(self, obj)
+            self.queue.insert(0, id)
+            return id
+        
+        def referenced(self, obj):
+            """tell the queue that this object is referenced again.
+            """
+            id = self.id(obj)
+            self.queue.pop(self.queue.index(id))
+            self.queue.insert(0, id)
+        
+        def to_unload(self):
+            """yields a list of objects suitable for unloading.
+            
+            in order of last object touched first, so that we can build a stack 
+            of row objects and their dependent objects (foreign keys), allowing 
+            foreign keys to be referenced more than once.
+            """
+            for id in self.queue: 
+                yield self.registry[id]
+    
     def __init__(self, style=None, medium=None):
         if style:
             self.style = style
@@ -43,10 +92,8 @@ class Loader(object):
         pass
     
     def begin(self, unloading=False):
-        self.loaded_cache = ObjRegistry()
         if not unloading:
-            self.loaded_requirements = {}
-            self.data = []
+            self.loaded = self.LoadQueue()
     
     def commit(self):
         raise NotImplementedError
@@ -62,27 +109,20 @@ class Loader(object):
         else:
             self.commit()
         
-    def load_dataset(self, ds, parent=None):
-        if not parent:
-            parent = ds
+    def load_dataset(self, ds):
                 
         for req_ds in ds.conf.requires:
-            req = req_ds()
-            self.attach_storage_medium(req)
-            
-            # hmmm...
-            k = self.loaded_cache.id(parent)
-            self.loaded_requirements.setdefault(k, [])
-            self.loaded_requirements[k].append(req)
-            self.load_dataset(req, parent=parent)
+            r = req_ds()
+            self.load_dataset(r)
         
-        # due to reference resolution we might get duplicate data sets...
-        if ds in self.loaded_cache:
-            return
-            
         self.attach_storage_medium(ds)
+        
+        if ds in self.loaded:
+            self.loaded.referenced(ds)
+            return
+        
+        ds.conf.storage_medium.visit_loader(self)
         for key, row in ds:
-            ds.conf.storage_medium.visit_loader(self)
             try:
                 obj = ds.conf.storage_medium.save(row)
                 ds.conf.stored_objects.append(obj)
@@ -91,19 +131,16 @@ class Loader(object):
                 raise etype, (
                         "%s (while saving '%s' of %s, %s)" % (
                                                 val, key, ds, row)), tb
-        self.loaded_cache.register(ds)
-        self.data.append(ds)
+                                                
+        self.loaded.register(ds)
     
     def rollback(self):
         raise NotImplementedError
     
     def unload(self):
-        if not self.data:
-            return
-        
         self.begin(unloading=True)
         try:
-            for dataset in self.data:
+            for dataset in self.loaded.to_unload():
                 self.unload_dataset(dataset)
         except:
             self.rollback()
@@ -113,11 +150,7 @@ class Loader(object):
     
     def unload_dataset(self, dataset):
         dataset.conf.storage_medium.clearall()
-        k = self.loaded_cache.id(dataset)
-        
-        if k in self.loaded_requirements:
-            for required_d in self.loaded_requirements[k]:
-                required_d.conf.storage_medium.clearall()
+                
 
 class DatabaseLoader(Loader):
     def __init__(self, style=None, dsn=None, env=None, medium=None):

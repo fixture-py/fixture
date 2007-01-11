@@ -19,10 +19,11 @@ class SqlAlchemyLoaderTest(LoaderTest):
                             env=globals()),
                         dataclass=MergedSuperSet )
         
-    def setup(self, dsn=conf.MEM_DSN):
+    def setUp(self, dsn=conf.MEM_DSN):
         from sqlalchemy import BoundMetaData
         
         self.meta = BoundMetaData(dsn)
+        self.meta.engine.echo = 1
         self.fixture.loader.meta = self.meta
         
         self.session_context = SessionContext(
@@ -31,7 +32,7 @@ class SqlAlchemyLoaderTest(LoaderTest):
         
         setup_db(self.meta, self.session_context)
     
-    def teardown(self):
+    def tearDown(self):
         teardown_db(self.meta, self.session_context)
 
 class TestSqlAlchemy(HavingCategoryData, SqlAlchemyLoaderTest):

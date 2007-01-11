@@ -28,7 +28,7 @@ class LoaderTest:
         raise NotImplementedError
     
     def test_with_data(self):
-        """test @with_data"""
+        """test @fixture.with_data"""
         
         @self.fixture.with_data(*self.datasets())
         def test_data_test(data):

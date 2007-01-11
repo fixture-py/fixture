@@ -16,6 +16,8 @@ class ObjRegistry:
         return id(object.__class__)
     
     def register(self, object):
-        self.registry[self.id(object)] = 1
+        id = self.id(object)
+        self.registry[id] = object
+        return id
         
         

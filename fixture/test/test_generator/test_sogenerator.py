@@ -18,14 +18,13 @@ def setup():
     global memconn, realconn, sqlhub
     if not env_supports.sqlobject:
         raise SkipTest
+        
     from sqlobject import connectionForURI, sqlhub
     
     realconn = connectionForURI(conf.POSTGRES_DSN)
-    
     setup_db(realconn)
-    
     sqlhub.processConnection = realconn
-    # yes, I've been working in marketing too long ...
+    
     parkas = Category(name="parkas")
     jersey = Product(name="jersey", category=parkas)
     rebates = Category(name="rebates")
@@ -38,6 +37,7 @@ def setup():
     setup_db(memconn)
 
 def teardown():
+    sqlhub.processConnection = None
     teardown_db(realconn)
     teardown_db(memconn)
 

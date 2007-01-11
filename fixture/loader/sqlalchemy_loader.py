@@ -8,7 +8,8 @@ class SqlAlchemyLoader(DatabaseLoader):
             DatabaseLoader.StorageMediumAdapter.__init__(self, *a,**kw)
             
         def clear(self, obj):
-            obj.delete()
+            self.session.delete(obj)
+            self.session.flush()
         
         def visit_loader(self, loader):
             self.session = loader.session
@@ -19,6 +20,7 @@ class SqlAlchemyLoader(DatabaseLoader):
                 setattr(obj, attname, val)
             
             self.session.save(obj)
+            self.session.flush()
             return obj
             
     Medium = AssignedMapperMedium

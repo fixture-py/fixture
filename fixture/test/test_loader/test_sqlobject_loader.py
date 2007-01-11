@@ -10,7 +10,7 @@ from fixture.loader import SQLObjectLoader
 from fixture.dataset import MergedSuperSet, DataSet
 from fixture.style import NamedDataStyle, PaddedNameStyle, CamelAndUndersStyle
 from fixture.examples.db.sqlobject_examples import *
-from fixture.test.conf import MEM_DSN
+from fixture.test import conf
 
 def setup():
     if not env_supports.sqlobject: raise SkipTest
@@ -18,10 +18,10 @@ def setup():
 class SQLObjectLoaderTest(LoaderTest):
     fixture = Fixture(  loader=SQLObjectLoader(
                             style=( NamedDataStyle() + CamelAndUndersStyle()),
-                            dsn=MEM_DSN, env=globals()),
+                            dsn=conf.MEM_DSN, env=globals()),
                         dataclass=MergedSuperSet )
         
-    def setup(self, dsn=MEM_DSN):
+    def setUp(self, dsn=conf.MEM_DSN):
         """should load the dataset"""
         from sqlobject import connectionForURI
         self.conn = connectionForURI(dsn)
@@ -29,8 +29,10 @@ class SQLObjectLoaderTest(LoaderTest):
         
         from sqlobject import sqlhub
         sqlhub.processConnection = self.conn
+        
+        self.fixture.loader.connection = self.conn
     
-    def teardown(self):
+    def tearDown(self):
         """should unload the dataset."""
         teardown_db(self.conn)
         from sqlobject import sqlhub
@@ -51,11 +53,11 @@ class TestSQLObjectLoader(HavingCategoryData, SQLObjectLoaderTest):
 
 class TestSQLObjectLoaderForeignKeys(
                         HavingOfferProductData, SQLObjectLoaderTest):
-    def setUp(self):
-        if not conf.POSTGRES_DSN:
-            raise SkipTest
-            
-        SQLObjectLoaderTest.setUp(self, dsn=conf.POSTGRES_DSN)
+    # def setUp(self):
+    #     if not conf.POSTGRES_DSN:
+    #         raise SkipTest
+    #         
+    #     SQLObjectLoaderTest.setUp(self, dsn=conf.POSTGRES_DSN)
     
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""

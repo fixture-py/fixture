@@ -37,6 +37,14 @@ def setup_db(conn):
 
 def teardown_db(conn):
     assert conn is not None
-    Category.dropTable(connection=conn, cascade=True)
-    Product.dropTable(connection=conn, cascade=True)
-    Offer.dropTable(connection=conn, cascade=True)
+    
+    # dbapi = conn.getConnection()
+    # c = dbapi.cursor()
+    # for tb in (Offer, Product, Category):
+    #     c.execute("delete from %s" % tb.sqlmeta.table)
+    #     dbapi.commit()
+    
+    ## apparently, sqlobject is retarded and sometimes 
+    ## this can cause an infinite loop that can't be interrupted.  excellent!
+    for tb in (Offer, Product, Category):
+        tb.dropTable(connection=conn)
