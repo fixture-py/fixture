@@ -53,11 +53,13 @@ class TestSQLObjectLoader(HavingCategoryData, SQLObjectLoaderTest):
 
 class TestSQLObjectLoaderForeignKeys(
                         HavingOfferProductData, SQLObjectLoaderTest):
-    # def setUp(self):
-    #     if not conf.POSTGRES_DSN:
-    #         raise SkipTest
-    #         
-    #     SQLObjectLoaderTest.setUp(self, dsn=conf.POSTGRES_DSN)
+    def setUp(self):
+        if not conf.POSTGRES_DSN:
+            raise SkipTest
+            
+        SQLObjectLoaderTest.setUp(self, dsn=conf.POSTGRES_DSN)
+        from sqlobject import sqlhub
+        sqlhub.processConnection.debug = 1
     
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""

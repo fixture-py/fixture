@@ -11,7 +11,8 @@ class SQLObjectLoader(DatabaseLoader):
             from sqlobject.styles import getStyle
             so_style = getStyle(self.medium)
     
-            assert 'connection' not in row, (
+            if 'connection' in row:
+                raise ValueError(
                         "cannot name a key 'connection' in row %s" % row)
             dbvals = dict([(so_style.dbColumnToPythonAttr(k), v) 
                                                     for k,v in row.items()])
@@ -19,7 +20,8 @@ class SQLObjectLoader(DatabaseLoader):
             return self.medium(**dbvals)
         
         def visit_loader(self, loader):
-            self.transaction = loader.transaction
+            self.transaction = loader.connection
+            # self.transaction = loader.transaction
             
     Medium = SQLObjectMedium
             
@@ -29,7 +31,7 @@ class SQLObjectLoader(DatabaseLoader):
                                                     medium=medium)
         self.connection = connection
     
-    def start_transaction(self):
+    def create_transaction(self):
         from sqlobject import connectionForURI
         if not self.connection:
             self.connection = connectionForURI(self.dsn)

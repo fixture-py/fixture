@@ -47,7 +47,7 @@ class SqlAlchemyLoader(DatabaseLoader):
         self.session.flush()
         DatabaseLoader.commit(self)
     
-    def start_transaction(self):
+    def create_transaction(self):
         transaction = self.session.create_transaction()
         return transaction
     

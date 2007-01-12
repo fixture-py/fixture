@@ -184,10 +184,13 @@ class DatabaseLoader(Loader):
     
     def begin(self, unloading=False):
         Loader.begin(self, unloading=unloading)
-        self.transaction = self.start_transaction()
+        self.transaction = self.create_transaction()
     
     def commit(self):
         self.transaction.commit()
+    
+    def create_transaction(self):
+        raise NotImplementedError
     
     def rollback(self):
         self.transaction.rollback()
