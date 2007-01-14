@@ -1,18 +1,13 @@
 
 import nose
-from nose.tools import raises
+from nose.tools import raises, eq_
 from nose.exc import SkipTest
 import unittest
 from fixture import DataSet
+from fixture.loader import Loader
 from fixture.test import env_supports
 
-__all__ = ['LoaderTest', 'HavingCategoryData', 'HavingOfferProductData']
-
 class LoaderTest:
-    """tests the behavior of fixture.loader.Loader object.
-    
-    to test combinations of loaders and datasets, implement this base tester.
-    """
     fixture = None
     
     def assert_data_loaded(self, dataset):
@@ -22,7 +17,12 @@ class LoaderTest:
     def assert_data_torndown(self):
         """assert that the dataset was torn down."""
         raise NotImplementedError
-        
+
+class LoaderBehaviorTest(LoaderTest):
+    """tests the behavior of fixture.loader.Loader object.
+    
+    to test combinations of loaders and datasets, implement this base tester.
+    """
     def datasets(self):
         """returns some datasets."""
         raise NotImplementedError
@@ -91,7 +91,7 @@ class LoaderTest:
         self.assert_data_torndown()
 
 class HavingCategoryData:
-    """mixin that adds data to a LoaderTest."""
+    """mixin that adds data to a LoaderBehaviorTest."""
     def datasets(self):
         """returns a single category data set."""
         
@@ -104,7 +104,7 @@ class HavingCategoryData:
         return [CategoryData]
         
 class HavingOfferProductData:  
-    """mixin that adds data to a LoaderTest."""
+    """mixin that adds data to a LoaderBehaviorTest."""
     def datasets(self):
         """returns some datasets."""
         
@@ -141,3 +141,27 @@ class HavingOfferProductData:
                             category_id=self.ref.CategoryData.free_stuff.id)),
                 )
         return [OfferData, ProductData]
+        
+
+class LoaderPartialRecoveryTest(HavingOfferProductData, LoaderTest):
+    
+    def partial_datasets(self):
+        """returns some real datasets, then some dummy ones."""
+        d = [ds for ds in self.datasets()]
+        
+        class DummyData(DataSet):
+            def data(self):
+                return (
+                    ('nonexistant', dict(shape='green', color='circular')),
+                )
+        d.append(DummyData)
+        return d
+    
+    def test_with_data_iterruption(self):
+        """test @fixture.with_data interruption"""
+        @raises(Loader.StorageMediaNotFound)
+        @self.fixture.with_data(*self.partial_datasets())
+        def test_partial_datasets(fxt):
+            pass
+        test_partial_datasets()        
+        self.assert_data_torndown()

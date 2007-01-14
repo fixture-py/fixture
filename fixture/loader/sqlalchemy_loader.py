@@ -52,5 +52,4 @@ class SqlAlchemyLoader(DatabaseLoader):
         return transaction
     
     def rollback(self):
-        # self.session.clear()
         DatabaseLoader.rollback(self)

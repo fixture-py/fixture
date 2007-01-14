@@ -4,18 +4,17 @@ from nose.tools import eq_
 from nose.exc import SkipTest
 from fixture import Fixture
 from fixture.test import env_supports
-from fixture.test.test_loader import (  
-    LoaderTest, HavingCategoryData, HavingOfferProductData)
 from fixture.loader import SQLObjectLoader
 from fixture.dataset import MergedSuperSet, DataSet
 from fixture.style import NamedDataStyle, PaddedNameStyle, CamelAndUndersStyle
+from fixture.test.test_loader import *
 from fixture.examples.db.sqlobject_examples import *
 from fixture.test import conf
 
 def setup():
     if not env_supports.sqlobject: raise SkipTest
 
-class SQLObjectLoaderTest(LoaderTest):
+class SQLObjectLoaderTest:
     fixture = Fixture(  loader=SQLObjectLoader(
                             style=( NamedDataStyle() + CamelAndUndersStyle()),
                             dsn=conf.MEM_DSN, env=globals(), 
@@ -41,7 +40,15 @@ class SQLObjectLoaderTest(LoaderTest):
         teardown_db(self.transaction)
         self.transaction.commit()
 
-class TestSQLObjectLoader(HavingCategoryData, SQLObjectLoaderTest):
+class SQLObjectLoaderPostgresTest(SQLObjectLoaderTest):
+    def setUp(self):
+        if not conf.POSTGRES_DSN:
+            raise SkipTest
+            
+        SQLObjectLoaderTest.setUp(self, dsn=conf.POSTGRES_DSN)
+
+class TestSQLObjectLoader(
+        HavingCategoryData, SQLObjectLoaderTest, LoaderBehaviorTest):
     
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""
@@ -54,13 +61,18 @@ class TestSQLObjectLoader(HavingCategoryData, SQLObjectLoaderTest):
         """assert that the dataset was torn down."""
         eq_(Category.select().count(), 0)
 
+# class TestSQLObjectPartialLoad(
+#         SQLObjectLoaderTest, LoaderPartialRecoveryTest):
+#     def assert_data_loaded(self):
+#         pass
+#         
+#     def assert_data_torndown(self):
+#         t = self.conn.transaction()
+#         eq_(Category.select(connection=t).count(), 0)
+
 class TestSQLObjectLoaderForeignKeys(
-                        HavingOfferProductData, SQLObjectLoaderTest):
-    def setUp(self):
-        if not conf.POSTGRES_DSN:
-            raise SkipTest
-            
-        SQLObjectLoaderTest.setUp(self, dsn=conf.POSTGRES_DSN)
+        HavingOfferProductData, SQLObjectLoaderPostgresTest, 
+        LoaderBehaviorTest):
     
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""

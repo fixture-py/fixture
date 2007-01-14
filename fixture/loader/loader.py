@@ -13,6 +13,10 @@ class Loader(object):
             self.medium = medium
             self.dataset = dataset
             self.transaction = None
+        
+        def __repr__(self):
+            return "%s at %s for %s" % (
+                    self.__class__.__name__, hex(id(self)), self.medium)
             
         def clear(self, obj):
             raise NotImplementedError
@@ -160,27 +164,36 @@ class DatabaseLoader(Loader):
         self.transaction = None
     
     def attach_storage_medium(self, ds):
+        
+        if ds.conf.storage_medium is not None:
+            # already attached...
+            return
             
         if not ds.conf.storage:
             ds.conf.storage = self.style.guess_storage(ds.__class__.__name__)
-        if not ds.conf.storage_medium:
-            if hasattr(self.env, 'get'):
-                ds.conf.storage_medium = self.Medium(self.env.get(
-                                                ds.conf.storage, None), ds)
-            if not ds.conf.storage_medium:
-                if hasattr(self.env, ds.conf.storage):
-                    ds.conf.storage_medium = self.Medium(getattr(
-                                                self.env, ds.conf.storage), ds)
-            
-        if not ds.conf.storage_medium:
+        
+        storable = None
+        
+        if hasattr(self.env, 'get'):
+            storable = self.env.get(ds.conf.storage, None)
+        if not storable:
+            if hasattr(self.env, ds.conf.storage):
+                try:
+                    storable = getattr(self.env, ds.conf.storage)
+                except AttributeError:
+                    pass
+        
+        if storable:
+            ds.conf.storage_medium = self.Medium(storable, ds)
+        else:
             repr_env = repr(type(self.env))
             if hasattr(self.env, '__module__'):
                 repr_env = "%s from '%s'" % (repr_env, repr_env.__module__)
                 
             raise self.StorageMediaNotFound(
                 "could not find %s '%s' for "
-                "dataset '%s' in self.env (%s)" % (
-                    self.Medium, ds.conf.storage, name, repr_env))
+                "dataset %s in self.env (%s)" % (
+                    self.Medium, ds.conf.storage, ds, repr_env))
     
     def begin(self, unloading=False):
         Loader.begin(self, unloading=unloading)

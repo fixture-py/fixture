@@ -4,16 +4,15 @@ from nose.exc import SkipTest
 from fixture import Fixture
 from fixture.dataset import MergedSuperSet
 from fixture.loader import SqlAlchemyLoader
-from fixture.test.test_loader import (  
-    LoaderTest, HavingCategoryData, HavingOfferProductData)
 from fixture.style import NamedDataStyle, CamelAndUndersStyle
 from fixture.test import conf, env_supports
+from fixture.test.test_loader import *
 from fixture.examples.db.sqlalchemy_examples import *
     
 def setup():
     if not env_supports.sqlalchemy: raise SkipTest
 
-class SqlAlchemyLoaderTest(LoaderTest):
+class SqlAlchemyLoaderTest:
     fixture = Fixture(  loader=SqlAlchemyLoader(
                             style=(NamedDataStyle() + CamelAndUndersStyle()),
                             env=globals()),
@@ -35,7 +34,8 @@ class SqlAlchemyLoaderTest(LoaderTest):
     def tearDown(self):
         teardown_db(self.meta, self.session_context)
 
-class TestSqlAlchemy(HavingCategoryData, SqlAlchemyLoaderTest):
+class TestSqlAlchemyLoader(
+        HavingCategoryData, SqlAlchemyLoaderTest, LoaderBehaviorTest):
     def assert_data_loaded(self, dataset):
         eq_(Category.get( dataset.gray_stuff.id).name, 
                             dataset.gray_stuff.name)
@@ -44,9 +44,19 @@ class TestSqlAlchemy(HavingCategoryData, SqlAlchemyLoaderTest):
     
     def assert_data_torndown(self):
         eq_(len(Category.select()), 0)
+
+class TestSqlAlchemyPartialRecovery(
+        SqlAlchemyLoaderTest, LoaderPartialRecoveryTest):
+    def assert_data_loaded(self, fxt):
+        pass
+    
+    def assert_data_torndown(self):
+        eq_(len(Category.select()), 0)
+        eq_(len(Offer.select()), 0)
+        eq_(len(Product.select()), 0)
         
 class TestSqlAlchemyLoaderForeignKeys(
-                            HavingOfferProductData, SqlAlchemyLoaderTest):
+        HavingOfferProductData, SqlAlchemyLoaderTest, LoaderBehaviorTest):
     def setUp(self):
         if not conf.POSTGRES_DSN:
             raise SkipTest
