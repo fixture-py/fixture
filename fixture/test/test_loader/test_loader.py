@@ -35,7 +35,19 @@ class LoaderTest:
             self.assert_data_loaded(data)
         test_data_test()
         self.assert_data_torndown()
+    
+    def test_with_data_recovery(self):
+        """test @fixture.with_data recovery"""
+        @raises(RuntimeError)
+        @self.fixture.with_data(*self.datasets())
+        def test_exception_tears_down(fxt):
+            self.assert_data_loaded(fxt)
+            raise RuntimeError
+        test_exception_tears_down()
+        self.assert_data_torndown()
         
+    def test_with_data_generator(self):
+        """test @fixture.with_data generator"""
         @self.fixture.with_data(*self.datasets())
         def test_generate_data_tests():
             def test_x(data, x):
@@ -49,16 +61,8 @@ class LoaderTest:
             func = stack.pop(0)
             func(*stack) 
         self.assert_data_torndown()
-        
-        @raises(RuntimeError)
-        @self.fixture.with_data(*self.datasets())
-        def test_exception_tears_down(fxt):
-            self.assert_data_loaded(fxt)
-            raise RuntimeError
-        test_exception_tears_down()
-        self.assert_data_torndown()
     
-    def test_with_data_as_f(self):
+    def test_with_data_as_d(self):
         """test with: fixture.data() as d"""
         if not env_supports.with_statement:
             raise SkipTest
@@ -70,6 +74,11 @@ class LoaderTest:
         eval(c)
         self.assert_data_torndown()
         
+    def test_with_data_as_d_recovery(self):
+        """test with: fixture.data() as d recovery"""
+        if not env_supports.with_statement:
+            raise SkipTest
+            
         @raises(RuntimeError)
         def doomed_with_statement():
             c = """
@@ -80,7 +89,6 @@ class LoaderTest:
             eval(c)
         doomed_with_statement()
         self.assert_data_torndown()
-
 
 class HavingCategoryData:
     """mixin that adds data to a LoaderTest."""

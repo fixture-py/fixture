@@ -38,13 +38,8 @@ def setup_db(conn):
 def teardown_db(conn):
     assert conn is not None
     
-    # dbapi = conn.getConnection()
-    # c = dbapi.cursor()
-    # for tb in (Offer, Product, Category):
-    #     c.execute("delete from %s" % tb.sqlmeta.table)
-    #     dbapi.commit()
-    
-    ## apparently, sqlobject is retarded and sometimes 
-    ## this can cause an infinite loop that can't be interrupted.  excellent!
+    ## apparently, this causes a deadlock if *all* sqlobject
+    ## interaction is not inside a transaction.  excellent!
+    ## as a workaround, loader's accept use_transaction = True
     for tb in (Offer, Product, Category):
         tb.dropTable(connection=conn)

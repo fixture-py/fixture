@@ -18,25 +18,28 @@ def setup():
 class SQLObjectLoaderTest(LoaderTest):
     fixture = Fixture(  loader=SQLObjectLoader(
                             style=( NamedDataStyle() + CamelAndUndersStyle()),
-                            dsn=conf.MEM_DSN, env=globals()),
+                            dsn=conf.MEM_DSN, env=globals(), 
+                            use_transaction=False),
                         dataclass=MergedSuperSet )
         
     def setUp(self, dsn=conf.MEM_DSN):
         """should load the dataset"""
         from sqlobject import connectionForURI
         self.conn = connectionForURI(dsn)
-        setup_db(self.conn)
-        
-        from sqlobject import sqlhub
-        sqlhub.processConnection = self.conn
+        self.conn.debug = 1
         
         self.fixture.loader.connection = self.conn
+        self.transaction = self.conn.transaction()
+        
+        from sqlobject import sqlhub
+        sqlhub.threadConnection = self.transaction
+        
+        setup_db(self.conn)
     
     def tearDown(self):
         """should unload the dataset."""
-        teardown_db(self.conn)
-        from sqlobject import sqlhub
-        sqlhub.processConnection = None
+        teardown_db(self.transaction)
+        self.transaction.commit()
 
 class TestSQLObjectLoader(HavingCategoryData, SQLObjectLoaderTest):
     
@@ -58,8 +61,6 @@ class TestSQLObjectLoaderForeignKeys(
             raise SkipTest
             
         SQLObjectLoaderTest.setUp(self, dsn=conf.POSTGRES_DSN)
-        from sqlobject import sqlhub
-        sqlhub.processConnection.debug = 1
     
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""
