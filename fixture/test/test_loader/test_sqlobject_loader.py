@@ -61,12 +61,15 @@ class TestSQLObjectLoader(
         """assert that the dataset was torn down."""
         eq_(Category.select().count(), 0)
 
-# class TestSQLObjectPartialLoad(
-#         SQLObjectLoaderTest, LoaderPartialRecoveryTest):
-#         
-#    def assert_partial_load_aborted(self):
-#         t = self.conn.transaction()
-#         eq_(Category.select(connection=t).count(), 0)
+class TestSQLObjectPartialLoad(
+        SQLObjectLoaderTest, LoaderPartialRecoveryTest):
+        
+   def assert_partial_load_aborted(self):
+       # I don't think sqlobject can support this ...
+       raise SkipTest
+       
+        # t = self.conn.transaction()
+        # eq_(Category.select(connection=t).count(), 0)
 
 class TestSQLObjectLoaderForeignKeys(
         HavingOfferProductData, SQLObjectLoaderPostgresTest, 
