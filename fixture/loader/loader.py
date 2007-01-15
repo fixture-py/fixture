@@ -22,7 +22,7 @@ class Loader(object):
             raise NotImplementedError
         
         def clearall(self):
-            for obj in self.dataset.conf.stored_objects:
+            for obj in self.dataset.meta.stored_objects:
                 self.clear(obj)
             
         def save(self, row):
@@ -115,7 +115,7 @@ class Loader(object):
         
     def load_dataset(self, ds):
                 
-        for req_ds in ds.conf.requires:
+        for req_ds in ds.meta.requires:
             r = req_ds()
             self.load_dataset(r)
         
@@ -125,11 +125,11 @@ class Loader(object):
             self.loaded.referenced(ds)
             return
         
-        ds.conf.storage_medium.visit_loader(self)
+        ds.meta.storage_medium.visit_loader(self)
         for key, row in ds:
             try:
-                obj = ds.conf.storage_medium.save(row)
-                ds.conf.stored_objects.append(obj)
+                obj = ds.meta.storage_medium.save(row)
+                ds.meta.stored_objects.append(obj)
             except:
                 etype, val, tb = sys.exc_info()
                 raise etype, (
@@ -153,7 +153,7 @@ class Loader(object):
             self.commit()
     
     def unload_dataset(self, dataset):
-        dataset.conf.storage_medium.clearall()
+        dataset.meta.storage_medium.clearall()
                 
 
 class DatabaseLoader(Loader):
@@ -165,26 +165,26 @@ class DatabaseLoader(Loader):
     
     def attach_storage_medium(self, ds):
         
-        if ds.conf.storage_medium is not None:
+        if ds.meta.storage_medium is not None:
             # already attached...
             return
             
-        if not ds.conf.storage:
-            ds.conf.storage = self.style.guess_storage(ds.__class__.__name__)
+        if not ds.meta.storage:
+            ds.meta.storage = self.style.guess_storage(ds.__class__.__name__)
         
         storable = None
         
         if hasattr(self.env, 'get'):
-            storable = self.env.get(ds.conf.storage, None)
+            storable = self.env.get(ds.meta.storage, None)
         if not storable:
-            if hasattr(self.env, ds.conf.storage):
+            if hasattr(self.env, ds.meta.storage):
                 try:
-                    storable = getattr(self.env, ds.conf.storage)
+                    storable = getattr(self.env, ds.meta.storage)
                 except AttributeError:
                     pass
         
         if storable:
-            ds.conf.storage_medium = self.Medium(storable, ds)
+            ds.meta.storage_medium = self.Medium(storable, ds)
         else:
             repr_env = repr(type(self.env))
             if hasattr(self.env, '__module__'):
@@ -193,7 +193,7 @@ class DatabaseLoader(Loader):
             raise self.StorageMediaNotFound(
                 "could not find %s '%s' for "
                 "dataset %s in self.env (%s)" % (
-                    self.Medium, ds.conf.storage, ds, repr_env))
+                    self.Medium, ds.meta.storage, ds, repr_env))
     
     def begin(self, unloading=False):
         Loader.begin(self, unloading=unloading)

@@ -6,34 +6,34 @@ from fixture.util import ObjRegistry
 class DataContainer(object):
     """contains data accessible by attribute and/or key.
     
-    for all configurable attributes, use the inner class Config.
+    for all internally used attributes, use the inner class Meta.
     """
-    class Config:
+    class Meta:
         data = None
         keys = None
         
     def __init__(self, data=None, keys=None):
-        if not hasattr(self, 'conf'):
-            self.conf = self.Config()
+        if not hasattr(self, 'meta'):
+            self.meta = self.Meta()
         if not data: 
             data = {}
-        self.conf.data = data
+        self.meta.data = data
         if not keys: 
             keys = []
-        self.conf.keys = keys
+        self.meta.keys = keys
     
     def __getitem__(self, key):
-        return self.conf.data[key]
+        return self.meta.data[key]
         
     def __getattr__(self, name):
         try:
-            return self.conf.data[name]
+            return self.meta.data[name]
         except KeyError:
             raise AttributeError("%s has no attribute '%s'" % (self, name))
     
     def __repr__(self):
-        if hasattr(self, 'conf'):
-            keys = self.conf.keys
+        if hasattr(self, 'meta'):
+            keys = self.meta.keys
         else:
             keys = None
         return "<%s at %s with keys %s>" % (
@@ -41,40 +41,40 @@ class DataContainer(object):
                 hex(id(self)), keys)
     
     def _setdata(self, key, value):
-        self.conf.keys.append(key)
-        self.conf.data[key] = value
+        self.meta.keys.append(key)
+        self.meta.data[key] = value
 
 class DataRow(DataContainer):
     """a key/attribute accessible dictionary."""
-    class Config(DataContainer.Config):
+    class Meta(DataContainer.Meta):
         pass
     def __init__(self, data):
         DataContainer.__init__(self, data=data, keys=[k for k in data])
     
     def __iter__(self):
-        for k in self.conf.data:
+        for k in self.meta.data:
             yield k
     
     def items(self):
-        for k,v in self.conf.data.items():
+        for k,v in self.meta.data.items():
             yield (k,v)
 
 class DataSetContainer(object):
     """yields datasets when itered over."""
-    class Config:
+    class Meta:
         datasets = None
         dataset_keys = None
         
     def __init__(self):
-        if not hasattr(self, 'conf'):
-            self.conf = self.Config()
-        self.conf.datasets = {}
-        self.conf.dataset_keys = []
-        self.conf._cache = ObjRegistry()
+        if not hasattr(self, 'meta'):
+            self.meta = self.Meta()
+        self.meta.datasets = {}
+        self.meta.dataset_keys = []
+        self.meta._cache = ObjRegistry()
     
     def __iter__(self):
-        for k in self.conf.dataset_keys:
-            yield self.conf.datasets[k]
+        for k in self.meta.dataset_keys:
+            yield self.meta.datasets[k]
         
     def _dataset_to_key(self, dataset):
         return dataset.__class__.__name__
@@ -82,18 +82,18 @@ class DataSetContainer(object):
     def _setdataset(self, dataset, key=None, isref=False):
         
         # due to reference resolution we might get colliding data sets...
-        if dataset in self.conf._cache:
+        if dataset in self.meta._cache:
             return False
             
         if key is None:
             key = self._dataset_to_key(dataset)
         if not isref:
             # refs are not yielded
-            self.conf.dataset_keys.append(key)
+            self.meta.dataset_keys.append(key)
             
-        self.conf.datasets[key] = dataset
+        self.meta.datasets[key] = dataset
         
-        self.conf._cache.register(dataset)
+        self.meta._cache.register(dataset)
         return True
 
 class SuperSet(DataContainer, DataSetContainer):
@@ -101,7 +101,7 @@ class SuperSet(DataContainer, DataSetContainer):
     
     each attribute/key is a DataSet.
     """
-    class Config(DataContainer.Config, DataSetContainer.Config):
+    class Meta(DataContainer.Meta, DataSetContainer.Meta):
         pass
         
     def __init__(self, *datasets):
@@ -125,24 +125,24 @@ class MergedSuperSet(SuperSet):
     
     all attributes of all data sets are merged together.
     """
-    class Config(SuperSet.Config):
+    class Meta(SuperSet.Meta):
         pass
     def __init__(self, *datasets):
-        if not hasattr(self, 'conf'):
-            self.conf = self.Config()
-        self.conf.keys_to_datasets = {}
+        if not hasattr(self, 'meta'):
+            self.meta = self.Meta()
+        self.meta.keys_to_datasets = {}
         SuperSet.__init__(self, *datasets)
     
     def _setdataset(self, dataset, key=None, isref=False):
         if SuperSet._setdataset(self, dataset, key=key, isref=isref):
             for k,row in dataset:
-                if k in self.conf.keys_to_datasets:
+                if k in self.meta.keys_to_datasets:
                     raise ValueError(
                         "cannot add key '%s' for %s because it was "
                         "already added by %s" % (
-                            k, dataset, self.conf.keys_to_datasets[k]))
+                            k, dataset, self.meta.keys_to_datasets[k]))
                 self._setdata(k, row)
-                self.conf.keys_to_datasets[k] = dataset 
+                self.meta.keys_to_datasets[k] = dataset 
     
     def _store_datasets(self, datasets):    
         for dataset in datasets:
@@ -177,7 +177,7 @@ class DataSet(DataContainer):
     
     """
     ref = None
-    class Config(DataContainer.Config):
+    class Meta(DataContainer.Meta):
         loader = None
         storage = None
         storage_medium = None
@@ -191,28 +191,28 @@ class DataSet(DataContainer):
         DataContainer.__init__(self)
         
         # we want the convenience of not having to 
-        # inherit DataSet.Config.  hmmm ...
-        if not isinstance(self.conf, DataSet.Config):
-            defaults = DataSet.Config()
+        # inherit DataSet.Meta.  hmmm ...
+        if not isinstance(self.meta, DataSet.Meta):
+            defaults = DataSet.Meta()
             for name in dir(defaults):
-                if not hasattr(self.conf, name):
-                    setattr(self.conf, name, getattr(defaults, name))
+                if not hasattr(self.meta, name):
+                    setattr(self.meta, name, getattr(defaults, name))
         
-        self.conf.stored_objects = []
+        self.meta.stored_objects = []
         
-        self.ref = self.conf.refclass(*(
-            [s() for s in self.conf.requires] + 
-            [s() for s in self.conf.references] ))
+        self.ref = self.meta.refclass(*(
+            [s() for s in self.meta.requires] + 
+            [s() for s in self.meta.references] ))
         
         for key, data in self.data():
             if hasattr(self, key):
                 raise ValueError(
                     "data() cannot redeclare key '%s' "
                     "(this is already an attribute)" % key)
-            self._setdata(key, self.conf.row(data))
+            self._setdata(key, self.meta.row(data))
     
     def __iter__(self):
-        for key in self.conf.keys:
+        for key in self.meta.keys:
             yield (key, getattr(self, key))
     
     def data(self):

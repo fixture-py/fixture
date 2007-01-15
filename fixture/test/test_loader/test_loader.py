@@ -7,7 +7,12 @@ from fixture import DataSet
 from fixture.loader import Loader
 from fixture.test import env_supports
 
+
 class LoaderTest:
+    """tests the behavior of fixture.loader.Loader object.
+    
+    to test combinations of loaders and datasets, implement this base tester.
+    """
     fixture = None
     
     def assert_data_loaded(self, dataset):
@@ -17,12 +22,7 @@ class LoaderTest:
     def assert_data_torndown(self):
         """assert that the dataset was torn down."""
         raise NotImplementedError
-
-class LoaderBehaviorTest(LoaderTest):
-    """tests the behavior of fixture.loader.Loader object.
-    
-    to test combinations of loaders and datasets, implement this base tester.
-    """
+        
     def datasets(self):
         """returns some datasets."""
         raise NotImplementedError
@@ -91,7 +91,7 @@ class LoaderBehaviorTest(LoaderTest):
         self.assert_data_torndown()
 
 class HavingCategoryData:
-    """mixin that adds data to a LoaderBehaviorTest."""
+    """mixin that adds data to a LoaderTest."""
     def datasets(self):
         """returns a single category data set."""
         
@@ -104,7 +104,7 @@ class HavingCategoryData:
         return [CategoryData]
         
 class HavingOfferProductData:  
-    """mixin that adds data to a LoaderBehaviorTest."""
+    """mixin that adds data to a LoaderTest."""
     def datasets(self):
         """returns some datasets."""
         
@@ -119,7 +119,7 @@ class HavingOfferProductData:
                     ('free_stuff', dict(id=2, name='get free stuff')),)
         
         class ProductData(DataSet):
-            class Config:
+            class Meta:
                 requires = (CategoryData,)
             def data(self):
                 return (('truck', dict(
@@ -128,7 +128,7 @@ class HavingOfferProductData:
                             category_id=self.ref.CategoryData.cars.id)),)
         
         class OfferData(DataSet):
-            class Config:
+            class Meta:
                 requires = (CategoryData, ProductData)
                 references = (WidgetData,)
             def data(self):
@@ -143,7 +143,12 @@ class HavingOfferProductData:
         return [OfferData, ProductData]
         
 
-class LoaderPartialRecoveryTest(HavingOfferProductData, LoaderTest):
+class LoaderPartialRecoveryTest(HavingOfferProductData):
+    fixture = None
+    
+    def assert_partial_load_aborted(self):
+        """assert that no datasets were loaded."""
+        raise NotImplementedError
     
     def partial_datasets(self):
         """returns some real datasets, then some dummy ones."""
@@ -164,4 +169,4 @@ class LoaderPartialRecoveryTest(HavingOfferProductData, LoaderTest):
         def test_partial_datasets(fxt):
             pass
         test_partial_datasets()        
-        self.assert_data_torndown()
+        self.assert_partial_load_aborted()

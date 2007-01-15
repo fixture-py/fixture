@@ -59,12 +59,12 @@ class TestDataSet(DataSetTest):
         else:
             raise ValueError("unexpected row %s, count %s" % (items, count))
 
-class TestDataSetCustomConfig(DataSetTest):
+class TestDataSetCustomMeta(DataSetTest):
     def setUp(self):
         # a dataset with a config that doesn't inherit from
         # the default config.  should be ok
         class Chairs(DataSet):
-            class Config:
+            class Meta:
                 storage = 'PretendStorage'
             def data(self):
                 return (
@@ -78,9 +78,9 @@ class TestDataSetCustomConfig(DataSetTest):
         eq_(dataset['Lazy-boy'].type, 'Lazy-boy')
         
         # should also have the same defaults as DataSet :
-        eq_(dataset.conf.storage, 'PretendStorage')
-        eq_(dataset.conf.row, DataSet.Config.row)
-        eq_(dataset.conf.loader, DataSet.Config.loader)
+        eq_(dataset.meta.storage, 'PretendStorage')
+        eq_(dataset.meta.row, DataSet.Meta.row)
+        eq_(dataset.meta.loader, DataSet.Meta.loader)
     
     def assert_itered_n_times(self, count):
         eq_(count, 2)

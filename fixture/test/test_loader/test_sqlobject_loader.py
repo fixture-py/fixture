@@ -48,7 +48,7 @@ class SQLObjectLoaderPostgresTest(SQLObjectLoaderTest):
         SQLObjectLoaderTest.setUp(self, dsn=conf.POSTGRES_DSN)
 
 class TestSQLObjectLoader(
-        HavingCategoryData, SQLObjectLoaderTest, LoaderBehaviorTest):
+        HavingCategoryData, SQLObjectLoaderTest, LoaderTest):
     
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""
@@ -63,16 +63,14 @@ class TestSQLObjectLoader(
 
 # class TestSQLObjectPartialLoad(
 #         SQLObjectLoaderTest, LoaderPartialRecoveryTest):
-#     def assert_data_loaded(self):
-#         pass
 #         
-#     def assert_data_torndown(self):
+#    def assert_partial_load_aborted(self):
 #         t = self.conn.transaction()
 #         eq_(Category.select(connection=t).count(), 0)
 
 class TestSQLObjectLoaderForeignKeys(
         HavingOfferProductData, SQLObjectLoaderPostgresTest, 
-        LoaderBehaviorTest):
+        LoaderTest):
     
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""

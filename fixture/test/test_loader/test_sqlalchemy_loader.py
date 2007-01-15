@@ -35,7 +35,7 @@ class SqlAlchemyLoaderTest:
         teardown_db(self.meta, self.session_context)
 
 class TestSqlAlchemyLoader(
-        HavingCategoryData, SqlAlchemyLoaderTest, LoaderBehaviorTest):
+        HavingCategoryData, SqlAlchemyLoaderTest, LoaderTest):
     def assert_data_loaded(self, dataset):
         eq_(Category.get( dataset.gray_stuff.id).name, 
                             dataset.gray_stuff.name)
@@ -47,16 +47,14 @@ class TestSqlAlchemyLoader(
 
 class TestSqlAlchemyPartialRecovery(
         SqlAlchemyLoaderTest, LoaderPartialRecoveryTest):
-    def assert_data_loaded(self, fxt):
-        pass
     
-    def assert_data_torndown(self):
+    def assert_partial_load_aborted(self):
         eq_(len(Category.select()), 0)
         eq_(len(Offer.select()), 0)
         eq_(len(Product.select()), 0)
         
 class TestSqlAlchemyLoaderForeignKeys(
-        HavingOfferProductData, SqlAlchemyLoaderTest, LoaderBehaviorTest):
+        HavingOfferProductData, SqlAlchemyLoaderTest, LoaderTest):
     def setUp(self):
         if not conf.POSTGRES_DSN:
             raise SkipTest
