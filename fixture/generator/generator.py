@@ -74,21 +74,39 @@ class FixtureGenerator(object):
         self.options = options
         self.cache = FixtureCache()
     
-    def get_handler(self, obj):
+    def get_handler(self, object_path):
+        
+        importable = 'YES'
+        
+        path, object_name = os.path.splitext(object_path)
+        try:
+            if not object_name:
+                obj = __import__(path, globals(), locals(), [])
+            else:
+                if object_name.startswith('.'):
+                    object_name = object_name[1:]
+                obj = __import__(path, globals(), locals(), [object_name]) 
+                obj = getattr(obj, object_name)
+        except ImportError:
+            importable = 'NO'            
+            obj = None
+            
         handler = None
         for h in handler_registry:
             try:
-                recognizes_obj = h.recognizes(obj)
+                recognizes_obj = h.recognizes(object_path, obj=obj)
             except UnsupportedHandler, e:
                 warn("%s is unsupported (%s)" % (h, e))
                 continue
             if recognizes_obj:
-                handler = h(obj, self.options)
+                handler = h(object_path, self.options, obj=obj)
                 break
         if handler is None:
-            raise ValueError, ("no handler recognizes object %s; tried %s" %
-                                (obj, 
-                                ", ".join([str(h) for h in handler_registry])))
+            raise ValueError, (
+                    "no handler recognizes object %s at %s (importable? %s); "
+                    "tried handlers %s" %
+                        (obj, object_path, importable, 
+                            ", ".join([str(h) for h in handler_registry])))
         return handler
     
     def code(self):
@@ -118,12 +136,13 @@ class FixtureGenerator(object):
         code = "\n".join(self.handler.import_header + code)
         return code
     
-    def __call__(self, obj):
+    def __call__(self, object_path):
         """uses data obj to generate code for a fixture.
     
         returns code string.
         """
-        self.handler = self.get_handler(obj)
+        
+        self.handler = self.get_handler(object_path)
         self.handler.findall(query=self.options.query)
         
         # need to loop through all sets,
@@ -183,7 +202,8 @@ class DataHandler(object):
     def __repr__(self):
         return "<%s at %s>" % (self.__class__, hex(id(self)))
         
-    def __init__(self, obj, options):
+    def __init__(self, object_path, options, obj=None):
+        self.obj_path = object_path
         self.obj = obj
         self.options = options
         self.data_header = [] # vars at top of data() method
@@ -236,8 +256,8 @@ class DataHandler(object):
         raise NotImplementedError
     
     @staticmethod
-    def recognizes(obj):
-        """return True if self can handle this object.
+    def recognizes(object_path, obj):
+        """return True if self can handle this object_path/object.
         """
         raise NotImplementedError
         
@@ -254,11 +274,12 @@ class DataHandler(object):
 
 def run_generator(argv=sys.argv[1:]):
     """
-    Using the data object specified in the path, generate fixture code to 
-    reproduce its data.
+    Using the object specified in the path, generate fixture code to 
+    reproduce its data.  An object_path can be a python path or a file path
+    or anything else that a handler can recognize.
     """
     parser = optparse.OptionParser(
-        usage=('%prog [options] package.path.ObjectName' 
+        usage=('%prog [options] object_path' 
                                     + "\n\n" + inspect.getdoc(run_generator)))
     parser.add_option('--dsn',
                 help="sets db connection for a handler that uses a db")
@@ -286,24 +307,15 @@ def run_generator(argv=sys.argv[1:]):
     
     (options, args) = parser.parse_args(argv)
     try:
-        model_path, = args
-    except ValueError:
+        object_path = args[0]
+    except IndexError:
         parser.error('incorrect arguments')
-    
-    name, model_name = os.path.splitext(model_path)
-    if not model_name:
-        model = __import__(name, globals(), locals(), [])
-    else:
-        if model_name.startswith('.'):
-            model_name = model_name[1:]
-        model = __import__(name, globals(), locals(), [model_name]) 
-        model = getattr(model, model_name)
     
     try:
         generate = FixtureGenerator(options)
     except MisconfiguredHandler, e:
         parser.error(e)
-    return generate(model)
+    return generate(object_path)
 
 def main():
     print( run_generator())

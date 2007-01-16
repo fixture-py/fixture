@@ -11,12 +11,7 @@ try:
 except ImportError:
     sqlobject = None
 
-class SOHandlerType(type):
-    def __repr__(self):
-        return 'SQLObject DataHandler'
-
-class SODataHandler(DataHandler):
-    __metaclass__ = SOHandlerType
+class SQLObjectHandler(DataHandler):
     
     def __init__(self, *a,**kw):
         DataHandler.__init__(self, *a,**kw)
@@ -63,9 +58,11 @@ class SODataHandler(DataHandler):
         return "_".join([camel_to_under(n) for n in fxt_cls_name.split('_')])
     
     @staticmethod
-    def recognizes(obj):
+    def recognizes(object_path, obj=None):
         """returns True if obj is a SQLObject class.
         """
+        if obj is None:
+            return False
         if not sqlobject:
             raise UnsupportedHandler("sqlobject module not found")
         from sqlobject.declarative import DeclarativeMeta
@@ -114,11 +111,11 @@ class SODataHandler(DataHandler):
     def sets(self):
         """yields FixtureSet for each row in SQLObject."""
         for row in self.rs:
-            yield SOFixtureSet(row, self.obj, connection=self.connection)
+            yield SQLObjectFixtureSet(row, self.obj, connection=self.connection)
             
-register_handler(SODataHandler)
+register_handler(SQLObjectHandler)
 
-class SOFixtureSet(FixtureSet):
+class SQLObjectFixtureSet(FixtureSet):
     """a fixture set for a SQLObject row."""
     
     def getDbName(self, col):
@@ -166,7 +163,7 @@ class SOFixtureSet(FixtureSet):
         if self.foreign_key_class.has_key(colname):
             model = findClass(self.foreign_key_class[colname])
             rs = model.get(value, connection=self.connection)
-            return SOFixtureSet(rs, model, connection=self.connection)
+            return SQLObjectFixtureSet(rs, model, connection=self.connection)
         else:
             return value
     
