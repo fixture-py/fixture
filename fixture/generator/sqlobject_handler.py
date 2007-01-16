@@ -38,11 +38,6 @@ class SQLObjectHandler(DataHandler):
     def fxt_type(self):
         return 'SOFixture'
     
-    def meta(self, fxt_kls):
-        """returns list of lines to add to the fixture class's meta.
-        """
-        return ["so_class = %s" % fxt_kls]
-    
     def mk_key(self, fset):
         """return a unique key for this fixture set.
         
@@ -61,10 +56,10 @@ class SQLObjectHandler(DataHandler):
     def recognizes(object_path, obj=None):
         """returns True if obj is a SQLObject class.
         """
-        if obj is None:
-            return False
         if not sqlobject:
             raise UnsupportedHandler("sqlobject module not found")
+        if obj is None:
+            return False
         from sqlobject.declarative import DeclarativeMeta
         if type(obj) is DeclarativeMeta and obj.__name__ not in (
                         'SQLObject', 'sqlmeta', 'ManyToMany', 'OneToMany'):

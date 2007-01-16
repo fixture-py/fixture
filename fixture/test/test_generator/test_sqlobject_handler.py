@@ -50,6 +50,7 @@ def test_query():
     # generate code w/ data from realconn :
     code = run_generator([  'fixture.examples.db.sqlobject_examples.Offer', 
                             '-q', "name = 'super cash back!'",
+                            "--template=testtools",
                             "--dsn", str(conf.POSTGRES_DSN)])
     # print code
     e = compile_(code)
