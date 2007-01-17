@@ -33,7 +33,7 @@ class SQLObjectHandler(DataHandler):
     def begin(self):
         """called once when starting to build a fixture.
         """
-        self.template.add_import('from datetime import datetime')
+        self.template.add_import('import datetime')
         self.template.add_import('from testtools.fixtures import SOFixture')
     
     def find(self, idval):
