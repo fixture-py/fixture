@@ -201,8 +201,8 @@ class DataSet(DataContainer):
         self.meta.stored_objects = []
         
         self.ref = self.meta.refclass(*(
-            [s() for s in self.meta.requires] + 
-            [s() for s in self.meta.references] ))
+            [s() for s in iter(self.meta.requires)] + 
+            [s() for s in iter(self.meta.references)] ))
         
         for key, data in self.data():
             if hasattr(self, key):

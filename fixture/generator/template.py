@@ -3,6 +3,10 @@
 
 from fixture.generator import code_str
 
+def _addto(val, list_):
+    if val not in list_:
+        list_.append(val)
+
 class _TemplateRegistry(object):
     def __init__(self):
         self.templates = []
@@ -36,19 +40,8 @@ class _TemplateRegistry(object):
 templates = _TemplateRegistry()
 
 class Template(object):
-    
-    basemeta = """
-class metabase:
-    pass"""
-    
-    fixture = None
-    
-    def __init__(self):
-        self.import_header = [] # lines of import statements
-
-    def __repr__(self):
-        return "'%s'" % self.__class__.__name__
-    
+    """knows how to render fixture code.
+    """
     class DataDef:
         def __init__(self):
             self.data_header = [] # vars at top of data() method
@@ -56,18 +49,33 @@ class metabase:
         def add_header(self, hdr):
             if hdr not in self.data_header:
                 self.data_header.append(hdr)
+
+        def meta(self, fxt_class):
+            """returns list of lines to add to the fixture class's meta.
+            """
+            return ['pass']
+    
+    metabase = """
+class metabase:
+    pass"""
+    
+    fixture = None
+    
+    def __init__(self):
+        self.import_header = [] # lines of import statements
+        self.meta_header = [] # lines of attributes for inner meta class
+
+    def __repr__(self):
+        return "'%s'" % self.__class__.__name__
     
     def add_import(self, _import):
-        if _import not in self.import_header:
-            self.import_header.append(_import)
+        _addto(_import, self.import_header)
+    
+    def begin(self):
+        pass
             
     def header(self):
-        return self.basemeta
-    
-    def meta(self, fxt_kls):
-        """returns list of lines to add to the fixture class's meta.
-        """
-        return ['pass']
+        return self.metabase
     
     def render(self, tpl):
         if self.fixture is None:
@@ -80,16 +88,47 @@ def is_template(obj):
 class fixture(Template):
     """renders DataSet objects for the fixture interface."""
     
+    class DataDef(Template.DataDef):
+        def __init__(self, *a,**kw):
+            Template.DataDef.__init__(self, *a,**kw)
+            self.requires = []
+    
+        def add_reference(self, fxt_class, fxt_var=None):
+            _addto(code_str(fxt_class), self.requires)
+        
+        def fset_to_attr(self, fset, fxt_class):
+            return code_str("self.ref.%s.%s.%s" % (
+                        fxt_class, fset.mk_key(), fset.get_id_attr()))
+            
+        def meta(self, fxt_class):
+            if len(self.requires):
+                return ["requires = %s" % str(tuple(self.requires))]
+            else:
+                return ["pass"]
+    
     fixture = """
 class %(fxt_class)s(DataSet):
-    class Meta(metabase):
+    class Meta(MetaBase):
         %(meta)s
     def data(self):
         %(data_header)s
         return %(data)s"""
     
+    metabase = """
+class MetaBase(DataSet.Meta):
+    pass"""
+    
+    def begin(self):
+        self.add_import('import datetime')
+        self.add_import("from fixture import DataSet, Fixture")
+        ## FIXME
+        self.add_import("from fixture.loader import SQLObjectLoader")
+    
     def header(self):
-        return Template.header(self)
+        return "\n".join([
+            """
+fixture = Fixture(loader=SQLObjectLoader(env=globals()))""",
+            Template.header(self)])
 
 templates.register(fixture(), default=True)
 
@@ -101,9 +140,14 @@ class testtools(Template):
             self.add_header('r = self.meta.req')
             self.add_header("r.%s = %s()" % (fxt_var, fxt_class))
         
-        def fset_to_attr(self, fset):
+        def fset_to_attr(self, fset, fxt_class):
             return code_str("r.%s.%s.%s" % (
                         fset.mk_var_name(), fset.mk_key(), fset.get_id_attr()))
+    
+        def meta(self, fxt_class):
+            """returns list of lines to add to the fixture class's meta.
+            """
+            return ["so_class = %s" % fxt_class]
     
     fixture = """
 class %(fxt_class)s(%(fxt_type)s):
@@ -113,9 +157,8 @@ class %(fxt_class)s(%(fxt_type)s):
         %(data_header)s
         return %(data)s"""
     
-    def meta(self, fxt_kls):
-        """returns list of lines to add to the fixture class's meta.
-        """
-        return ["so_class = %s" % fxt_kls]
+    def begin(self):
+        self.add_import('import datetime')
+        self.add_import('from testtools.fixtures import SOFixture')
         
 templates.register(testtools())

@@ -112,17 +112,17 @@ class FixtureGenerator(object):
         o = [k for k in self.cache.order_of_appearence]
         o.reverse()
         for kls in o:
+            datadef = self.template.DataDef()
             tpl['data'] = []
             tpl['fxt_class'] = self.handler.mk_class_name(kls)
-            tpl['meta'] = "\n        ".join(self.template.meta(kls))
             
             val_dict = self.cache.registry[kls]
-            datadef = self.template.DataDef()
             for k,fset in val_dict.items():
                 key = fset.mk_key()
                 data = self.handler.resolve_data_dict(datadef, fset)
                 tpl['data'].append((key, data))
                 
+            tpl['meta'] = "\n        ".join(datadef.meta(kls))
             tpl['data_header'] = "\n        ".join(datadef.data_header) + "\n"
             tpl['data'] = pprint.pformat(tuple(tpl['data']))
             code.append(self.template.render(tpl))
@@ -268,9 +268,10 @@ class DataHandler(object):
                 linked_fset = v
                 self.add_fixture_set(linked_fset)
                 
-                datadef.add_reference(  self.mk_class_name(linked_fset),
+                fxt_class = self.mk_class_name(linked_fset)
+                datadef.add_reference(  fxt_class,
                                         fxt_var = linked_fset.mk_var_name() )
-                fset.data_dict[k] = datadef.fset_to_attr(linked_fset)
+                fset.data_dict[k] = datadef.fset_to_attr(linked_fset, fxt_class)
                 
         return fset.data_dict
         

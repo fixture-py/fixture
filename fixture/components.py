@@ -61,7 +61,7 @@ class Fixture(object):
             return self.data[name]
     
         def setup(self):
-            self.data = self.dataclass(*[d() for d in self.datasets])
+            self.data = self.dataclass(*[d() for d in iter(self.datasets)])
             self.loader.load(self.data)
     
         def teardown(self):

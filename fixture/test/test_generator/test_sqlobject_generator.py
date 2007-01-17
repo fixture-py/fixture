@@ -27,6 +27,9 @@ def setup():
 class SQLObjectGeneratorTest:
     template = None
     
+    def load_datasets(self, module, conn, datasets):
+        raise NotImplementedError
+    
     def setUp(self):        
         setup_db(realconn)
         sqlhub.processConnection = realconn
@@ -60,42 +63,43 @@ class SQLObjectGeneratorTest:
         # print code
         try:
             e = compile_(code)
+            CategoryData = e['CategoryData']
+            ProductData = e['ProductData']
+            OfferData = e['OfferData']
+    
+            # another sanity check, wipe out the source data
+            Offer.clearTable(connection=realconn)
+            Product.clearTable(connection=realconn)
+            Category.clearTable(connection=realconn)
+    
+            # set our conn back to memory then load the fixture.
+            # hmm, seems hoky
+            sqlhub.processConnection = memconn
+            fxt = self.load_datasets(e, memconn, 
+                                [CategoryData, ProductData, OfferData])
+    
+            rs =  Category.select()
+            eq_(rs.count(), 2)
+            parkas = rs[0]
+            rebates = rs[1]
+            eq_(parkas.name, "parkas")
+            eq_(rebates.name, "rebates")
+    
+            rs = Product.select()
+            eq_(rs.count(), 1)
+            eq_(rs[0].name, "jersey")
+    
+            rs = Offer.select()
+            eq_(rs.count(), 1)
+            eq_(rs[0].name, "super cash back!")
+    
+            # note that here we test that colliding fixture key links 
+            # got resolved correctly :
+            eq_(Category.get(fxt.product_1.category_id),   parkas)
+            eq_(Category.get(fxt.offer_1.category_id),     rebates)
         except:
             print code
             raise
-        CategoryData = e['CategoryData']
-        ProductData = e['ProductData']
-        OfferData = e['OfferData']
-    
-        # another sanity check, wipe out the source data
-        Offer.clearTable(connection=realconn)
-        Product.clearTable(connection=realconn)
-        Category.clearTable(connection=realconn)
-    
-        # set our conn back to memory then load the fixture.
-        # hmm, seems hoky
-        sqlhub.processConnection = memconn
-        fxt = affix(CategoryData(), ProductData(), OfferData())
-    
-        rs =  Category.select()
-        eq_(rs.count(), 2)
-        parkas = rs[0]
-        rebates = rs[1]
-        eq_(parkas.name, "parkas")
-        eq_(rebates.name, "rebates")
-    
-        rs = Product.select()
-        eq_(rs.count(), 1)
-        eq_(rs[0].name, "jersey")
-    
-        rs = Offer.select()
-        eq_(rs.count(), 1)
-        eq_(rs[0].name, "super cash back!")
-    
-        # note that here we test that colliding fixture key links 
-        # got resolved correctly :
-        eq_(Category.get(fxt.product_1.category_id),   parkas)
-        eq_(Category.get(fxt.offer_1.category_id),     rebates)
     
     def test_query(self):
         self.run_with_args([ 
@@ -105,7 +109,17 @@ class SQLObjectGeneratorTest:
 class TestSQLObjectTesttools(SQLObjectGeneratorTest):
     template = 'testtools'
     
+    def load_datasets(self, module, conn, datasets):
+        fxt = affix(*[d() for d in datasets])
+        return fxt
+    
 class TestSQLObjectFixture(SQLObjectGeneratorTest):
     template = 'fixture'
+    
+    def load_datasets(self, module, conn, datasets):
+        module['fixture'].loader.connection = memconn
+        d = module['fixture'].data(*datasets)
+        d.setup()
+        return d
     
     
