@@ -19,13 +19,6 @@ class UnsupportedHandler(HandlerException):
 class MisconfiguredHandler(HandlerException):
     pass
 
-class code_str(str):
-    """string that reproduces without quotes.
-    
-    """
-    def __repr__(self):
-        return str.__repr__(self)[1:-1]
-
 class FixtureCache(object):
     """cache of Fixture objects and their data sets to be generatred.
     
@@ -124,17 +117,17 @@ class FixtureGenerator(object):
             tpl['meta'] = "\n        ".join(self.template.meta(kls))
             
             val_dict = self.cache.registry[kls]
+            datadef = self.template.DataDef()
             for k,fset in val_dict.items():
-                key = self.handler.mk_key(fset)
-                data = self.handler.resolve_data_dict(fset)
+                key = fset.mk_key()
+                data = self.handler.resolve_data_dict(datadef, fset)
                 tpl['data'].append((key, data))
                 
-            tpl['data_header'] = "\n        ".join(
-                                    self.handler.data_header) + "\n"
+            tpl['data_header'] = "\n        ".join(datadef.data_header) + "\n"
             tpl['data'] = pprint.pformat(tuple(tpl['data']))
             code.append(self.template.render(tpl))
             
-        code = "\n".join(self.handler.import_header + code)
+        code = "\n".join(self.template.import_header + code)
         return code
     
     def __call__(self, object_path):
@@ -180,6 +173,22 @@ class FixtureSet(object):
         return "<%s at %s for data %s>" % (
                 self.__class__.__name__, hex(id(self)), 
                 pprint.pformat(self.data_dict))
+                
+    def attr_to_db_col(self, col):
+        """returns a database column name for a fixture set's attribute.
+        
+        this is only useful for sqlobject in how it wants camel case.
+        """
+        return col
+        
+    def mk_key(self):
+        """return a unique key for this fixture set."""
+        raise NotImplementedError
+    
+    def mk_var_name(self):
+        """returns a variable name for the instance of the fixture class.
+        """
+        raise NotImplementedError
     
     def obj_id(self):
         """returns a unique value that identifies the object used
@@ -207,18 +216,7 @@ class DataHandler(object):
         self.obj_path = object_path
         self.obj = obj
         self.options = options
-        self.data_header = [] # vars at top of data() method
-        self.import_header = [] # lines of import statements
-        self.imports = [] # imports to put at top of file
         self.template = template
-    
-    def add_data_header(self, hdr):
-        if hdr not in self.data_header:
-            self.data_header.append(hdr)
-    
-    def add_import(self, _import):
-        if _import not in self.import_header:
-            self.import_header.append(_import)
     
     def begin(self):
         """called once when starting to build a fixture.
@@ -236,34 +234,45 @@ class DataHandler(object):
     def fxt_type(self):
         """returns name of the type of Fixture class for this data object."""
     
-    def mk_class_name(self, obj_name):
-        """returns a fixture class for the data object name.
+    def mk_class_name(self, name_or_fset):
+        """returns a fixture class for the fixture set.
         """
-        # maybe a style object to do this?
-        
+        if isinstance(name_or_fset, FixtureSet):
+            obj_name = name_or_fset.obj_id()
+        else:
+            obj_name = name_or_fset
         return "%s%s%s" % (self.options.prefix, obj_name, self.options.suffix)
-        
-    def mk_key(self, fset):
-        """return a unique key for this fixture set."""
-        raise NotImplementedError
-    
-    def mk_var_name(self, fxt_cls_name):
-        """returns a variable name for the instance of the fixture class.
-        """
-        raise NotImplementedError
     
     @staticmethod
     def recognizes(object_path, obj):
         """return True if self can handle this object_path/object.
         """
-        raise NotImplementedError
-        
-    def resolve_data_dict(self, fset):
-        """make any resolutions to a fixture set's data_dict.
+        raise NotImplementedError        
+    
+    def resolve_data_dict(self, datadef, fset):
+        """given a fixture set, resolve the linked sets
+        in the data_dict and log any necessary headers.
         
         return the data_dict
-        """
-        raise NotImplementedError
+        """        
+        self.add_fixture_set(fset)
+        
+        # this is the dict that defines all keys/vals for
+        # the row.  note that the only thing special we 
+        # want to do is turn all foreign key values into
+        # code strings 
+        
+        for k,v in fset.data_dict.items():
+            if isinstance(v, FixtureSet):
+                # then it's a foreign key link
+                linked_fset = v
+                self.add_fixture_set(linked_fset)
+                
+                datadef.add_reference(  self.mk_class_name(linked_fset),
+                                        fxt_var = linked_fset.mk_var_name() )
+                fset.data_dict[k] = datadef.fset_to_attr(linked_fset)
+                
+        return fset.data_dict
         
     def sets(self):
         """yield a FixtureSet for each set in obj."""

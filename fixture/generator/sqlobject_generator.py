@@ -22,11 +22,19 @@ class SQLObjectHandler(DataHandler):
             raise MisconfiguredHandler(
                     "--dsn option is required by %s" % self.__class__)
     
+    def add_fixture_set(self, fset):
+        from sqlobject.classregistry import findClass
+        so_class = fset.obj_id()
+        kls = findClass(so_class)
+        # this maybe isn't very flexible ...
+        self.template.add_import("from %s import %s" % (
+                            kls.__module__, so_class))  
+    
     def begin(self):
         """called once when starting to build a fixture.
         """
-        self.add_import('import datetime')
-        self.add_import('from testtools.fixtures import SOFixture')
+        self.template.add_import('from datetime import datetime')
+        self.template.add_import('from testtools.fixtures import SOFixture')
     
     def find(self, idval):
         self.rs = [self.obj.get(idval)]
@@ -37,20 +45,6 @@ class SQLObjectHandler(DataHandler):
     
     def fxt_type(self):
         return 'SOFixture'
-    
-    def mk_key(self, fset):
-        """return a unique key for this fixture set.
-        
-        this is the so class name + primary key value
-        """
-        so_class = fset.obj_id()
-        return "_".join(str(s) for s in (
-                        self.mk_var_name(so_class), fset.set_id()))
-    
-    def mk_var_name(self, fxt_cls_name):
-        """returns a variable name for the instance of the fixture class.
-        """
-        return "_".join([camel_to_under(n) for n in fxt_cls_name.split('_')])
     
     @staticmethod
     def recognizes(object_path, obj=None):
@@ -63,45 +57,7 @@ class SQLObjectHandler(DataHandler):
         from sqlobject.declarative import DeclarativeMeta
         if type(obj) is DeclarativeMeta and obj.__name__ not in (
                         'SQLObject', 'sqlmeta', 'ManyToMany', 'OneToMany'):
-            return True
-    
-    def resolve_data_dict(self, fset):
-        """given a fixture set, resolve the linked sets
-        in the data_dict and log any necessary headers.
-        
-        return the data_dict
-        """
-        # need to clean header per resolution. hmm
-        self.data_header = []
-        self.add_data_header('r = self.meta.req')
-        
-        def add_import_class(so_class=None):
-            from sqlobject.classregistry import findClass
-            if not so_class:
-                so_class = fset.obj_id()
-            kls = findClass(so_class)
-            # this probably isn't very flexible ...
-            self.add_import("from %s import %s" % (
-                                kls.__module__, so_class))
-        add_import_class()
-        
-        for k,v in fset.data_dict.items():
-            if isinstance(v, FixtureSet):
-                # then it's a foreign key link
-                linked_fset = v
-                meta = linked_fset.meta
-                so_class = linked_fset.obj_id()
-                add_import_class(so_class)
-                fxt_class = self.mk_class_name(so_class)
-                fxt_var = self.mk_var_name(so_class)
-                self.add_data_header("r.%s = %s()" % (
-                                            fxt_var, 
-                                            fxt_class))
-                fset.data_dict[k] = code_str("r.%s.%s.%s" % (
-                                            fxt_var, 
-                                            self.mk_key(linked_fset),
-                                            meta.style.idForTable(meta.table)))
-        return fset.data_dict
+            return True      
     
     def sets(self):
         """yields FixtureSet for each row in SQLObject."""
@@ -112,12 +68,6 @@ register_handler(SQLObjectHandler)
 
 class SQLObjectFixtureSet(FixtureSet):
     """a fixture set for a SQLObject row."""
-    
-    def getDbName(self, col):
-        if col.dbName is not None:
-            return col.dbName
-        else:
-            return self.meta.style.pythonAttrToDBColumn(col.name)
     
     def __init__(self, data, model, connection=None):
         FixtureSet.__init__(self, data)
@@ -133,16 +83,18 @@ class SQLObjectFixtureSet(FixtureSet):
         # so we need to find it ...
         
         cols = [self.meta.style.idForTable(self.meta.table)]
-        cols.extend([self.getDbName(c) for c in self.meta.columnList])
+        cols.extend([self.attr_to_db_col(c) for c in self.meta.columnList])
     
         vals = [getattr(self.data, self.meta.idName)]
         vals.extend([self.get_col_value(c.name) for c in self.meta.columnList])
     
         self.data_dict = dict(zip(cols, vals))
     
-    def obj_id(self):
-        """returns id of this data object (the model name)."""
-        return self.model.__name__
+    def attr_to_db_col(self, col):
+        if col.dbName is not None:
+            return col.dbName
+        else:
+            return self.meta.style.pythonAttrToDBColumn(col.name)
     
     def get_col_value(self, colname):
         """transform column name into a value or a
@@ -162,6 +114,29 @@ class SQLObjectFixtureSet(FixtureSet):
         else:
             return value
     
+    def get_id_attr(self):
+        meta = self.meta
+        id_attr = meta.style.idForTable(meta.table)
+        return id_attr
+    
+    def mk_key(self):
+        """return a unique key for this fixture set.
+        
+        i.e. <dataclass>_<primarykey>
+        """
+        return "_".join(str(s) for s in (
+                        self.mk_var_name(), self.set_id()))
+    
+    def mk_var_name(self):
+        """returns a variable name for the instance of the fixture class.
+        """
+        fxt_cls_name = self.obj_id()
+        return "_".join([camel_to_under(n) for n in fxt_cls_name.split('_')])
+    
+    def obj_id(self):
+        """returns id of this data object (the model name)."""
+        return self.model.__name__
+    
     def set_id(self):
         """returns id of this set (the primary key value)."""
         return getattr(self.data, self.meta.idName)
@@ -172,7 +147,6 @@ class SQLObjectFixtureSet(FixtureSet):
         
         for name,col in self.meta.columns.items():
             if isinstance(col, SOForeignKey):
-                #dbcol = self.meta.style.pythonAttrToDBColumn(col.name)
                 self.foreign_key_class[col.name] = col.foreignKey
                 
 

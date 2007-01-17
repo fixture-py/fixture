@@ -1,6 +1,8 @@
 
 """templates that generate fixture modules."""
 
+from fixture.generator import code_str
+
 class _TemplateRegistry(object):
     def __init__(self):
         self.templates = []
@@ -41,11 +43,26 @@ class metabase:
     
     fixture = None
     
+    def __init__(self):
+        self.import_header = [] # lines of import statements
+
     def __repr__(self):
         return "'%s'" % self.__class__.__name__
     
+    class DataDef:
+        def __init__(self):
+            self.data_header = [] # vars at top of data() method
+    
+        def add_header(self, hdr):
+            if hdr not in self.data_header:
+                self.data_header.append(hdr)
+    
+    def add_import(self, _import):
+        if _import not in self.import_header:
+            self.import_header.append(_import)
+            
     def header(self):
-        raise NotImplementedError
+        return self.basemeta
     
     def meta(self, fxt_kls):
         """returns list of lines to add to the fixture class's meta.
@@ -70,12 +87,23 @@ class %(fxt_class)s(DataSet):
     def data(self):
         %(data_header)s
         return %(data)s"""
+    
+    def header(self):
+        return Template.header(self)
 
 templates.register(fixture(), default=True)
 
 class testtools(Template):
     """renders Fixture objects for the legacy testtools interface.
     """
+    class DataDef(Template.DataDef):
+        def add_reference(self, fxt_class, fxt_var=None):
+            self.add_header('r = self.meta.req')
+            self.add_header("r.%s = %s()" % (fxt_var, fxt_class))
+        
+        def fset_to_attr(self, fset):
+            return code_str("r.%s.%s.%s" % (
+                        fset.mk_var_name(), fset.mk_key(), fset.get_id_attr()))
     
     fixture = """
 class %(fxt_class)s(%(fxt_type)s):
@@ -84,9 +112,6 @@ class %(fxt_class)s(%(fxt_type)s):
     def data(self):
         %(data_header)s
         return %(data)s"""
-    
-    def header(self):
-        return self.basemeta
     
     def meta(self, fxt_kls):
         """returns list of lines to add to the fixture class's meta.
