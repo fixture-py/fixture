@@ -2,6 +2,7 @@
 """fixture generators for SQLObjects"""
 
 from fixture.style import camel_to_under
+from fixture.loader import SQLObjectLoader
 from fixture.generator import (
     DataHandler, FixtureSet, register_handler, code_str, 
     UnsupportedHandler, MisconfiguredHandler, )
@@ -12,6 +13,8 @@ except ImportError:
     sqlobject = None
 
 class SQLObjectHandler(DataHandler):
+    
+    loader_class = SQLObjectLoader
     
     def __init__(self, *a,**kw):
         DataHandler.__init__(self, *a,**kw)

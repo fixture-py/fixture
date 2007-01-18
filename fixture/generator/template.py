@@ -74,7 +74,7 @@ class metabase:
     def begin(self):
         pass
             
-    def header(self):
+    def header(self, handler):
         return self.metabase
     
     def render(self, tpl):
@@ -97,8 +97,10 @@ class fixture(Template):
             _addto(code_str(fxt_class), self.requires)
         
         def fset_to_attr(self, fset, fxt_class):
-            return code_str("self.ref.%s.%s.%s" % (
-                        fxt_class, fset.mk_key(), fset.get_id_attr()))
+            # do we need to check for MergedSuperSet ?
+            # attribute needs key only
+            return code_str("self.ref.%s.%s" % (
+                        fset.mk_key(), fset.get_id_attr()))
             
         def meta(self, fxt_class):
             if len(self.requires):
@@ -116,19 +118,27 @@ class %(fxt_class)s(DataSet):
     
     metabase = """
 class MetaBase(DataSet.Meta):
-    pass"""
+    refclass = MergedSuperSet"""
     
     def begin(self):
         self.add_import('import datetime')
         self.add_import("from fixture import DataSet, Fixture")
-        ## FIXME
-        self.add_import("from fixture.loader import SQLObjectLoader")
+        self.add_import("from fixture.dataset import MergedSuperSet")
+        self.add_import("from fixture.style import NamedDataStyle")
     
-    def header(self):
+    def header(self, handler):
+        loader_class = handler.loader_class
+        self.add_import("from %s import %s" % (
+                            loader_class.__module__, loader_class.__name__))
         return "\n".join([
             """
-fixture = Fixture(loader=SQLObjectLoader(env=globals()))""",
-            Template.header(self)])
+fixture = Fixture(  
+            loader = %s(
+                        env = globals(),
+                        style = NamedDataStyle()),
+            dataclass = MergedSuperSet)""" % (
+                                loader_class.__name__),
+            Template.header(self, handler)])
 
 templates.register(fixture(), default=True)
 

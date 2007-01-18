@@ -41,7 +41,8 @@ class DataContainer(object):
                 hex(id(self)), keys)
     
     def _setdata(self, key, value):
-        self.meta.keys.append(key)
+        if key not in self.meta.data:
+            self.meta.keys.append(key)
         self.meta.data[key] = value
 
 class DataRow(DataContainer):

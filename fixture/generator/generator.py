@@ -108,7 +108,7 @@ class FixtureGenerator(object):
         """
         tpl = {'fxt_type': self.handler.fxt_type()}
         
-        code = [self.template.header()]
+        code = [self.template.header(self.handler)]
         o = [k for k in self.cache.order_of_appearence]
         o.reverse()
         for kls in o:
@@ -209,6 +209,8 @@ class FixtureSet(object):
 class DataHandler(object):
     """handles an object that can provide fixture data.
     """
+    loader_class = None
+    
     def __repr__(self):
         return "<%s at %s>" % (self.__class__, hex(id(self)))
         
