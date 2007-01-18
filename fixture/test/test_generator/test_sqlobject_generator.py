@@ -24,7 +24,15 @@ def setup():
     realconn = connectionForURI(conf.POSTGRES_DSN)
     memconn = connectionForURI("sqlite:/:memory:")
 
-class GeneratorTest:
+class GeneratorTest(object):
+    """tests that a fixture code generator can run with the specified arguments 
+    and produce a loadable fixture.
+    
+    the details of which arguments, how that fixture loads data, and how the 
+    data load is proven is defined in the concrete implementation of this test 
+    class
+    
+    """
     args = []
     
     def assert_env_is_clean(self):
@@ -118,22 +126,30 @@ class SQLObjectGeneratorTest(GeneratorTest):
     def test_query(self):
         self.run_generator(['-q', "name = 'super cash back!'"])
 
-basetest = SQLObjectGeneratorTest
-        
-class TestSQLObjectTesttools(basetest):
-    args = [a for a in basetest.args] + ["--template=testtools"]
+class UsingTesttoolsTemplate(object):
+    def __init__(self, *a,**kw):
+        super(UsingTesttoolsTemplate, self).__init__(*a,**kw)
+        self.args = [a for a in self.args] + ["--template=testtools"]
     
     def load_datasets(self, module, conn, datasets):
         fxt = affix(*[d() for d in datasets])
-        return fxt
-    
-class TestSQLObjectFixture(basetest):
-    args = [a for a in basetest.args] + ["--template=fixture"]
+        return fxt    
+        
+class UsingFixtureTemplate(object):
+    def __init__(self, *a,**kw):
+        super(UsingFixtureTemplate, self).__init__(*a,**kw)
+        self.args = [a for a in self.args] + ["--template=fixture"]
     
     def load_datasets(self, module, conn, datasets):
         module['fixture'].loader.connection = memconn
         d = module['fixture'].data(*datasets)
         d.setup()
         return d
+        
+class TestSQLObjectTesttools(UsingTesttoolsTemplate, SQLObjectGeneratorTest):
+    pass
+    
+class TestSQLObjectFixture(UsingFixtureTemplate, SQLObjectGeneratorTest):
+    pass
     
     
