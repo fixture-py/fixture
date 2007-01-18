@@ -24,7 +24,7 @@ def setup():
     realconn = connectionForURI(conf.POSTGRES_DSN)
     memconn = connectionForURI("sqlite:/:memory:")
 
-class GeneratorTest(object):
+class GenerateTest(object):
     """tests that a fixture code generator can run with the specified arguments 
     and produce a loadable fixture.
     
@@ -40,8 +40,11 @@ class GeneratorTest(object):
     
     def assert_env_generated_ok(self, env):
         raise NotImplementedError
+        
+    def assert_data_loaded(self, data):
+        raise NotImplementedError
     
-    def load_datasets(self, module, conn, datasets):
+    def load_env(self, module):
         raise NotImplementedError
     
     def run_generator(self, extra_args=[]):
@@ -54,11 +57,13 @@ class GeneratorTest(object):
         try:
             e = compile_(code)
             self.assert_env_generated_ok(e)
+            data = self.load_env(e)
+            self.assert_data_loaded(data)
         except:
             print code
             raise
 
-class SQLObjectGeneratorTest(GeneratorTest):
+class SQLObjectGenerateTest(GenerateTest):
     args = [
         "fixture.examples.db.sqlobject_examples.Offer", 
         "--dsn", str(conf.POSTGRES_DSN) ]
@@ -77,13 +82,8 @@ class SQLObjectGeneratorTest(GeneratorTest):
         Offer.clearTable(connection=realconn)
         Product.clearTable(connection=realconn)
         Category.clearTable(connection=realconn)
-
-        # set our conn back to memory then load the fixture.
-        # hmm, seems hoky
-        sqlhub.processConnection = memconn
-        fxt = self.load_datasets(e, memconn, 
-                            [CategoryData, ProductData, OfferData])
-
+    
+    def assert_data_loaded(self, fxt):
         rs =  Category.select()
         eq_(rs.count(), 2)
         parkas = rs[0]
@@ -103,6 +103,17 @@ class SQLObjectGeneratorTest(GeneratorTest):
         # got resolved correctly :
         eq_(Category.get(fxt.product_1.category_id),   parkas)
         eq_(Category.get(fxt.offer_1.category_id),     rebates)
+    
+    def load_datasets(self, module, conn, datasets):
+        raise NotImplementedError
+    
+    def load_env(self, env):
+        # set our conn back to memory then load the fixture.
+        # hmm, seems hoky
+        sqlhub.processConnection = memconn
+        data = self.load_datasets(env, 
+                    [env['CategoryData'], env['ProductData'], env['OfferData']])
+        return data
     
     def setUp(self):        
         setup_db(realconn)
@@ -131,7 +142,7 @@ class UsingTesttoolsTemplate(object):
         super(UsingTesttoolsTemplate, self).__init__(*a,**kw)
         self.args = [a for a in self.args] + ["--template=testtools"]
     
-    def load_datasets(self, module, conn, datasets):
+    def load_datasets(self, module, datasets):
         fxt = affix(*[d() for d in datasets])
         return fxt    
         
@@ -140,16 +151,16 @@ class UsingFixtureTemplate(object):
         super(UsingFixtureTemplate, self).__init__(*a,**kw)
         self.args = [a for a in self.args] + ["--template=fixture"]
     
-    def load_datasets(self, module, conn, datasets):
+    def load_datasets(self, module, datasets):
         module['fixture'].loader.connection = memconn
         d = module['fixture'].data(*datasets)
         d.setup()
         return d
         
-class TestSQLObjectTesttools(UsingTesttoolsTemplate, SQLObjectGeneratorTest):
+class TestSQLObjectTesttools(UsingTesttoolsTemplate, SQLObjectGenerateTest):
     pass
     
-class TestSQLObjectFixture(UsingFixtureTemplate, SQLObjectGeneratorTest):
+class TestSQLObjectFixture(UsingFixtureTemplate, SQLObjectGenerateTest):
     pass
     
     
