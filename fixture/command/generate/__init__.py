@@ -11,6 +11,6 @@ from generate import *
 
 # load modules so they can register themselves (better way?)
 try:
-    import sqlobject_generator
+    import generate_sqlobject
 except ImportError:
     pass
