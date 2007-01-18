@@ -4,8 +4,8 @@ import testtools
 from nose.tools import eq_
 from nose.exc import SkipTest
 from testtools.fixtures import affix
-from fixture.generator import FixtureGenerator, run_generator
-from fixture.test.test_generator import compile_
+from fixture.command.generate import FixtureGenerator, run_generator
+from fixture.test.test_command.test_generate import compile_
 from fixture.test import env_supports, conf
 from fixture.examples.db.sqlobject_examples import (
                     Category, Product, Offer, setup_db, teardown_db)

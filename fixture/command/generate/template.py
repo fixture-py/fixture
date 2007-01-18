@@ -1,7 +1,7 @@
 
 """templates that generate fixture modules."""
 
-from fixture.generator import code_str
+from fixture.command.generate import code_str
 
 def _addto(val, list_):
     if val not in list_:

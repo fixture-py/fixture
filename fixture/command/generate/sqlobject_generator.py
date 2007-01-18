@@ -3,7 +3,7 @@
 
 from fixture.style import camel_to_under
 from fixture.loader import SQLObjectLoader
-from fixture.generator import (
+from fixture.command.generate import (
     DataHandler, FixtureSet, register_handler, code_str, 
     UnsupportedHandler, MisconfiguredHandler, )
             

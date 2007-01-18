@@ -36,5 +36,5 @@ setup(
                         sys.version_info[1]),
     packages = find_packages(),
     entry_points = { 'console_scripts': [ 
-                        'fixture = fixture.generator:main' ] },
+                        'fixture = fixture.command.generate:main' ] },
     )

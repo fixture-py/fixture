@@ -9,7 +9,7 @@ import optparse
 import inspect
 import pprint
 from warnings import warn
-from fixture.generator.template import templates, is_template
+from fixture.command.generate.template import templates, is_template
 handler_registry = []
 
 class HandlerException(Exception):

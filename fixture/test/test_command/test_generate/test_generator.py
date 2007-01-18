@@ -1,6 +1,6 @@
 
 from nose.tools import eq_, raises
-from fixture.generator import FixtureGenerator
+from fixture.command.generate import FixtureGenerator
     
 class Stranger(object):
     """something that cannot produce data."""
