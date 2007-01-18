@@ -7,7 +7,7 @@ class code_str(str):
     def __repr__(self):
         return str.__repr__(self)[1:-1]
         
-from generator import *
+from generate import *
 
 # load modules so they can register themselves (better way?)
 try:
