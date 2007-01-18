@@ -1,5 +1,5 @@
 
-"""fixture generators for SQLObjects"""
+"""support to generate SQLObject-based fixtures."""
 
 from fixture.style import camel_to_under
 from fixture.loader import SQLObjectLoader
