@@ -10,4 +10,3 @@ class Stranger(object):
 def test_unhandlable_object():
     generate = FixtureGenerator({})
     generate(".".join([Stranger.__module__, Stranger.__name__]))
-    

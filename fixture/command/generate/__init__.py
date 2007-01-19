@@ -14,3 +14,7 @@ try:
     import generate_sqlobject
 except ImportError:
     pass
+try:
+    import generate_sqlalchemy
+except ImportError:
+    pass

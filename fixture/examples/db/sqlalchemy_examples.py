@@ -40,12 +40,14 @@ if sqlalchemy:
     class Offer(object):
         pass
 
-def setup_db(meta, session_context):
+def setup_db(meta, session_context, **kw):
     assert sqlalchemy
     
-    def assign_and_create(obj, table):
+    def assign_and_create(obj, table, **localkw):
         table.tometadata(meta)
-        assign_mapper(session_context, obj, table)
+        sendkw = dict([(k,v) for k,v in localkw.items()])
+        sendkw.update(kw)
+        assign_mapper(session_context, obj, table, **sendkw)
         table.create(meta.engine)
     
     session = session_context.current

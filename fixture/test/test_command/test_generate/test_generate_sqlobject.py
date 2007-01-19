@@ -3,9 +3,9 @@ import os
 import testtools
 from nose.tools import eq_
 from nose.exc import SkipTest
-from testtools.fixtures import affix
 from fixture.command.generate import FixtureGenerator, run_generator
-from fixture.test.test_command.test_generate import compile_
+from fixture.test.test_command.test_generate import (
+        compile_, GenerateTest, UsingTesttoolsTemplate, UsingFixtureTemplate)
 from fixture.test import env_supports, conf
 from fixture.examples.db.sqlobject_examples import (
                     Category, Product, Offer, setup_db, teardown_db)
@@ -23,45 +23,6 @@ def setup():
     
     realconn = connectionForURI(conf.POSTGRES_DSN)
     memconn = connectionForURI("sqlite:/:memory:")
-
-class GenerateTest(object):
-    """tests that a fixture code generator can run with the specified arguments 
-    and produce a loadable fixture.
-    
-    the details of which arguments, how that fixture loads data, and how the 
-    data load is proven is defined in the concrete implementation of this test 
-    class
-    
-    """
-    args = []
-    
-    def assert_env_is_clean(self):
-        raise NotImplementedError
-    
-    def assert_env_generated_ok(self, env):
-        raise NotImplementedError
-        
-    def assert_data_loaded(self, data):
-        raise NotImplementedError
-    
-    def load_env(self, module):
-        raise NotImplementedError
-    
-    def run_generator(self, extra_args=[]):
-        args = [a for a in self.args]
-        if extra_args:
-            args.extend(extra_args)
-        
-        self.assert_env_is_clean()
-        code = run_generator(args)
-        try:
-            e = compile_(code)
-            self.assert_env_generated_ok(e)
-            data = self.load_env(e)
-            self.assert_data_loaded(data)
-        except:
-            print code
-            raise
 
 class SQLObjectGenerateTest(GenerateTest):
     args = [
@@ -136,31 +97,12 @@ class SQLObjectGenerateTest(GenerateTest):
     
     def test_query(self):
         self.run_generator(['-q', "name = 'super cash back!'"])
-
-class UsingTesttoolsTemplate(object):
-    def __init__(self, *a,**kw):
-        super(UsingTesttoolsTemplate, self).__init__(*a,**kw)
-        self.args = [a for a in self.args] + ["--template=testtools"]
-    
-    def load_datasets(self, module, datasets):
-        fxt = affix(*[d() for d in datasets])
-        return fxt    
-        
-class UsingFixtureTemplate(object):
-    def __init__(self, *a,**kw):
-        super(UsingFixtureTemplate, self).__init__(*a,**kw)
-        self.args = [a for a in self.args] + ["--template=fixture"]
-    
-    def load_datasets(self, module, datasets):
-        module['fixture'].loader.connection = memconn
-        d = module['fixture'].data(*datasets)
-        d.setup()
-        return d
         
 class TestSQLObjectTesttools(UsingTesttoolsTemplate, SQLObjectGenerateTest):
     pass
     
 class TestSQLObjectFixture(UsingFixtureTemplate, SQLObjectGenerateTest):
-    pass
+    def visit_loader(self, loader):
+        loader.connection = memconn
     
     
