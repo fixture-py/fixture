@@ -1,6 +1,5 @@
 
 import os
-import testtools
 from nose.tools import eq_
 from nose.exc import SkipTest
 from fixture.command.generate import FixtureGenerator, run_generator
