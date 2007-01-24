@@ -59,7 +59,7 @@ setup(
                         sys.version_info[1]),
     packages = find_packages(),
     
-    install_requires=('nose>=0.9.2',),
+    install_requires=('nose',),
     # test_suite="nose.collector",
     entry_points = { 
         'console_scripts': [ 'fixture = fixture.command.generate:main' ] 
