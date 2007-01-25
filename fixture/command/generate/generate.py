@@ -14,6 +14,8 @@ handler_registry = []
 
 class HandlerException(Exception):
     pass
+class UnrecognizedObject(HandlerException):
+    pass
 class UnsupportedHandler(HandlerException):
     pass
 class MisconfiguredHandler(HandlerException):
@@ -96,7 +98,7 @@ class FixtureGenerator(object):
                             obj=obj, template=self.template)
                 break
         if handler is None:
-            raise ValueError, (
+            raise UnrecognizedObject, (
                     "no handler recognizes object %s at %s (importable? %s); "
                     "tried handlers %s" %
                         (obj, object_path, importable, 
@@ -181,22 +183,33 @@ class FixtureSet(object):
         """
         return col
         
-    def mk_key(self):
-        """return a unique key for this fixture set."""
+    def get_id_attr(self):
+        """returns the name of this set's id attribute.
+        
+        i.e. "id"
+        """
         raise NotImplementedError
+    
+    def mk_key(self):
+        """return a unique key for this fixture set.
+        
+        i.e. <dataclass>_<primarykey>
+        """
+        return "_".join(str(s) for s in (
+                        self.mk_var_name(), self.set_id()))
     
     def mk_var_name(self):
         """returns a variable name for the instance of the fixture class.
         """
-        raise NotImplementedError
+        return self.obj_id()
     
     def obj_id(self):
         """returns a unique value that identifies the object used
         to generate this fixture.
         
-        i.e. typically, this is the name of the data model, say Employees
+        by default this is the name of the data model, i.e. Employees
         """
-        raise NotImplementedError
+        return self.model.__name__
     
     def set_id(self):
         """returns a unique value that identifies this set
@@ -206,13 +219,16 @@ class FixtureSet(object):
         """
         raise NotImplementedError
 
+class Handler(type):
+    def __str__(self):
+        # split camel class name into something readable?
+        return self.__name__
+
 class DataHandler(object):
     """handles an object that can provide fixture data.
     """
+    __metaclass__ = Handler
     loader_class = None
-    
-    def __repr__(self):
-        return "<%s at %s>" % (self.__class__, hex(id(self)))
         
     def __init__(self, object_path, options, obj=None, template=None):
         self.obj_path = object_path
@@ -223,7 +239,7 @@ class DataHandler(object):
     def begin(self):
         """called once when starting to build a fixture.
         """
-        raise NotImplementedError
+        self.template.begin()
     
     def find(self, idval):
         """finds a record set based on key, idval."""

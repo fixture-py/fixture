@@ -33,11 +33,6 @@ class SQLObjectHandler(DataHandler):
         self.template.add_import("from %s import %s" % (
                             kls.__module__, so_class))  
     
-    def begin(self):
-        """called once when starting to build a fixture.
-        """
-        self.template.begin()
-    
     def find(self, idval):
         self.rs = [self.obj.get(idval)]
         
@@ -121,23 +116,11 @@ class SQLObjectFixtureSet(FixtureSet):
         id_attr = meta.style.idForTable(meta.table)
         return id_attr
     
-    def mk_key(self):
-        """return a unique key for this fixture set.
-        
-        i.e. <dataclass>_<primarykey>
-        """
-        return "_".join(str(s) for s in (
-                        self.mk_var_name(), self.set_id()))
-    
     def mk_var_name(self):
         """returns a variable name for the instance of the fixture class.
         """
         fxt_cls_name = self.obj_id()
         return "_".join([camel_to_under(n) for n in fxt_cls_name.split('_')])
-    
-    def obj_id(self):
-        """returns id of this data object (the model name)."""
-        return self.model.__name__
     
     def set_id(self):
         """returns id of this set (the primary key value)."""
@@ -237,4 +220,7 @@ if sqlobject:
             results.append(colClass(**kw))
         return results
     from sqlobject.postgres import pgconnection
+    from warnings import warn
+    warn("monkey patching %s for multiple schema support" % (
+                    pgconnection.PostgresConnection.columnsFromSchema))
     pgconnection.PostgresConnection.columnsFromSchema = columnsFromSchema

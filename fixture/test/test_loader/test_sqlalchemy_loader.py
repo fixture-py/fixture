@@ -65,13 +65,13 @@ class TestSqlAlchemyLoaderForeignKeys(
         """assert that the dataset was loaded."""
         eq_(Offer.get(dataset.free_truck.id).name, dataset.free_truck.name)
         
-        eq_(Product.get(
-                dataset.truck.id).name,
-                dataset.truck.name)
-                
-        eq_(Category.get(
-                dataset.cars.id).name,
-                dataset.cars.name)
+        product = Product.get(dataset.truck.id)
+        eq_(product.name, dataset.truck.name)
+        eq_(product.category_id, dataset.cars.id)
+        
+        category = Category.get(dataset.cars.id)
+        eq_(category.name, dataset.cars.name)
+        
         eq_(Category.get(
                 dataset.free_stuff.id).name,
                 dataset.free_stuff.name)

@@ -74,7 +74,7 @@ class UsingFixtureTemplate(object):
         self.args = [a for a in self.args] + ["--template=fixture"]
     
     def visit_loader(self, loader):
-        raise NotImplementedError
+        pass
     
     def load_datasets(self, module, datasets):
         self.visit_loader(module['fixture'].loader)
