@@ -83,14 +83,6 @@ class SqlAlchemyFixtureSet(FixtureSet):
         
         self.data_dict = {}
         for col in self.model.mapper.columns:
-            if not hasattr(self.data, col.name):
-                # this is sort of strange:
-                # we seem to get back referenced foreign key columns.  i.e. a 
-                # category mapper's columns might have category_id if an offer 
-                # table had declared its category_id as a foreign key to 
-                # category.  the link is actually to category.id and we've 
-                # already resolved it all, so continue??
-                continue
             sendkw = {}
             if col.foreign_key:
                 sendkw['foreign_key'] = col.foreign_key
@@ -107,7 +99,7 @@ class SqlAlchemyFixtureSet(FixtureSet):
         """
         value = getattr(self.data, colname)
         if value is None:
-            # this means that we are in a NULL foreign key
+            # this means that we are in a NULL column or foreign key
             # which could be perfectly legal.
             return None
             

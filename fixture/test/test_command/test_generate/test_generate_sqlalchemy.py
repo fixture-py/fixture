@@ -67,10 +67,11 @@ class SqlAlchemyGenerateTest(GenerateTest):
         
         session.flush()
         
-        jersey = Product(name="jersey", category_id=parkas.id)
+        jersey = Product(id=1, name="jersey", category_id=parkas.id)
         session.save(jersey)
+        session.flush()
         super_cashback = Offer( name="super cash back!", 
-                                product=jersey, category_id=rebates.id)
+                                product_id=jersey.id, category_id=rebates.id)
         session.save(super_cashback)
         session.flush()
         # realmeta.engine.echo = 0

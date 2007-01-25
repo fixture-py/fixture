@@ -37,3 +37,8 @@ __version__ = "1.0"
     
 from components import Fixture
 from dataset import DataSet
+
+
+def setup_test_not_supported():
+    """hook for setup for the test command."""
+    raise NotImplementedError("use: python setup.py nosetests instead")

@@ -61,6 +61,7 @@ setup(
     
     install_requires=('nose',),
     # test_suite="nose.collector",
+    test_suite="fixture.setup_test_not_supported",
     entry_points = { 
         'console_scripts': [ 'fixture = fixture.command.generate:main' ] 
         },

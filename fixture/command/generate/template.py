@@ -113,7 +113,7 @@ class %(fxt_class)s(DataSet):
     class Meta(MetaBase):
         %(meta)s
     def data(self):
-        %(data_header)s
+        %(data_header)s\
         return %(data)s"""
     
     metabase = """
@@ -164,7 +164,7 @@ class %(fxt_class)s(%(fxt_type)s):
     class meta(metabase):
         %(meta)s
     def data(self):
-        %(data_header)s
+        %(data_header)s\
         return %(data)s"""
     
     def begin(self):
