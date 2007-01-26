@@ -321,6 +321,12 @@ def run_generator(argv=sys.argv[1:]):
         help="string prefix for all dataset class names (default: None)",
         default="")
     
+    parser.add_option('--env',
+        help = (
+            "module path to use as an environment for finding objects.  "
+            "declaring multiple --env values will be recognized"),
+        action='append', default=[])
+    
     default_tpl = templates.default()
     parser.add_option('--template',
         help="template to use; choices: %s, default: %s" % (

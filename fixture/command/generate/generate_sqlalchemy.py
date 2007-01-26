@@ -1,4 +1,5 @@
 
+import sys
 from fixture.command.generate import (
         DataHandler, register_handler, FixtureSet)
 from fixture.loader import SqlAlchemyLoader
@@ -6,6 +7,59 @@ try:
     import sqlalchemy
 except ImportError:
     sqlalchemy = False
+
+class TableEnv(object):
+    """a shared environment of modules that contain sqlalchemy Table instances.
+    """
+    def __contains__(self, key):
+        return key in self.tablemap
+    
+    def __getitem__(self, key):
+        try:
+            return self.tablemap[key]
+        except KeyError:
+            etype, val, tb = sys.exc_info()
+            raise etype, (
+                "%s (looked in: %s)  You might need to add "
+                "--env='path.to.module' ?" % (
+                        val, ", ".join([p for p in self.modpaths])), tb)
+        
+    def __init__(self, *modpaths):
+        self.modpaths = modpaths
+        self.tablemap = {}
+        for p in self.modpaths:
+            if p not in sys.modules:
+                # i.e. modpath from command-line option...
+                try:
+                    if "." in p:
+                        cut = p.rfind(".")
+                        names = [p[cut+1:]]
+                        parent = __import__(
+                                    p[0:cut], globals(), locals(), names)
+                        module = getattr(parent, names[0])
+                    else:
+                        module = __import__(p)
+                except:
+                    etype, val, tb = sys.exc_info()
+                    raise etype, ("%s (while importing %s)" % (val, p)), tb
+            else:
+                module = sys.modules[p]
+            self._find_tables(module)
+    
+    def _find_tables(self, module):
+        from sqlalchemy.schema import Table
+        for name in dir(module):
+            o = getattr(module, name)
+            if isinstance(o, Table):
+                self.tablemap[o] = (name, module)
+    
+    def get_name(self, table):
+        name, mod = self[table]
+        return name
+    
+    def get_table(self, table):
+        name, mod = self[table]
+        return getattr(mod, name)
 
 class SqlAlchemyHandler(DataHandler):
     
@@ -22,17 +76,12 @@ class SqlAlchemyHandler(DataHandler):
         else:
             raise MisconfiguredHandler(
                     "--dsn option is required by %s" % self.__class__)
-    
-    def add_fixture_set(self, fset):
-        # from sqlobject.classregistry import findClass
-        # so_class = fset.obj_id()
-        # kls = findClass(so_class)
-        # # this maybe isn't very flexible ...
         
-        kls = fset.model
-        self.template.add_import("from %s import %s" % (
-                            kls.__module__, kls.__name__))  
-        ### next, need to assign_mapper
+        self.env = TableEnv(*[self.obj.__module__] + self.options.env)
+    
+    def add_fixture_set(self, fset):        
+        name, mod = self.env[fset.model.mapper.mapped_table]
+        self.template.add_import("from %s import %s" % (mod.__name__, name))  
     
     def find(self, idval):
         raise NotImplementedError
@@ -65,7 +114,8 @@ class SqlAlchemyHandler(DataHandler):
         """yields FixtureSet for each row in SQLObject."""
         
         for row in self.rs:
-            yield SqlAlchemyFixtureSet(row, self.obj, self.session_context)
+            yield SqlAlchemyFixtureSet(row, self.obj, 
+                                        self.session_context, self.env)
             
 register_handler(SqlAlchemyHandler)
 
@@ -73,8 +123,9 @@ register_handler(SqlAlchemyHandler)
 class SqlAlchemyFixtureSet(FixtureSet):
     """a fixture set for a sqlalchemy row object."""
     
-    def __init__(self, data, model, session_context):
+    def __init__(self, data, model, session_context, env):
         FixtureSet.__init__(self, data)
+        self.env = env
         # self.meta = meta
         self.session_context = session_context
         self.model = model
@@ -113,10 +164,9 @@ class SqlAlchemyFixtureSet(FixtureSet):
             # probably a *much* better way to create dynamic mappers...
             class Object(object): 
                 pass
-            Object.__name__ = "%s_" % foreign_key.column.table
-            
-            assign_mapper(  self.session_context, Object, 
-                            foreign_key.column.table )
+                
+            table = self.env.get_table(foreign_key.column.table)
+            assign_mapper(  self.session_context, Object, table )
             rs = Object.get(value)
             
             # rs = self.meta.engine.execute(
@@ -126,7 +176,7 @@ class SqlAlchemyFixtureSet(FixtureSet):
             #                     foreign_key.column.name)), 
             #                         {foreign_key.column.name: value})
             subset = SqlAlchemyFixtureSet(
-                    rs, Object, self.session_context)
+                        rs, Object, self.session_context, self.env)
             clear_mapper(Object.mapper)
             del Object
             return subset
@@ -144,6 +194,9 @@ class SqlAlchemyFixtureSet(FixtureSet):
     
     def get_id_attr(self):
         return self.model.id.key
+    
+    def obj_id(self):
+        return self.env.get_name(self.model.mapper.mapped_table)
     
     def set_id(self):
         """returns id of this set (the primary key value)."""
