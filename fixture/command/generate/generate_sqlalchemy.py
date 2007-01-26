@@ -9,21 +9,8 @@ except ImportError:
     sqlalchemy = False
 
 class TableEnv(object):
-    """a shared environment of modules that contain sqlalchemy Table instances.
+    """a shared environment of sqlalchemy Table instances.
     """
-    def __contains__(self, key):
-        return key in self.tablemap
-    
-    def __getitem__(self, key):
-        try:
-            return self.tablemap[key]
-        except KeyError:
-            etype, val, tb = sys.exc_info()
-            raise etype, (
-                "%s (looked in: %s)  You might need to add "
-                "--env='path.to.module' ?" % (
-                        val, ", ".join([p for p in self.modpaths])), tb)
-        
     def __init__(self, *modpaths):
         self.modpaths = modpaths
         self.tablemap = {}
@@ -45,6 +32,19 @@ class TableEnv(object):
             else:
                 module = sys.modules[p]
             self._find_tables(module)
+            
+    def __contains__(self, key):
+        return key in self.tablemap
+    
+    def __getitem__(self, key):
+        try:
+            return self.tablemap[key]
+        except KeyError:
+            etype, val, tb = sys.exc_info()
+            raise etype, (
+                "%s (looked in: %s)  You might need to add "
+                "--env='path.to.module' ?" % (
+                        val, ", ".join([p for p in self.modpaths])), tb)
     
     def _find_tables(self, module):
         from sqlalchemy.schema import Table
@@ -62,6 +62,7 @@ class TableEnv(object):
         return getattr(mod, name)
 
 class SqlAlchemyHandler(DataHandler):
+    """handles genration of fixture code from a sqlalchemy data source."""
     
     loader_class = SqlAlchemyLoader
     
@@ -121,15 +122,13 @@ register_handler(SqlAlchemyHandler)
 
 
 class SqlAlchemyFixtureSet(FixtureSet):
-    """a fixture set for a sqlalchemy row object."""
+    """a fixture set for a sqlalchemy record set."""
     
     def __init__(self, data, model, session_context, env):
         FixtureSet.__init__(self, data)
         self.env = env
-        # self.meta = meta
         self.session_context = session_context
         self.model = model
-        self.foreign_key_class = {}
         self.primary_key = None
         
         self.data_dict = {}
@@ -154,10 +153,7 @@ class SqlAlchemyFixtureSet(FixtureSet):
             # which could be perfectly legal.
             return None
             
-        ## raise an error when there are multiple foreign keys?
         if foreign_key:
-            # print foreign_key.column.table
-            # print dir(foreign_key)
             from sqlalchemy import clear_mapper
             from sqlalchemy.ext.assignmapper import assign_mapper
             
@@ -181,16 +177,7 @@ class SqlAlchemyFixtureSet(FixtureSet):
             del Object
             return subset
             
-            
-        if colname in self.foreign_key_class:
-            raise NotImplementedError
-        else:
-            return value
-        #     model = findClass(self.foreign_key_class[colname])
-        #     rs = model.get(value, connection=self.connection)
-        #     return SQLObjectFixtureSet(rs, model, connection=self.connection)
-        # else:
-        #     return value
+        return value
     
     def get_id_attr(self):
         return self.model.id.key
