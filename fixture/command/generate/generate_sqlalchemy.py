@@ -36,15 +36,16 @@ class TableEnv(object):
     def __contains__(self, key):
         return key in self.tablemap
     
-    def __getitem__(self, key):
+    def __getitem__(self, table):
         try:
-            return self.tablemap[key]
+            return self.tablemap[table]
         except KeyError:
             etype, val, tb = sys.exc_info()
-            raise etype, (
-                "%s (looked in: %s)  You might need to add "
-                "--env='path.to.module' ?" % (
-                        val, ", ".join([p for p in self.modpaths])), tb)
+            raise LookupError, (
+                "Could not locate original declaration of Table %s "
+                "(looked in: %s)  You might need to add "
+                "--env='path.to.module'?" % (
+                        table, ", ".join([p for p in self.modpaths]))), tb
     
     def _find_tables(self, module):
         from sqlalchemy.schema import Table
