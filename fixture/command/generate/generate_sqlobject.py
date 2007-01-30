@@ -24,6 +24,10 @@ class SQLObjectHandler(DataHandler):
         else:
             raise MisconfiguredHandler(
                     "--dsn option is required by %s" % self.__class__)
+        if len(self.options.env):
+            raise NotImplementedError(
+                "sqlobject is not using --env; perhaps we just need to import "
+                "the envs so that findClass knows about its objects?")
     
     def add_fixture_set(self, fset):
         from sqlobject.classregistry import findClass

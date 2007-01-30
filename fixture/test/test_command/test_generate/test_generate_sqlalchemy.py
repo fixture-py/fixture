@@ -43,16 +43,17 @@ class SqlAlchemyGenerateTest(GenerateTest):
         eq_(len(session.query(Product).select()), 0)
     
     def assert_env_generated_ok(self, e):
-        # print dir(e)
-        raise NotImplementedError
-        # CategoryData = e['CategoryData']
-        # ProductData = e['ProductData']
-        # OfferData = e['OfferData']
-        # 
-        # # another sanity check, wipe out the source data
-        # Offer.clearTable(connection=realconn)
-        # Product.clearTable(connection=realconn)
-        # Category.clearTable(connection=realconn)
+        # get rid of the source so that we
+        # are sure we aren't ever querying the source db
+        engine = realmeta.engine
+        e['offers'].drop(connectable=engine)
+        e['products'].drop(connectable=engine)
+        e['categories'].drop(connectable=engine)
+    
+    def load_env(self, env):
+        data = self.load_datasets(env, 
+                [env['categoriesData'], env['productsData'], env['offersData']])
+        return data
     
     def setUp(self):        
         setup_db(realmeta, realcontext)

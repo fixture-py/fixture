@@ -13,8 +13,11 @@ class SqlAlchemyLoader(DatabaseLoader):
         
         def visit_loader(self, loader):
             self.session = loader.session
+            self.session_context = loader.session_context
             
         def save(self, row):
+            # table = self.medium.mapper.local_table
+            # obj = table.insert(values=row)
             obj = self.medium()
             for attname, val in row.items():
                 setattr(obj, attname, val)

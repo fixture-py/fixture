@@ -31,7 +31,7 @@ class TableEnv(object):
                     raise etype, ("%s (while importing %s)" % (val, p)), tb
             else:
                 module = sys.modules[p]
-            self._find_tables(module)
+            self._find_objects(module)
             
     def __contains__(self, key):
         return key in self.tablemap
@@ -47,20 +47,46 @@ class TableEnv(object):
                 "--env='path.to.module'?" % (
                         table, ", ".join([p for p in self.modpaths]))), tb
     
-    def _find_tables(self, module):
+    def _find_objects(self, module):
         from sqlalchemy.schema import Table
+        from sqlalchemy.orm.mapper import (
+                        has_mapper, class_mapper, object_mapper, 
+                        mapper_registry)
         for name in dir(module):
             o = getattr(module, name)
             if isinstance(o, Table):
-                self.tablemap[o] = (name, module)
+                self.tablemap.setdefault(o, {})
+                self.tablemap[o]['name'] = name
+                self.tablemap[o]['module'] = module
+                # for k in mapper_registry:
+                #     print k, mapper_registry[k]
+                # self.tablemap[o]['mapped_class'] = object_mapper(o)
+                
+                ## whoa?? how else can I find an existing mapper for a table?
+                
+            # if has_mapper(o):
+            #     mapper = class_mapper(o, entity_name=o._entity_name)
+            #     if not hasattr(mapper, local_table):
+            #         raise NotImplementedError(
+            #             "not sure how to handle a mapper like %s that does not "
+            #             "contain a local_table" % mapper)
+            #     t = mapper.local_table
+            #     self.tablemap.setdefault(t, {})
+            #     self.tablemap[t]['mapped_class'] = o
+    
+    # def get_mapped_class(self, table):
+    #     try:
+    #         return self[table]['mapped_class']
+    #     except KeyError:
+    #         # fixme: repr the env here...
+    #         raise LookupError(
+    #             "no mapped class found for table %s in env" % (table))
     
     def get_name(self, table):
-        name, mod = self[table]
-        return name
+        return self[table]['name']
     
     def get_table(self, table):
-        name, mod = self[table]
-        return getattr(mod, name)
+        return getattr(self[table]['module'], self[table]['name'])
 
 class SqlAlchemyHandler(DataHandler):
     """handles genration of fixture code from a sqlalchemy data source."""
@@ -96,21 +122,40 @@ class SqlAlchemyHandler(DataHandler):
     
     @staticmethod
     def recognizes(object_path, obj=None):
-        """returns True if obj is a SQLObject class.
+        """returns True if obj is a mapped sqlalchemy object
         """
         if not sqlalchemy:
             raise UnsupportedHandler("sqlalchemy module not found")
         if obj is None:
             return False
-            
-        # support something other than mapped objects??
-        if not hasattr(obj, 'mapper'):
-            return False
-        from sqlalchemy.orm.mapper import Mapper
-        if not type(obj.mapper)==Mapper:
-            return False
         
-        return True
+        def isa_mapper(mapper):
+            from sqlalchemy.orm.mapper import Mapper
+            if type(mapper)==Mapper:
+                return True
+                
+        if hasattr(obj, 'mapper'):
+            # i.e. assign_mapper ...
+            if isa_mapper(obj.mapper):
+                return True
+        if hasattr(obj, '_mapper'):
+            # i.e. sqlsoup ??
+            if isa_mapper(obj._mapper):
+                return True
+            
+        from sqlalchemy.orm.mapper import has_mapper
+        if has_mapper(obj):
+            # i.e. has been used in a session (is this likely?)
+            return True
+        
+        from sqlalchemy.schema import Table
+        if isinstance(obj, Table):
+            raise NotImplementedError(
+                "using a table object, like %s, is not implemented.  perhaps "
+                "it should be.  for now you will have to pass in a mapper "
+                "instead" % obj)
+        
+        return False
     
     def sets(self):
         """yields FixtureSet for each row in SQLObject."""
@@ -155,16 +200,17 @@ class SqlAlchemyFixtureSet(FixtureSet):
             return None
             
         if foreign_key:
-            from sqlalchemy import clear_mapper
             from sqlalchemy.ext.assignmapper import assign_mapper
-            
-            # probably a *much* better way to create dynamic mappers...
-            class Object(object): 
-                pass
+            from sqlalchemy.ext.sqlsoup import class_for_table
                 
-            table = self.env.get_table(foreign_key.column.table)
-            assign_mapper(  self.session_context, Object, table )
-            rs = Object.get(value)
+            table = foreign_key.column.table
+            try:
+                MappedClass = self.env.get_mapped_class(table)
+            except LookupError:
+                # do we need to connect the session here??
+                MappedClass = class_for_table(table)
+            
+            rs = MappedClass.get(value)
             
             # rs = self.meta.engine.execute(
             #                 foreign_key.column.table.select(
@@ -173,9 +219,7 @@ class SqlAlchemyFixtureSet(FixtureSet):
             #                     foreign_key.column.name)), 
             #                         {foreign_key.column.name: value})
             subset = SqlAlchemyFixtureSet(
-                        rs, Object, self.session_context, self.env)
-            clear_mapper(Object.mapper)
-            del Object
+                        rs, MappedClass, self.session_context, self.env)
             return subset
             
         return value
