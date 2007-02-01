@@ -48,23 +48,26 @@ def setup_db(meta, session_context, **kw):
         sendkw = dict([(k,v) for k,v in localkw.items()])
         sendkw.update(kw)
         assign_mapper(session_context, obj, table, **sendkw)
-        table.create(meta.engine)
+        checkfirst=False
+        table.create(meta.engine, checkfirst=checkfirst)
+        # if checkfirst:
+        #     meta.engine.execute(table.delete(cascade=True))
     
-    session = session_context.current
     
     assign_and_create(Category, categories)
     assign_and_create(Product, products)
     assign_and_create(Offer, offers)
     
-    session.flush()
-    session.clear()
+    # session = session_context.current
+    # session.flush()
+    # session.clear()
 
 def teardown_db(meta, session_context):
-    assert sqlalchemy
+    import sqlalchemy
     meta.drop_all()
     
-    session = session_context.current
-    session.flush()
+    # session = session_context.current
+    # session.flush()
     
     sqlalchemy.orm.clear_mappers()
     

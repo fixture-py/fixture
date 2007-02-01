@@ -12,6 +12,9 @@ from warnings import warn
 from fixture.command.generate.template import templates, is_template
 handler_registry = []
 
+class NoData(LookupError):
+    """no data was returned by a query"""
+    pass
 class HandlerException(Exception):
     pass
 class UnrecognizedObject(HandlerException):
@@ -147,14 +150,20 @@ class FixtureGenerator(object):
         # got it???
         
         self.handler.begin()
-        def cache_set(s):        
-            self.cache.add(s)
-            for (k,v) in s.data_dict.items():
-                if isinstance(v, FixtureSet):
-                    f_set = v
-                    cache_set(f_set)
-        for s in self.handler.sets():
-            cache_set(s)
+        try:
+            def cache_set(s):        
+                self.cache.add(s)
+                for (k,v) in s.data_dict.items():
+                    if isinstance(v, FixtureSet):
+                        f_set = v
+                        cache_set(f_set)
+            for s in self.handler.sets():
+                cache_set(s)
+        except:
+            self.handler.rollback()
+            raise
+        else:
+            self.handler.commit()
         
         return self.code()
 
@@ -241,6 +250,10 @@ class DataHandler(object):
         """
         self.template.begin()
     
+    def commit(self):
+        """called after performing any action successfully."""
+        pass
+    
     def find(self, idval):
         """finds a record set based on key, idval."""
         raise NotImplementedError
@@ -292,6 +305,10 @@ class DataHandler(object):
                 fset.data_dict[k] = datadef.fset_to_attr(linked_fset, fxt_class)
                 
         return fset.data_dict
+    
+    def rollback(self):
+        """called after any action raises an exception."""
+        pass
         
     def sets(self):
         """yield a FixtureSet for each set in obj."""
@@ -350,14 +367,14 @@ def run_generator(argv=sys.argv[1:]):
     
     try:
         generate = FixtureGenerator(options)
-    except MisconfiguredHandler, e:
-        parser.error(e)
     
-    if is_template(options.template):
-        generate.template = options.template
-    else:
-        generate.template = templates.find(options.template)
-    return generate(object_path)
+        if is_template(options.template):
+            generate.template = options.template
+        else:
+            generate.template = templates.find(options.template)
+        return generate(object_path)
+    except (MisconfiguredHandler, NoData), e:
+        parser.error(e)
 
 def main():
     print( run_generator())

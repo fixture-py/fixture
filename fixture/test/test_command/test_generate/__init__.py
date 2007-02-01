@@ -1,5 +1,7 @@
 
+import sys
 import os
+from nose.tools import eq_
 from nose.exc import SkipTest
 from fixture.test import conf
 from fixture.command.generate import FixtureGenerator, run_generator
@@ -56,6 +58,27 @@ class GenerateTest(object):
         except:
             print code
             raise
+    
+    def test_query(self):
+        self.run_generator(['-q', "name = 'super cash back!'"])
+    
+    def test_query_no_data(self):
+        _stderr = sys.stderr
+        sys.stderr = sys.stdout
+        def wrong_exc(exc=None):
+            raise AssertionError("expected exit 2 %s" % (
+                    exc and ("(raised: %s: %s)" % (exc.__class__, exc)) or ""))
+        try:
+            try:
+                self.run_generator(['-q', "name = 'fooobzarius'"])
+            except SystemExit, e:
+                eq_(e.code, 2)
+            except Exception, e:
+                wrong_exc(e)
+            else:
+                wrong_exc()
+        finally:
+            sys.stderr = _stderr
             
 
 class UsingTesttoolsTemplate(object):

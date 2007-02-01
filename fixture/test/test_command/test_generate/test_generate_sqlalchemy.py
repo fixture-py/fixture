@@ -1,5 +1,6 @@
 
-from nose.tools import eq_
+import sys
+from nose.tools import eq_, raises
 from nose.exc import SkipTest
 from fixture.test import conf
 from fixture.test import env_supports
@@ -55,11 +56,10 @@ class SqlAlchemyGenerateTest(GenerateTest):
                 [env['categoriesData'], env['productsData'], env['offersData']])
         return data
     
-    def setUp(self):        
+    def setUp(self):
         setup_db(realmeta, realcontext)
         
         session = realcontext.current
-        # realmeta.engine.echo = 1
         
         parkas = Category(name="parkas", id=1)
         session.save(parkas)
@@ -81,12 +81,13 @@ class SqlAlchemyGenerateTest(GenerateTest):
     
     def tearDown(self):
         teardown_db(realmeta, realcontext)
+        realcontext.current.clear()
+        
         teardown_db(memmeta, memcontext)
-    
-    def test_query(self):
-        self.run_generator(['-q', "name = 'super cash back!'"])
+        memcontext.current.clear()
 
-class TestSomething(UsingFixtureTemplate, SqlAlchemyGenerateTest):
+class TestGenerateSqlAlchemyFixture(
+        UsingFixtureTemplate, SqlAlchemyGenerateTest):        
     def visit_loader(self, loader):
         loader.meta = realmeta
         loader.session_context = realcontext

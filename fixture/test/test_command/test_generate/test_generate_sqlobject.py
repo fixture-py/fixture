@@ -93,9 +93,6 @@ class SQLObjectGenerateTest(GenerateTest):
         sqlhub.processConnection = None
         teardown_db(realconn)
         teardown_db(memconn)
-    
-    def test_query(self):
-        self.run_generator(['-q', "name = 'super cash back!'"])
         
 class TestSQLObjectTesttools(UsingTesttoolsTemplate, SQLObjectGenerateTest):
     pass

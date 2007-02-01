@@ -1,7 +1,7 @@
 
 import sys
 from fixture.command.generate import (
-        DataHandler, register_handler, FixtureSet)
+        DataHandler, register_handler, FixtureSet, NoData)
 from fixture.loader import SqlAlchemyLoader
 try:
     import sqlalchemy
@@ -93,12 +93,20 @@ class SqlAlchemyHandler(DataHandler):
     
     loader_class = SqlAlchemyLoader
     
+    class ObjectAdapter(object):
+        """adapts a sqlalchemy data object for use in a SqlAlchemyFixtureSet."""
+        columns = None
+        def __init__(self, obj):
+            raise NotImplementedError("not a concrete implementation")
+    
     def __init__(self, *a,**kw):
         DataHandler.__init__(self, *a,**kw)
         if self.options.dsn:
             from sqlalchemy import BoundMetaData
             from sqlalchemy.ext.sessioncontext import SessionContext
             self.meta = BoundMetaData(self.options.dsn)
+            # self.meta.engine.echo = 1
+            # self.meta.engine.raw_connection().autocommit = 1
             self.session_context = SessionContext(
                 lambda: sqlalchemy.create_session(bind_to=self.meta.engine))
         else:
@@ -111,6 +119,27 @@ class SqlAlchemyHandler(DataHandler):
         name, mod = self.env[fset.model.mapper.mapped_table]
         self.template.add_import("from %s import %s" % (mod.__name__, name))  
     
+    def begin(self, *a,**kw):
+        DataHandler.begin(self, *a,**kw)
+        # how do I enter autocommit mode?
+        
+        self.engine = self.meta.engine
+        # conn = self.engine.raw_connection()
+        # conn.autocommit = 1
+        # conn.isolation_level = 1
+        # raise ValueError("can't get autocommit")
+        
+        # self.transaction = self.session_context.current.create_transaction()
+        # self.engine = self.transaction.session.bind_to
+    
+    def commit(self):
+        # self.transaction.commit()
+        pass
+    
+    def rollback(self):
+        # self.transaction.rollback()
+        pass
+    
     def find(self, idval):
         raise NotImplementedError
         # self.rs = [self.obj.get(idval)]
@@ -119,6 +148,8 @@ class SqlAlchemyHandler(DataHandler):
         """gets record set for query."""
         session = self.session_context.current
         self.rs = session.query(self.obj).select_whereclause(query)
+        if not len(self.rs):
+            raise NoData("no data for query \"%s\" on %s" % (query, self.obj))
     
     @staticmethod
     def recognizes(object_path, obj=None):
@@ -127,6 +158,26 @@ class SqlAlchemyHandler(DataHandler):
         if not sqlalchemy:
             raise UnsupportedHandler("sqlalchemy module not found")
         if obj is None:
+            return False
+        return True
+    
+    def sets(self):
+        """yields FixtureSet for each row in SQLObject."""
+        
+        for row in self.rs:
+            yield SqlAlchemyFixtureSet(row, self.ObjectAdapter(self.obj), 
+                                            self.engine, self.env)
+
+class SqlAlchemyMapperHandler(SqlAlchemyHandler):
+    
+    class ObjectAdapter(SqlAlchemyHandler.ObjectAdapter):
+        def __init__(self, obj):
+            self.mapped_class = obj
+            self.columns = self.mapped_class.mapper.columns
+            
+    @staticmethod
+    def recognizes(object_path, obj=None):
+        if not SqlAlchemyHandler.recognizes(object_path, obj=obj):
             return False
         
         def isa_mapper(mapper):
@@ -148,6 +199,22 @@ class SqlAlchemyHandler(DataHandler):
             # i.e. has been used in a session (is this likely?)
             return True
         
+        return False
+        
+register_handler(SqlAlchemyMapperHandler)
+
+class SqlAlchemyTableHandler(SqlAlchemyHandler):
+    
+    class ObjectAdapter(SqlAlchemyHandler.ObjectAdapter):
+        def __init__(self, obj):
+            self.table = obj
+            self.columns = self.table.columns
+            
+    @staticmethod
+    def recognizes(object_path, obj=None):
+        if not SqlAlchemyHandler.recognizes(object_path, obj=obj):
+            return False
+        
         from sqlalchemy.schema import Table
         if isinstance(obj, Table):
             raise NotImplementedError(
@@ -156,29 +223,24 @@ class SqlAlchemyHandler(DataHandler):
                 "instead" % obj)
         
         return False
-    
-    def sets(self):
-        """yields FixtureSet for each row in SQLObject."""
         
-        for row in self.rs:
-            yield SqlAlchemyFixtureSet(row, self.obj, 
-                                        self.session_context, self.env)
-            
-register_handler(SqlAlchemyHandler)
+register_handler(SqlAlchemyTableHandler)
 
 
 class SqlAlchemyFixtureSet(FixtureSet):
     """a fixture set for a sqlalchemy record set."""
     
-    def __init__(self, data, model, session_context, env):
+    def __init__(self, data, obj, engine, env):
+        # print data, model
         FixtureSet.__init__(self, data)
         self.env = env
-        self.session_context = session_context
-        self.model = model
+        # self.session_context = session_context
+        self.engine = engine
+        self.obj = obj
         self.primary_key = None
         
         self.data_dict = {}
-        for col in self.model.mapper.columns:
+        for col in self.obj.columns:
             sendkw = {}
             if col.foreign_key:
                 sendkw['foreign_key'] = col.foreign_key
@@ -203,14 +265,14 @@ class SqlAlchemyFixtureSet(FixtureSet):
             from sqlalchemy.ext.assignmapper import assign_mapper
             from sqlalchemy.ext.sqlsoup import class_for_table
                 
-            table = foreign_key.column.table
-            try:
-                MappedClass = self.env.get_mapped_class(table)
-            except LookupError:
-                # do we need to connect the session here??
-                MappedClass = class_for_table(table)
-            
-            rs = MappedClass.get(value)
+            # this gets the existing table object, so the name is correct
+            table = self.env.get_table(foreign_key.column.table)
+            # engine = self.session_context.current.bind_to
+            raise ValueError(
+                "gonna deadlock because %s is not in autocommit "
+                "or a managed transaction")
+            stmt = table.select(getattr(table.c, foreign_key.column.key)==value)
+            rs = self.engine.execute(stmt)
             
             # rs = self.meta.engine.execute(
             #                 foreign_key.column.table.select(
@@ -219,7 +281,7 @@ class SqlAlchemyFixtureSet(FixtureSet):
             #                     foreign_key.column.name)), 
             #                         {foreign_key.column.name: value})
             subset = SqlAlchemyFixtureSet(
-                        rs, MappedClass, self.session_context, self.env)
+                        rs, table, self.engine, self.env)
             return subset
             
         return value

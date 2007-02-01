@@ -5,7 +5,7 @@ from fixture.style import camel_to_under
 from fixture.loader import SQLObjectLoader
 from fixture.command.generate import (
     DataHandler, FixtureSet, register_handler, code_str, 
-    UnsupportedHandler, MisconfiguredHandler, )
+    UnsupportedHandler, MisconfiguredHandler, NoData )
             
 try:
     import sqlobject
@@ -43,6 +43,9 @@ class SQLObjectHandler(DataHandler):
     def findall(self, query):
         """gets record set for query."""        
         self.rs = self.obj.select(query, connection=self.connection)
+        if not self.rs.count():
+            raise NoData("no data for query \"%s\" on object %s" % (
+                                                        query, self.obj))
     
     def fxt_type(self):
         return 'SOFixture'
