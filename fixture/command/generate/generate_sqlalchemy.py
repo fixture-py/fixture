@@ -102,11 +102,10 @@ class SqlAlchemyHandler(DataHandler):
     def __init__(self, *a,**kw):
         DataHandler.__init__(self, *a,**kw)
         if self.options.dsn:
-            from sqlalchemy import BoundMetaData
+            from sqlalchemy import BoundMetaData, create_engine
             from sqlalchemy.ext.sessioncontext import SessionContext
             self.meta = BoundMetaData(self.options.dsn)
-            # self.meta.engine.echo = 1
-            # self.meta.engine.raw_connection().autocommit = 1
+            self.connection = self.meta.engine.connect()
             self.session_context = SessionContext(
                 lambda: sqlalchemy.create_session(bind_to=self.meta.engine))
         else:
@@ -123,22 +122,21 @@ class SqlAlchemyHandler(DataHandler):
         DataHandler.begin(self, *a,**kw)
         # how do I enter autocommit mode?
         
-        self.engine = self.meta.engine
+        # self.engine = self.meta.engine
         # conn = self.engine.raw_connection()
         # conn.autocommit = 1
         # conn.isolation_level = 1
         # raise ValueError("can't get autocommit")
         
-        # self.transaction = self.session_context.current.create_transaction()
+        self.transaction = self.session_context.current.create_transaction()
+        self.transaction.add(self.connection)
         # self.engine = self.transaction.session.bind_to
     
     def commit(self):
-        # self.transaction.commit()
-        pass
+        self.transaction.commit()
     
     def rollback(self):
-        # self.transaction.rollback()
-        pass
+        self.transaction.rollback()
     
     def find(self, idval):
         raise NotImplementedError
@@ -166,7 +164,7 @@ class SqlAlchemyHandler(DataHandler):
         
         for row in self.rs:
             yield SqlAlchemyFixtureSet(row, self.ObjectAdapter(self.obj), 
-                                            self.engine, self.env)
+                                            self.connection, self.env)
 
 class SqlAlchemyMapperHandler(SqlAlchemyHandler):
     
@@ -230,12 +228,12 @@ register_handler(SqlAlchemyTableHandler)
 class SqlAlchemyFixtureSet(FixtureSet):
     """a fixture set for a sqlalchemy record set."""
     
-    def __init__(self, data, obj, engine, env):
+    def __init__(self, data, obj, connection, env):
         # print data, model
         FixtureSet.__init__(self, data)
         self.env = env
         # self.session_context = session_context
-        self.engine = engine
+        self.connection = connection
         self.obj = obj
         self.primary_key = None
         
@@ -268,11 +266,11 @@ class SqlAlchemyFixtureSet(FixtureSet):
             # this gets the existing table object, so the name is correct
             table = self.env.get_table(foreign_key.column.table)
             # engine = self.session_context.current.bind_to
-            raise ValueError(
-                "gonna deadlock because %s is not in autocommit "
-                "or a managed transaction")
+            # raise ValueError(
+            #     "gonna deadlock because %s is not in autocommit "
+            #     "or a managed transaction")
             stmt = table.select(getattr(table.c, foreign_key.column.key)==value)
-            rs = self.engine.execute(stmt)
+            rs = self.connection.execute(stmt)
             
             # rs = self.meta.engine.execute(
             #                 foreign_key.column.table.select(
@@ -281,7 +279,7 @@ class SqlAlchemyFixtureSet(FixtureSet):
             #                     foreign_key.column.name)), 
             #                         {foreign_key.column.name: value})
             subset = SqlAlchemyFixtureSet(
-                        rs, table, self.engine, self.env)
+                        rs, table, self.connection, self.env)
             return subset
             
         return value
