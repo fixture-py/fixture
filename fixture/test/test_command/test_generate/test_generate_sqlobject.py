@@ -28,21 +28,6 @@ class SQLObjectGenerateTest(GenerateTest):
         "fixture.examples.db.sqlobject_examples.Offer", 
         "--dsn", str(conf.POSTGRES_DSN) ]
     
-    def assert_env_is_clean(self):
-        # sanity check :
-        assert Product.select(connection=realconn).count()
-        assert not Product.select(connection=memconn).count()
-    
-    def assert_env_generated_ok(self, e):
-        CategoryData = e['CategoryData']
-        ProductData = e['ProductData']
-        OfferData = e['OfferData']
-
-        # another sanity check, wipe out the source data
-        Offer.clearTable(connection=realconn)
-        Product.clearTable(connection=realconn)
-        Category.clearTable(connection=realconn)
-    
     def assert_data_loaded(self, fxt):
         rs =  Category.select()
         eq_(rs.count(), 2)
@@ -63,6 +48,21 @@ class SQLObjectGenerateTest(GenerateTest):
         # got resolved correctly :
         eq_(Category.get(fxt.product_1.category_id),   parkas)
         eq_(Category.get(fxt.offer_1.category_id),     rebates)
+    
+    def assert_env_is_clean(self):
+        # sanity check :
+        assert Product.select(connection=realconn).count()
+        assert not Product.select(connection=memconn).count()
+    
+    def assert_env_generated_ok(self, e):
+        CategoryData = e['CategoryData']
+        ProductData = e['ProductData']
+        OfferData = e['OfferData']
+
+        # another sanity check, wipe out the source data
+        Offer.clearTable(connection=realconn)
+        Product.clearTable(connection=realconn)
+        Category.clearTable(connection=realconn)
     
     def load_datasets(self, module, conn, datasets):
         raise NotImplementedError

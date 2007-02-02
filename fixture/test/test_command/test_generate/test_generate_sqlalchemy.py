@@ -7,7 +7,8 @@ from fixture.test import env_supports
 from fixture.test.test_command.test_generate import (
             GenerateTest, UsingTesttoolsTemplate, UsingFixtureTemplate)
 from fixture.examples.db.sqlalchemy_examples import (
-            Category, Product, Offer, setup_db, teardown_db)
+            Category, Product, Offer, setup_db, teardown_db,
+            categories, products, offers )
 
 realmeta = None
 realcontext = None
@@ -35,6 +36,34 @@ class SqlAlchemyGenerateTest(GenerateTest):
     args = [
         "fixture.examples.db.sqlalchemy_examples.Offer", 
         "--dsn", str(conf.POSTGRES_DSN) ]
+    
+    def assert_data_loaded(self, fxt):
+        session = memcontext.current
+        conn = session.bind_to.connect()
+        
+        rs = [r for r in conn.execute(categories.select())]
+        eq_(len(rs), 2)
+        parkas = rs[0]
+        rebates = rs[1]
+        eq_(parkas.name, "parkas")
+        eq_(rebates.name, "rebates")
+        
+        rs = [r for r in conn.execute(products.select())]
+        eq_(len(rs), 1)
+        eq_(rs[0].name, "jersey")
+
+        rs = [r for r in conn.execute(offers.select())]
+        eq_(len(rs), 1)
+        eq_(rs[0].name, "super cash back!")
+        
+        # note that here we test that colliding fixture key links 
+        # got resolved correctly :
+        def get(table, id):
+            c = conn.execute(table.select(table.c.id==id))
+            return c.fetchone()
+            
+        eq_(get(categories, fxt.products_1.category_id), parkas )
+        eq_(get(categories, fxt.offers_1.category_id), rebates )
     
     def assert_env_is_clean(self):
         # sanity check :
