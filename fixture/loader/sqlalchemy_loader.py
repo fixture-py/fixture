@@ -34,11 +34,11 @@ class TableMedium(DatabaseLoader.StorageMediumAdapter):
         for k in table.primary_key:
             id = getattr(table.c, k.key)
             stmt = table.delete(id==primary_key[i])
-            c = self.engine.execute(stmt)
+            c = self.connection.execute(stmt)
             i+=1
     
     def visit_loader(self, loader):
-        self.engine = loader.session.bind_to
+        self.connection = loader.connection
         
     def save(self, row):
         from sqlalchemy.schema import Table
@@ -47,7 +47,8 @@ class TableMedium(DatabaseLoader.StorageMediumAdapter):
                 "medium %s must be a Table instance" % self.medium)
                 
         stmt = self.medium.insert()
-        c = self.engine.execute(stmt, row)
+        c = self.connection.execute(stmt, 
+                                    dict([(k,v) for k,v in row.iteritems()]))
         primary_key = c.last_inserted_ids()
         if primary_key is None:
             raise NotImplementedError(
@@ -96,6 +97,7 @@ class SqlAlchemyLoader(DatabaseLoader):
             self.session_context = SessionContext(sqlalchemy.create_session)
         
         self.session = self.session_context.current
+        self.connection = self.session.bind_to.connect()
         
         DatabaseLoader.begin(self, unloading=unloading)
     
@@ -105,6 +107,7 @@ class SqlAlchemyLoader(DatabaseLoader):
     
     def create_transaction(self):
         transaction = self.session.create_transaction()
+        transaction.add(self.connection)
         return transaction
     
     def rollback(self):

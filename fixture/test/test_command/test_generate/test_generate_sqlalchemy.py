@@ -89,6 +89,6 @@ class SqlAlchemyGenerateTest(GenerateTest):
 class TestGenerateSqlAlchemyFixture(
         UsingFixtureTemplate, SqlAlchemyGenerateTest):        
     def visit_loader(self, loader):
-        loader.meta = realmeta
-        loader.session_context = realcontext
+        loader.meta = memmeta
+        loader.session_context = memcontext
         

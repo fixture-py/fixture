@@ -58,34 +58,8 @@ class TableEnv(object):
                 self.tablemap.setdefault(o, {})
                 self.tablemap[o]['name'] = name
                 self.tablemap[o]['module'] = module
-                # for k in mapper_registry:
-                #     print k, mapper_registry[k]
-                # self.tablemap[o]['mapped_class'] = object_mapper(o)
-                
-                ## whoa?? how else can I find an existing mapper for a table?
-                
-            # if has_mapper(o):
-            #     mapper = class_mapper(o, entity_name=o._entity_name)
-            #     if not hasattr(mapper, local_table):
-            #         raise NotImplementedError(
-            #             "not sure how to handle a mapper like %s that does not "
-            #             "contain a local_table" % mapper)
-            #     t = mapper.local_table
-            #     self.tablemap.setdefault(t, {})
-            #     self.tablemap[t]['mapped_class'] = o
     
-    # def get_mapped_class(self, table):
-    #     try:
-    #         return self[table]['mapped_class']
-    #     except KeyError:
-    #         # fixme: repr the env here...
-    #         raise LookupError(
-    #             "no mapped class found for table %s in env" % (table))
-    
-    def get_name(self, table):
-        return self[table]['name']
-    
-    def get_table(self, table):
+    def get_real_table(self, table):
         return getattr(self[table]['module'], self[table]['name'])
 
 class SqlAlchemyHandler(DataHandler):
@@ -98,6 +72,9 @@ class SqlAlchemyHandler(DataHandler):
         columns = None
         def __init__(self, obj):
             raise NotImplementedError("not a concrete implementation")
+            
+        def primary_key_from_instance(self, data):
+            raise NotImplementedError
     
     def __init__(self, *a,**kw):
         DataHandler.__init__(self, *a,**kw)
@@ -114,23 +91,15 @@ class SqlAlchemyHandler(DataHandler):
         
         self.env = TableEnv(*[self.obj.__module__] + self.options.env)
     
-    def add_fixture_set(self, fset):        
-        name, mod = self.env[fset.model.mapper.mapped_table]
-        self.template.add_import("from %s import %s" % (mod.__name__, name))  
+    def add_fixture_set(self, fset):
+        t = self.env[fset.obj.table]
+        self.template.add_import("from %s import %s" % (
+                                        t['module'].__name__, t['name']))  
     
     def begin(self, *a,**kw):
         DataHandler.begin(self, *a,**kw)
-        # how do I enter autocommit mode?
-        
-        # self.engine = self.meta.engine
-        # conn = self.engine.raw_connection()
-        # conn.autocommit = 1
-        # conn.isolation_level = 1
-        # raise ValueError("can't get autocommit")
-        
         self.transaction = self.session_context.current.create_transaction()
         self.transaction.add(self.connection)
-        # self.engine = self.transaction.session.bind_to
     
     def commit(self):
         self.transaction.commit()
@@ -163,15 +132,28 @@ class SqlAlchemyHandler(DataHandler):
         """yields FixtureSet for each row in SQLObject."""
         
         for row in self.rs:
-            yield SqlAlchemyFixtureSet(row, self.ObjectAdapter(self.obj), 
-                                            self.connection, self.env)
+            yield SqlAlchemyFixtureSet(row, self.obj, self.connection, self.env,
+                                            adapter=self.ObjectAdapter)
 
-class SqlAlchemyMapperHandler(SqlAlchemyHandler):
+class SqlAlchemyMappedHandler(SqlAlchemyHandler):
     
     class ObjectAdapter(SqlAlchemyHandler.ObjectAdapter):
         def __init__(self, obj):
             self.mapped_class = obj
+            
+            if self.mapped_class.mapper.local_table:
+                self.table = self.mapped_class.mapper.local_table
+            elif self.mapped_class.mapper.select_table:
+                self.table = self.mapped_class.mapper.select_table
+            else:
+                raise LookupError(
+                    "not sure how to get a table from mapped calss %s" % 
+                                                        self.mapped_class)
             self.columns = self.mapped_class.mapper.columns
+            self.id_attr = self.mapped_class.id.key
+            
+        def primary_key_from_instance(self, data):
+            return self.mapped_class.mapper.primary_key_from_instance(data)
             
     @staticmethod
     def recognizes(object_path, obj=None):
@@ -199,7 +181,7 @@ class SqlAlchemyMapperHandler(SqlAlchemyHandler):
         
         return False
         
-register_handler(SqlAlchemyMapperHandler)
+register_handler(SqlAlchemyMappedHandler)
 
 class SqlAlchemyTableHandler(SqlAlchemyHandler):
     
@@ -207,6 +189,16 @@ class SqlAlchemyTableHandler(SqlAlchemyHandler):
         def __init__(self, obj):
             self.table = obj
             self.columns = self.table.columns
+            keys = [k for k in self.table.primary_key]
+            if len(keys) != 1:
+                raise ValueError("unsupported primary key type %s" % keys)
+            self.id_attr = keys[0].key
+        
+        def primary_key_from_instance(self, data):
+            key_str = []
+            for k in self.table.primary_key:
+                key_str.append(str(getattr(data, k.key)))
+            return "_".join(key_str)
             
     @staticmethod
     def recognizes(object_path, obj=None):
@@ -228,13 +220,15 @@ register_handler(SqlAlchemyTableHandler)
 class SqlAlchemyFixtureSet(FixtureSet):
     """a fixture set for a sqlalchemy record set."""
     
-    def __init__(self, data, obj, connection, env):
+    def __init__(self, data, obj, connection, env, adapter=None):
         # print data, model
         FixtureSet.__init__(self, data)
         self.env = env
-        # self.session_context = session_context
         self.connection = connection
-        self.obj = obj
+        if adapter:
+            self.obj = adapter(obj)
+        else:
+            self.obj = obj
         self.primary_key = None
         
         self.data_dict = {}
@@ -263,34 +257,26 @@ class SqlAlchemyFixtureSet(FixtureSet):
             from sqlalchemy.ext.assignmapper import assign_mapper
             from sqlalchemy.ext.sqlsoup import class_for_table
                 
-            # this gets the existing table object, so the name is correct
-            table = self.env.get_table(foreign_key.column.table)
-            # engine = self.session_context.current.bind_to
-            # raise ValueError(
-            #     "gonna deadlock because %s is not in autocommit "
-            #     "or a managed transaction")
+            table = foreign_key.column.table
             stmt = table.select(getattr(table.c, foreign_key.column.key)==value)
             rs = self.connection.execute(stmt)
             
-            # rs = self.meta.engine.execute(
-            #                 foreign_key.column.table.select(
-            #                     "%s = %%(%s)s" % (
-            #                     foreign_key.column.name, 
-            #                     foreign_key.column.name)), 
-            #                         {foreign_key.column.name: value})
+            # adapter is always table adapter here, since that's
+            # how we obtain foreign keys...
             subset = SqlAlchemyFixtureSet(
-                        rs, table, self.connection, self.env)
+                        rs.fetchone(), table, self.connection, self.env,
+                        adapter=SqlAlchemyTableHandler.ObjectAdapter)
             return subset
             
         return value
     
     def get_id_attr(self):
-        return self.model.id.key
+        return self.obj.id_attr
     
     def obj_id(self):
-        return self.env.get_name(self.model.mapper.mapped_table)
+        return self.env[self.obj.table]['name']
     
     def set_id(self):
         """returns id of this set (the primary key value)."""
-        compid = self.model.mapper.primary_key_from_instance(self.data)
+        compid = self.obj.primary_key_from_instance(self.data)
         return "_".join([str(i) for i in compid])

@@ -6,6 +6,9 @@ from fixture.style import NamedDataStyle
 class Loader(object):
     """knows how to load and unload a DataSet.
     """
+    class LoadError(Exception):
+        pass
+        
     style = NamedDataStyle()
     
     class StorageMediumAdapter(object):
@@ -130,11 +133,11 @@ class Loader(object):
             try:
                 obj = ds.meta.storage_medium.save(row)
                 ds.meta.stored_objects.append(obj)
-            except:
+            except Exception, e:
                 etype, val, tb = sys.exc_info()
-                raise etype, (
-                        "%s (while saving '%s' of %s, %s)" % (
-                                                val, key, ds, row)), tb
+                raise self.LoadError(
+                        "%s: %s (while saving '%s' of %s, %s)" % (
+                                etype.__name__, val, key, ds, row)), None, tb
                                                 
         self.loaded.register(ds)
     

@@ -40,6 +40,9 @@ class DataContainer(object):
                 self.__class__.__name__,
                 hex(id(self)), keys)
     
+    def get(self, k, default=None):
+        return self.meta.data.get(k, default)
+    
     def _setdata(self, key, value):
         if key not in self.meta.data:
             self.meta.keys.append(key)
@@ -49,6 +52,7 @@ class DataRow(DataContainer):
     """a key/attribute accessible dictionary."""
     class Meta(DataContainer.Meta):
         pass
+    
     def __init__(self, data):
         DataContainer.__init__(self, data=data, keys=[k for k in data])
     
@@ -56,8 +60,12 @@ class DataRow(DataContainer):
         for k in self.meta.data:
             yield k
     
-    def items(self):
+    def iteritems(self):
         for k,v in self.meta.data.items():
+            yield (k,v)
+    
+    def items(self):
+        for k,v in self.iteritems():
             yield (k,v)
 
 class DataSetContainer(object):
