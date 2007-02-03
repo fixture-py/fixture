@@ -1,5 +1,5 @@
 
-"""fixture components."""
+"""base fixture components."""
 
 from nose.util import is_generator
 from nose.tools import with_setup

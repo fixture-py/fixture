@@ -1,6 +1,6 @@
 
 import sys
-from fixture.components import Fixture
+from fixture.base import Fixture
 from fixture.util import ObjRegistry
 from fixture.style import NamedDataStyle
 

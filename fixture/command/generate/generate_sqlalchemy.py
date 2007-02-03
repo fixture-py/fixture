@@ -2,7 +2,7 @@
 import sys
 from fixture.command.generate import (
         DataHandler, register_handler, FixtureSet, NoData)
-from fixture.loader import SQLAlchemyFixture
+from fixture import SQLAlchemyFixture
 try:
     import sqlalchemy
 except ImportError:

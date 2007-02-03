@@ -1,4 +1,4 @@
 
-from fixture.loader.loader import *
-from fixture.loader.sqlobject_loader import *
-from fixture.loader.sqlalchemy_loader import *
+from loadable import *
+from sqlalchemy_loadable import SQLAlchemyFixture
+from sqlobject_loadable import SQLObjectFixture

@@ -1,5 +1,5 @@
 
-from fixture.loader import DBLoadableFixture
+from fixture.loadable import DBLoadableFixture
 
 def negotiated_medium(obj, dataset):
     if is_assigned_mapper(obj):

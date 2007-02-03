@@ -35,8 +35,8 @@ easy_install fixture
 
 __version__ = "1.0"
 
-from fixture.loader.sqlalchemy_loader import SQLAlchemyFixture
-from fixture.loader.sqlobject_loader import SQLObjectFixture
+from fixture.loadable import SQLAlchemyFixture
+from fixture.loadable import SQLObjectFixture
 from dataset import DataSet
 
 

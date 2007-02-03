@@ -4,12 +4,12 @@ from nose.tools import raises, eq_
 from nose.exc import SkipTest
 import unittest
 from fixture import DataSet
-from fixture.loader import LoadableFixture
+from fixture.loadable import LoadableFixture
 from fixture.test import env_supports
 
 
 class LoaderTest:
-    """tests the behavior of fixture.loader.LoadableFixture object.
+    """tests the behavior of fixture.loadable.LoadableFixture object.
     
     to test combinations of loaders and datasets, implement this base tester.
     """

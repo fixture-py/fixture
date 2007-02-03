@@ -2,7 +2,7 @@
 """support to generate SQLObject-based fixtures."""
 
 from fixture.style import camel_to_under
-from fixture.loader import SQLObjectFixture
+from fixture import SQLObjectFixture
 from fixture.command.generate import (
     DataHandler, FixtureSet, register_handler, code_str, 
     UnsupportedHandler, MisconfiguredHandler, NoData )

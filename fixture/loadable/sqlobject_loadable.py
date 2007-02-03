@@ -1,5 +1,5 @@
 
-from fixture.loader import DBLoadableFixture
+from fixture.loadable import DBLoadableFixture
 
 class SQLObjectFixture(DBLoadableFixture):
             

@@ -3,10 +3,10 @@ from nose.tools import eq_
 from nose.exc import SkipTest
 from fixture import SQLAlchemyFixture
 from fixture.dataset import MergedSuperSet
-from fixture.loader import SQLAlchemyFixture
+from fixture import SQLAlchemyFixture
 from fixture.style import NamedDataStyle, CamelAndUndersStyle
 from fixture.test import conf, env_supports
-from fixture.test.test_loader import *
+from fixture.test.test_loadable import *
 from fixture.examples.db.sqlalchemy_examples import *
     
 def setup():
