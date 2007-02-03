@@ -1,9 +1,52 @@
 
-from fixture.loader import DatabaseLoader
+from fixture.loader import DBLoadableFixture
 
-class AssignedMapperMedium(DatabaseLoader.StorageMediumAdapter):
+def negotiated_medium(obj, dataset):
+    if is_assigned_mapper(obj):
+        return AssignedMapperMedium(obj, dataset)
+    elif is_table(obj):
+        return TableMedium(obj, dataset)
+    else:
+        raise NotImplementedError("object %s is not supported by %s" % (
+                                                    obj, SQLAlchemyFixture))
+
+class SQLAlchemyFixture(DBLoadableFixture):            
+    Medium = staticmethod(negotiated_medium)
+    
+    def __init__(self,  style=None, dsn=None, medium=None, 
+                        env=None, session_context=None, dataclass=None):
+        DBLoadableFixture.__init__(self,   style=style, dsn=dsn, 
+                                    env=env, medium=medium, dataclass=dataclass)
+        self.session_context = session_context
+        self.session = None
+    
+    def begin(self, unloading=False):
+        
+        if self.session_context is None:            
+            import sqlalchemy
+            from sqlalchemy.ext.sessioncontext import SessionContext
+            self.session_context = SessionContext(sqlalchemy.create_session)
+        
+        self.session = self.session_context.current
+        self.connection = self.session.bind_to.connect()
+        
+        DBLoadableFixture.begin(self, unloading=unloading)
+    
+    def commit(self):
+        self.session.flush()
+        DBLoadableFixture.commit(self)
+    
+    def create_transaction(self):
+        transaction = self.session.create_transaction()
+        transaction.add(self.connection)
+        return transaction
+    
+    def rollback(self):
+        DBLoadableFixture.rollback(self)
+
+class AssignedMapperMedium(DBLoadableFixture.StorageMediumAdapter):
     def __init__(self, *a,**kw):
-        DatabaseLoader.StorageMediumAdapter.__init__(self, *a,**kw)
+        DBLoadableFixture.StorageMediumAdapter.__init__(self, *a,**kw)
         
     def clear(self, obj):
         self.session.delete(obj)
@@ -24,9 +67,9 @@ class AssignedMapperMedium(DatabaseLoader.StorageMediumAdapter):
         self.session.flush()
         return obj
         
-class TableMedium(DatabaseLoader.StorageMediumAdapter):
+class TableMedium(DBLoadableFixture.StorageMediumAdapter):
     def __init__(self, *a,**kw):
-        DatabaseLoader.StorageMediumAdapter.__init__(self, *a,**kw)
+        DBLoadableFixture.StorageMediumAdapter.__init__(self, *a,**kw)
         
     def clear(self, obj):
         table, primary_key = obj
@@ -69,46 +112,3 @@ def is_assigned_mapper(obj):
 def is_table(obj):
     from sqlalchemy.schema import Table
     return isinstance(obj, Table)
-
-def negotiated_medium(obj, dataset):
-    if is_assigned_mapper(obj):
-        return AssignedMapperMedium(obj, dataset)
-    elif is_table(obj):
-        return TableMedium(obj, dataset)
-    else:
-        raise NotImplementedError("object %s is not supported by %s" % (
-                                                    obj, SqlAlchemyLoader))
-
-class SqlAlchemyLoader(DatabaseLoader):            
-    Medium = staticmethod(negotiated_medium)
-    
-    def __init__(self,  style=None, dsn=None, medium=None, 
-                        env=None, session_context=None):
-        DatabaseLoader.__init__(self,   style=style, dsn=dsn, 
-                                        env=env, medium=medium)
-        self.session_context = session_context
-        self.session = None
-    
-    def begin(self, unloading=False):
-        
-        if self.session_context is None:            
-            import sqlalchemy
-            from sqlalchemy.ext.sessioncontext import SessionContext
-            self.session_context = SessionContext(sqlalchemy.create_session)
-        
-        self.session = self.session_context.current
-        self.connection = self.session.bind_to.connect()
-        
-        DatabaseLoader.begin(self, unloading=unloading)
-    
-    def commit(self):
-        self.session.flush()
-        DatabaseLoader.commit(self)
-    
-    def create_transaction(self):
-        transaction = self.session.create_transaction()
-        transaction.add(self.connection)
-        return transaction
-    
-    def rollback(self):
-        DatabaseLoader.rollback(self)

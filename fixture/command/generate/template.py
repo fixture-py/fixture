@@ -110,34 +110,31 @@ class fixture(Template):
     
     fixture = """
 class %(fxt_class)s(DataSet):
-    class Meta(MetaBase):
+    class Meta(DataSet.Meta):
         %(meta)s
     def data(self):
         %(data_header)s\
         return %(data)s"""
     
-    metabase = """
-class MetaBase(DataSet.Meta):
-    refclass = MergedSuperSet"""
+    metabase = ""
     
     def begin(self):
         self.add_import('import datetime')
-        self.add_import("from fixture import DataSet, Fixture")
+        self.add_import("from fixture import DataSet")
         self.add_import("from fixture.dataset import MergedSuperSet")
         self.add_import("from fixture.style import NamedDataStyle")
     
     def header(self, handler):
-        loader_class = handler.loader_class
-        self.add_import("from %s import %s" % (
-                            loader_class.__module__, loader_class.__name__))
+        loadable_fxt_class = handler.loadable_fxt_class
+        self.add_import("from fixture import %s" % (
+                                        loadable_fxt_class.__name__))
         return "\n".join([
             """
-fixture = Fixture(  
-            loader = %s(
-                        env = globals(),
-                        style = NamedDataStyle()),
+fixture = %s(  
+            env = globals(),
+            style = NamedDataStyle(),
             dataclass = MergedSuperSet)""" % (
-                                loader_class.__name__),
+                                loadable_fxt_class.__name__),
             Template.header(self, handler)])
 
 templates.register(fixture(), default=True)

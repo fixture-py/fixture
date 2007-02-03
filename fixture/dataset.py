@@ -163,6 +163,12 @@ class MergedSuperSet(SuperSet):
 class DataSet(DataContainer):
     """a set of row objects.
     
+    Keyword Arguments
+    -----------------
+    - default_refclass
+      
+      - a SuperSet to use if None has already been specified in Meta
+    
     a loader will typically want to load a dataset into a 
     single storage medium.  I.E. a table in a database.
     
@@ -187,16 +193,16 @@ class DataSet(DataContainer):
     """
     ref = None
     class Meta(DataContainer.Meta):
+        row = DataRow
+        refclass = None
         loader = None
         storage = None
         storage_medium = None
         stored_objects = []
         requires = []
         references = []
-        row = DataRow
-        refclass = SuperSet
     
-    def __init__(self):
+    def __init__(self, default_refclass=None):
         DataContainer.__init__(self)
         
         # we want the convenience of not having to 
@@ -209,9 +215,17 @@ class DataSet(DataContainer):
         
         self.meta.stored_objects = []
         
+        if not self.meta.refclass:
+            if default_refclass:
+                self.meta.refclass = default_refclass
+            else:
+                self.meta.refclass = SuperSet
+                
         self.ref = self.meta.refclass(*(
-            [s() for s in iter(self.meta.requires)] + 
-            [s() for s in iter(self.meta.references)] ))
+            [ds(default_refclass=default_refclass) \
+                for ds in iter(self.meta.requires)] + 
+            [ds(default_refclass=default_refclass) \
+                for ds in iter(self.meta.references)] ))
         
         for key, data in self.data():
             if hasattr(self, key):

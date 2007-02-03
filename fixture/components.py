@@ -6,7 +6,7 @@ from nose.tools import with_setup
 try:
     from functools import wraps
 except ImportError:
-    # this is a limited set of what we need to do
+    # for python < 2.5... this is a limited set of what we need to do
     # with a wrapped function :
     def wraps(f):
         def wrap_with_f(new_f):
@@ -19,15 +19,17 @@ except ImportError:
 from fixture.dataset import SuperSet
 
 class Fixture(object):
-    """defines an environment for loading data.
+    """Defines an environment for loading data.
     
     An instance of this class can safely be a module-level object.
+    It may be more useful to use a concrete LoadableFixture, such as
+    SQLAlchemyFixture
     
     Keywords
     --------
     - dataclass
       
-      - class to instantiate with datasets.  Default is fixture.dataset.SuperSet
+      - class to instantiate with datasets (defaults to SuperSet)
     
     - loader
       
@@ -61,15 +63,19 @@ class Fixture(object):
             return self.data[name]
     
         def setup(self):
-            self.data = self.dataclass(*[d() for d in iter(self.datasets)])
+            self.data = self.dataclass(*[
+                            ds( default_refclass=self.dataclass ) \
+                            for ds in iter(self.datasets)])
             self.loader.load(self.data)
     
         def teardown(self):
             self.loader.unload()
                 
-    def __init__(self, **attr):
-        for k,v in attr.items():
-            setattr(self, k, v)
+    def __init__(self, dataclass=None, loader=None):
+        if dataclass:
+            self.dataclass = dataclass
+        if loader:
+            self.loader = loader
     
     def __iter__(self):
         for k in self.__dict__:

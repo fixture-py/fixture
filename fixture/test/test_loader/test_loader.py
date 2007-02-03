@@ -4,12 +4,12 @@ from nose.tools import raises, eq_
 from nose.exc import SkipTest
 import unittest
 from fixture import DataSet
-from fixture.loader import Loader
+from fixture.loader import LoadableFixture
 from fixture.test import env_supports
 
 
 class LoaderTest:
-    """tests the behavior of fixture.loader.Loader object.
+    """tests the behavior of fixture.loader.LoadableFixture object.
     
     to test combinations of loaders and datasets, implement this base tester.
     """
@@ -125,7 +125,7 @@ class HavingOfferProductData:
                 return (('truck', dict(
                             id=1, 
                             name='truck', 
-                            category_id=self.ref.CategoryData.cars.id)),)
+                            category_id=self.ref.cars.id)),)
         
         class OfferData(DataSet):
             class Meta:
@@ -136,9 +136,9 @@ class HavingOfferProductData:
                     ('free_truck', dict(
                             id=1, 
                             name=('free truck by %s' % 
-                                    self.ref.WidgetData.just_some_widget.type),
-                            product_id=self.ref.ProductData.truck.id,
-                            category_id=self.ref.CategoryData.free_stuff.id)),
+                                    self.ref.just_some_widget.type),
+                            product_id=self.ref.truck.id,
+                            category_id=self.ref.free_stuff.id)),
                 )
         return [OfferData, ProductData]
         
@@ -164,7 +164,7 @@ class LoaderPartialRecoveryTest(HavingOfferProductData):
     
     def test_with_data_iterruption(self):
         """test @fixture.with_data interruption"""
-        @raises(Loader.StorageMediaNotFound)
+        @raises(LoadableFixture.StorageMediaNotFound)
         @self.fixture.with_data(*self.partial_datasets())
         def test_partial_datasets(fxt):
             pass

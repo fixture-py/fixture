@@ -32,7 +32,7 @@ def setup():
     memcontext = SessionContext(
             lambda: sqlalchemy.create_session(bind_to=memmeta.engine))
 
-class SqlAlchemyGenerateTest(GenerateTest):
+class SQLAlchemyGenerateTest(GenerateTest):
     args = [
         "fixture.examples.db.sqlalchemy_examples.Offer", 
         "--dsn", str(conf.POSTGRES_DSN) ]
@@ -115,8 +115,8 @@ class SqlAlchemyGenerateTest(GenerateTest):
         teardown_db(memmeta, memcontext)
         memcontext.current.clear()
 
-class TestGenerateSqlAlchemyFixture(
-        UsingFixtureTemplate, SqlAlchemyGenerateTest):        
+class TestGenerateSQLAlchemyFixture(
+        UsingFixtureTemplate, SQLAlchemyGenerateTest):        
     def visit_loader(self, loader):
         loader.meta = memmeta
         loader.session_context = memcontext

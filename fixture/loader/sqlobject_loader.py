@@ -1,9 +1,16 @@
 
-from fixture.loader import DatabaseLoader
+from fixture.loader import DBLoadableFixture
 
-class SQLObjectLoader(DatabaseLoader):
+class SQLObjectFixture(DBLoadableFixture):
+            
+    def __init__(self,  style=None, dsn=None, medium=None, dataclass=None,
+                        connection=None, env=None, use_transaction=True):
+        DBLoadableFixture.__init__(self, style=style, dsn=dsn, env=env, 
+                                            medium=medium, dataclass=dataclass)
+        self.connection = connection
+        self.use_transaction = use_transaction
     
-    class SQLObjectMedium(DatabaseLoader.StorageMediumAdapter):
+    class SQLObjectMedium(DBLoadableFixture.StorageMediumAdapter):
         def clear(self, obj):
             obj.destroySelf()
             
@@ -23,13 +30,6 @@ class SQLObjectLoader(DatabaseLoader):
             self.transaction = loader.transaction
             
     Medium = SQLObjectMedium
-            
-    def __init__(self,  style=None, dsn=None, medium=None, 
-                        connection=None, env=None, use_transaction=True):
-        DatabaseLoader.__init__(self, style=style, dsn=dsn, env=env, 
-                                                    medium=medium)
-        self.connection = connection
-        self.use_transaction = use_transaction
     
     def create_transaction(self):
         from sqlobject import connectionForURI
@@ -42,9 +42,9 @@ class SQLObjectLoader(DatabaseLoader):
     
     def commit(self):
         if self.use_transaction:
-            DatabaseLoader.commit(self)
+            DBLoadableFixture.commit(self)
     
     def rollback(self):
         if self.use_transaction:
-            DatabaseLoader.rollback(self)
+            DBLoadableFixture.rollback(self)
         

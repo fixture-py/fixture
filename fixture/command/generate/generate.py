@@ -237,7 +237,7 @@ class DataHandler(object):
     """handles an object that can provide fixture data.
     """
     __metaclass__ = Handler
-    loader_class = None
+    loadable_fxt_class = None
         
     def __init__(self, object_path, options, obj=None, template=None):
         self.obj_path = object_path

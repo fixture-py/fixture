@@ -2,7 +2,7 @@
 import sys
 from fixture.command.generate import (
         DataHandler, register_handler, FixtureSet, NoData)
-from fixture.loader import SqlAlchemyLoader
+from fixture.loader import SQLAlchemyFixture
 try:
     import sqlalchemy
 except ImportError:
@@ -62,13 +62,13 @@ class TableEnv(object):
     def get_real_table(self, table):
         return getattr(self[table]['module'], self[table]['name'])
 
-class SqlAlchemyHandler(DataHandler):
+class SQLAlchemyHandler(DataHandler):
     """handles genration of fixture code from a sqlalchemy data source."""
     
-    loader_class = SqlAlchemyLoader
+    loadable_fxt_class = SQLAlchemyFixture
     
     class ObjectAdapter(object):
-        """adapts a sqlalchemy data object for use in a SqlAlchemyFixtureSet."""
+        """adapts a sqlalchemy data object for use in a SQLAlchemyFixtureSet."""
         columns = None
         def __init__(self, obj):
             raise NotImplementedError("not a concrete implementation")
@@ -132,12 +132,12 @@ class SqlAlchemyHandler(DataHandler):
         """yields FixtureSet for each row in SQLObject."""
         
         for row in self.rs:
-            yield SqlAlchemyFixtureSet(row, self.obj, self.connection, self.env,
+            yield SQLAlchemyFixtureSet(row, self.obj, self.connection, self.env,
                                             adapter=self.ObjectAdapter)
 
-class SqlAlchemyMappedHandler(SqlAlchemyHandler):
+class SQLAlchemyMappedHandler(SQLAlchemyHandler):
     
-    class ObjectAdapter(SqlAlchemyHandler.ObjectAdapter):
+    class ObjectAdapter(SQLAlchemyHandler.ObjectAdapter):
         def __init__(self, obj):
             self.mapped_class = obj
             
@@ -157,7 +157,7 @@ class SqlAlchemyMappedHandler(SqlAlchemyHandler):
             
     @staticmethod
     def recognizes(object_path, obj=None):
-        if not SqlAlchemyHandler.recognizes(object_path, obj=obj):
+        if not SQLAlchemyHandler.recognizes(object_path, obj=obj):
             return False
         
         def isa_mapper(mapper):
@@ -181,11 +181,11 @@ class SqlAlchemyMappedHandler(SqlAlchemyHandler):
         
         return False
         
-register_handler(SqlAlchemyMappedHandler)
+register_handler(SQLAlchemyMappedHandler)
 
-class SqlAlchemyTableHandler(SqlAlchemyHandler):
+class SQLAlchemyTableHandler(SQLAlchemyHandler):
     
-    class ObjectAdapter(SqlAlchemyHandler.ObjectAdapter):
+    class ObjectAdapter(SQLAlchemyHandler.ObjectAdapter):
         def __init__(self, obj):
             self.table = obj
             self.columns = self.table.columns
@@ -202,7 +202,7 @@ class SqlAlchemyTableHandler(SqlAlchemyHandler):
             
     @staticmethod
     def recognizes(object_path, obj=None):
-        if not SqlAlchemyHandler.recognizes(object_path, obj=obj):
+        if not SQLAlchemyHandler.recognizes(object_path, obj=obj):
             return False
         
         from sqlalchemy.schema import Table
@@ -214,10 +214,10 @@ class SqlAlchemyTableHandler(SqlAlchemyHandler):
         
         return False
         
-register_handler(SqlAlchemyTableHandler)
+register_handler(SQLAlchemyTableHandler)
 
 
-class SqlAlchemyFixtureSet(FixtureSet):
+class SQLAlchemyFixtureSet(FixtureSet):
     """a fixture set for a sqlalchemy record set."""
     
     def __init__(self, data, obj, connection, env, adapter=None):
@@ -263,9 +263,9 @@ class SqlAlchemyFixtureSet(FixtureSet):
             
             # adapter is always table adapter here, since that's
             # how we obtain foreign keys...
-            subset = SqlAlchemyFixtureSet(
+            subset = SQLAlchemyFixtureSet(
                         rs.fetchone(), table, self.connection, self.env,
-                        adapter=SqlAlchemyTableHandler.ObjectAdapter)
+                        adapter=SQLAlchemyTableHandler.ObjectAdapter)
             return subset
             
         return value

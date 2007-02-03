@@ -2,9 +2,9 @@
 import os
 from nose.tools import eq_
 from nose.exc import SkipTest
-from fixture import Fixture
+from fixture import SQLObjectFixture
 from fixture.test import env_supports
-from fixture.loader import SQLObjectLoader
+from fixture.loader import SQLObjectFixture
 from fixture.dataset import MergedSuperSet, DataSet
 from fixture.style import NamedDataStyle, PaddedNameStyle, CamelAndUndersStyle
 from fixture.test.test_loader import *
@@ -14,11 +14,11 @@ from fixture.test import conf
 def setup():
     if not env_supports.sqlobject: raise SkipTest
 
-class SQLObjectLoaderTest:
-    fixture = Fixture(  loader=SQLObjectLoader(
-                            style=( NamedDataStyle() + CamelAndUndersStyle()),
-                            dsn=conf.MEM_DSN, env=globals(), 
-                            use_transaction=False),
+class SQLObjectFixtureTest:
+    fixture = SQLObjectFixture(
+                        style=( NamedDataStyle() + CamelAndUndersStyle()),
+                        dsn=conf.MEM_DSN, env=globals(), 
+                        use_transaction=False,
                         dataclass=MergedSuperSet )
         
     def setUp(self, dsn=conf.MEM_DSN):
@@ -27,7 +27,7 @@ class SQLObjectLoaderTest:
         self.conn = connectionForURI(dsn)
         self.conn.debug = 1
         
-        self.fixture.loader.connection = self.conn
+        self.fixture.connection = self.conn
         self.transaction = self.conn.transaction()
         
         from sqlobject import sqlhub
@@ -40,15 +40,15 @@ class SQLObjectLoaderTest:
         teardown_db(self.transaction)
         self.transaction.commit()
 
-class SQLObjectLoaderPostgresTest(SQLObjectLoaderTest):
+class SQLObjectFixturePostgresTest(SQLObjectFixtureTest):
     def setUp(self):
         if not conf.POSTGRES_DSN:
             raise SkipTest
             
-        SQLObjectLoaderTest.setUp(self, dsn=conf.POSTGRES_DSN)
+        SQLObjectFixtureTest.setUp(self, dsn=conf.POSTGRES_DSN)
 
-class TestSQLObjectLoader(
-        HavingCategoryData, SQLObjectLoaderTest, LoaderTest):
+class TestSQLObjectFixture(
+        HavingCategoryData, SQLObjectFixtureTest, LoaderTest):
     
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""
@@ -62,7 +62,7 @@ class TestSQLObjectLoader(
         eq_(Category.select().count(), 0)
 
 class TestSQLObjectPartialLoad(
-        SQLObjectLoaderTest, LoaderPartialRecoveryTest):
+        SQLObjectFixtureTest, LoaderPartialRecoveryTest):
         
    def assert_partial_load_aborted(self):
        # I don't think sqlobject can support this ...
@@ -71,8 +71,8 @@ class TestSQLObjectPartialLoad(
         # t = self.conn.transaction()
         # eq_(Category.select(connection=t).count(), 0)
 
-class TestSQLObjectLoaderForeignKeys(
-        HavingOfferProductData, SQLObjectLoaderPostgresTest, 
+class TestSQLObjectFixtureForeignKeys(
+        HavingOfferProductData, SQLObjectFixturePostgresTest, 
         LoaderTest):
     
     def assert_data_loaded(self, dataset):

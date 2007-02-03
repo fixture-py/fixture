@@ -1,15 +1,44 @@
 
 import sys
+from fixture.components import Fixture
 from fixture.util import ObjRegistry
 from fixture.style import NamedDataStyle
 
-class Loader(object):
-    """knows how to load and unload a DataSet.
+class LoadableFixture(Fixture):
+    """A fixture that knows how to load and unload a DataSet.
+    
+    This ia an abstract class and cannot be used directly.  You can use a 
+    LoadableFixture that already knows how to load into a specific medium, such 
+    as SQLAlchemyFixture
+    
+    Keyword Arguments
+    -----------------
+    - dataclass
+        
+      - class to instantiate with datasets (defaults to that of Fixture)
+    
+    - style
+    
+      - a Style object to translate names with (defaults to NamedDataStyle)
+     
+    - medium
+    
+      - optional LoadableFixture.StorageMediumAdapter to store DataSet 
+        objects with
+    
     """
+    style = NamedDataStyle()
+    dataclass = Fixture.dataclass
+    
+    def __init__(self, style=None, medium=None, dataclass=None):
+        Fixture.__init__(self, loader=self, dataclass=dataclass)
+        if style:
+            self.style = style
+        if medium:
+            self.Medium = medium
+        
     class LoadError(Exception):
         pass
-        
-    style = NamedDataStyle()
     
     class StorageMediumAdapter(object):
         def __init__(self, medium, dataset):
@@ -48,7 +77,7 @@ class Loader(object):
         >>> class Bar: 
         ...     name = 'bar'
         ...
-        >>> q = Loader.LoadQueue()
+        >>> q = LoadableFixture.LoadQueue()
         >>> assert q.register(Foo()) is not None
         >>> Foo() in q
         True
@@ -88,13 +117,6 @@ class Loader(object):
             for id in self.queue: 
                 yield self.registry[id]
     
-    def __init__(self, style=None, medium=None):
-        if style:
-            self.style = style
-        if medium:
-            self.Medium = medium
-        self.data = []
-    
     def attach_storage_medium(self):
         pass
     
@@ -117,9 +139,11 @@ class Loader(object):
             self.commit()
         
     def load_dataset(self, ds):
-                
+        
+        if not ds.meta.refclass:
+            ds.meta.refclass = self.dataclass
         for req_ds in ds.meta.requires:
-            r = req_ds()
+            r = req_ds(default_refclass=self.dataclass)
             self.load_dataset(r)
         
         self.attach_storage_medium(ds)
@@ -159,9 +183,11 @@ class Loader(object):
         dataset.meta.storage_medium.clearall()
                 
 
-class DatabaseLoader(Loader):
-    def __init__(self, style=None, dsn=None, env=None, medium=None):
-        Loader.__init__(self, style=style, medium=medium)
+class DBLoadableFixture(LoadableFixture):
+    def __init__(self, style=None, dsn=None, env=None, medium=None, 
+                        dataclass=None):
+        LoadableFixture.__init__(self, style=style, medium=medium, 
+                                        dataclass=dataclass)
         self.dsn = dsn
         self.env = env
         self.transaction = None
@@ -199,7 +225,7 @@ class DatabaseLoader(Loader):
                     self.Medium, ds.meta.storage, ds, repr_env))
     
     def begin(self, unloading=False):
-        Loader.begin(self, unloading=unloading)
+        LoadableFixture.begin(self, unloading=unloading)
         self.transaction = self.create_transaction()
     
     def commit(self):
