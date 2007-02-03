@@ -1,4 +1,6 @@
 
+"""sqlalchemy fixture components."""
+
 from fixture.loadable import DBLoadableFixture
 
 def negotiated_medium(obj, dataset):
@@ -10,7 +12,42 @@ def negotiated_medium(obj, dataset):
         raise NotImplementedError("object %s is not supported by %s" % (
                                                     obj, SQLAlchemyFixture))
 
-class SQLAlchemyFixture(DBLoadableFixture):            
+class SQLAlchemyFixture(DBLoadableFixture):
+    """A fixture that knows how to load DataSet objects into sqlalchemy objects.
+    
+    Keyword Arguments
+    -----------------
+    - style
+    
+      - A Style object to translate names with
+     
+    - dsn
+    
+      - A dsn to create an engine with.  without one you will have to speficy 
+        session_context
+    
+    - session_context
+    
+      - An instance of sqlalchemy.ext.sessioncontext.SessionContext
+    
+    - dataclass
+    
+      - SuperSet to represent loaded data with
+    
+    - env
+    
+      - A dict or module that contains either mapped classes or Table objects,
+        or both.  This will be search when style translates DataSet names into
+        storage media.
+    
+    - medium
+    
+      - A custom StorageMediumAdapter to instantiate when storing a DataSet.
+        By default, a medium adapter will be negotiated based on the type of 
+        sqlalchemy object so you should only set this if you know what you 
+        doing.
+    
+    """
     Medium = staticmethod(negotiated_medium)
     
     def __init__(self,  style=None, dsn=None, medium=None, 

@@ -69,7 +69,7 @@ class LoadableFixture(Fixture):
         pass
     
     class LoadQueue(ObjRegistry):
-        """keeps track of what class instances were loaded
+        """Keeps track of what class instances were loaded
         
         >>> class Foo: 
         ...     name = 'foo'
@@ -184,6 +184,12 @@ class LoadableFixture(Fixture):
                 
 
 class DBLoadableFixture(LoadableFixture):
+    """An abstract fixture that will be loadable into a database.
+    
+    More specifically, one that runs atomically (within a 
+    begin/ commit/ rollback block).
+    
+    """
     def __init__(self, style=None, dsn=None, env=None, medium=None, 
                         dataclass=None):
         LoadableFixture.__init__(self, style=style, medium=medium, 

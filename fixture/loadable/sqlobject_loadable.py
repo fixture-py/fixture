@@ -1,7 +1,41 @@
 
+"""sqlobject fixture components."""
+
 from fixture.loadable import DBLoadableFixture
 
 class SQLObjectFixture(DBLoadableFixture):
+    """A fixture that knows how to load DataSet objects into sqlobject(s).
+    
+    Keyword Arguments
+    -----------------
+    - style
+    
+      - A Style object to translate names with
+     
+    - dsn
+    
+      - A dsn to create a connection with.
+    
+    - dataclass
+    
+      - SuperSet to represent loaded data with
+    
+    - env
+    
+      - A dict or module that contains SQLObject classes.  The Style object will 
+        look here when translating DataSet names into SQLObject class names.
+    
+    - medium
+    
+      - A custom StorageMediumAdapter to instantiate when storing a DataSet.
+    
+    - use_transaction
+    
+      - If this is true, no data will be loaded or torn down inside a 
+        transaction, so it is possible that an IntegrityError will leave 
+        partially loaded data behind.
+    
+    """
             
     def __init__(self,  style=None, dsn=None, medium=None, dataclass=None,
                         connection=None, env=None, use_transaction=True):
