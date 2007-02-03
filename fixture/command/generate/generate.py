@@ -125,11 +125,11 @@ class FixtureGenerator(object):
             for k,fset in val_dict.items():
                 key = fset.mk_key()
                 data = self.handler.resolve_data_dict(datadef, fset)
-                tpl['data'].append((key, data))
+                tpl['data'].append((key, self.template.dict(data)))
                 
             tpl['meta'] = "\n        ".join(datadef.meta(kls))
             tpl['data_header'] = "\n        ".join(datadef.data_header) + "\n"
-            tpl['data'] = pprint.pformat(tuple(tpl['data']))
+            tpl['data'] = pprint.pformat(self.template.tuple(tpl['data']))
             code.append(self.template.render(tpl))
             
         code = "\n".join(self.template.import_header + code)

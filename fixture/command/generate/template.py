@@ -42,6 +42,22 @@ templates = _TemplateRegistry()
 class Template(object):
     """knows how to render fixture code.
     """
+    class dict(dict):
+        def __repr__(self):
+            s = ["dict("]
+            for k,v in self.iteritems():
+                s.append("          %s = %s," % (
+                                        k, repr(v)))
+            s[-1] = s[-1] + ")"
+            return "\n".join(s)
+    
+    class tuple(tuple):
+        def __repr__(self):
+            s = ["("]
+            for item in self:
+                s.append("      %s," % repr(item))
+            return "\n".join(s) + ")"
+            
     class DataDef:
         def __init__(self):
             self.data_header = [] # vars at top of data() method
@@ -112,8 +128,7 @@ class fixture(Template):
 class %(fxt_class)s(DataSet):
     class Meta(DataSet.Meta):
         %(meta)s
-    def data(self):
-        %(data_header)s\
+    def data(self):%(data_header)s\
         return %(data)s"""
     
     metabase = ""
