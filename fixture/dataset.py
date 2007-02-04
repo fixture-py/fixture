@@ -3,7 +3,7 @@
 
 from fixture.util import ObjRegistry
 
-__all__ = ['DataSet']
+__all__ = ['DataSet', 'SequencedSet']
 
 class DataContainer(object):
     """contains data accessible by attribute and/or key.
@@ -91,8 +91,12 @@ class DataType(type):
         super(DataType, cls).__init__(name, bases, dict)
         for name, attr in cls_attr.iteritems():
             if is_row_class(attr):
-                # bind a ref method
-                attr.ref = Ref(cls, attr)
+                cls.decorate_row(attr, name, bases, cls_attr)
+    
+    def decorate_row(cls, row, name, bases, cls_attr):
+        # bind a ref method
+        row.ref = Ref(cls, row)
+        
 
 class DataRow(DataContainer):
     """a key/attribute accessible dictionary."""
@@ -244,6 +248,63 @@ class DataSet(DataContainer):
         if empty:
             raise ValueError("cannot create an empty DataSet")
         self.meta._built = True
+
+class Sequence(object):
+    def __init__(self, name='id'):
+        self.name = name
+        self.value = 0
+    
+    def currval(self):
+        return self.value
+    
+    def nextval(self):
+        self.value += 1
+        return self.value
+    
+    def setval(self, value):
+        self.value = value
+    
+class SeqRegistry(dict):
+    def getsequence(self, bases, name, cls_attr):
+        if 'Meta' in cls_attr:
+            Meta = cls_attr['Meta']
+        else:            
+            if len(bases) > 1:
+                raise NotImplementedError(
+                    "finding Meta when there are multiple bases "
+                    "is not implemented")
+            dataset_class = bases[0]
+            Meta = dataset_class.Meta
+                
+        k = "%s:%s" % (cls_attr['__module__'], name)
+        self.setdefault(k, Sequence(name=Meta.seqname))
+        return self[k]
+        
+sequence_registry = SeqRegistry()
+
+class SequenceType(DataType):
+    def __init__(cls, name, bases, cls_attr):        
+        cls_attr['_sequence'] = sequence_registry.getsequence(
+                                                    bases, name, cls_attr)
+        DataType.__init__(cls, name, bases, cls_attr)
+        del cls_attr['_sequence']
+        
+    def decorate_row(cls, row, name, bases, cls_attr):
+        DataType.decorate_row(cls, row, name, bases, cls_attr)
+        
+        sequence = cls_attr['_sequence']
+        if not hasattr(row, sequence.name):
+            setattr(row, sequence.name, sequence.nextval())
+        else:
+            defval = getattr(row, sequence.name)
+            if defval > sequence.currval():
+                # avoid collision by incrementing...
+                sequence.setval(defval)
+
+class SequencedSet(DataSet):
+    __metaclass__ = SequenceType
+    class Meta(DataSet.Meta):
+        seqname = 'id'
 
 class DataSetContainer(object):
     """yields datasets when itered over."""

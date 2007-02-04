@@ -3,7 +3,7 @@ import nose
 from nose.tools import raises, eq_
 from nose.exc import SkipTest
 import unittest
-from fixture import DataSet
+from fixture import DataSet, SequencedSet
 from fixture.loadable import LoadableFixture
 from fixture.test import env_supports
 
@@ -169,6 +169,30 @@ class HavingOfferProductAsDataType:
         class OfferData(DataSet):
             class free_truck:
                 id = 1
+                name = "it's a free truck"
+                product_id = ProductData.truck.ref('id')
+                category_id = CategoryData.free_stuff.ref('id')
+                
+        return [ProductData, OfferData]
+        
+class HavingSequencedOfferProduct:  
+    """mixin that adds data to a LoaderTest."""
+    def datasets(self):
+        """returns some datasets."""
+        
+        class CategoryData(SequencedSet):
+            class cars:
+                name = 'cars'
+            class free_stuff:
+                name = 'get free stuff'
+        
+        class ProductData(SequencedSet):
+            class truck:
+                name = 'truck'
+                category_id = CategoryData.cars.ref('id')
+        
+        class OfferData(SequencedSet):
+            class free_truck:
                 name = "it's a free truck"
                 product_id = ProductData.truck.ref('id')
                 category_id = CategoryData.free_stuff.ref('id')

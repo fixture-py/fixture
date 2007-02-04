@@ -90,8 +90,10 @@ class SQLAlchemyFixtureForKeysTest(SQLAlchemyFixtureTest):
 class TestSQLAlchemyFixtureForKeys(
         HavingOfferProductData, SQLAlchemyFixtureForKeysTest, LoaderTest):
     pass
-        
 class TestSQLAlchemyFixtureForKeysAsType(
         HavingOfferProductAsDataType, SQLAlchemyFixtureForKeysTest, LoaderTest):
+    pass
+class TestSQLAlchemyFixtureSeqForKeys(
+        HavingSequencedOfferProduct, SQLAlchemyFixtureForKeysTest, LoaderTest):
     pass
     

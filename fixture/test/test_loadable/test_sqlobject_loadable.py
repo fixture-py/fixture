@@ -102,9 +102,12 @@ class TestSQLObjectFixtureCascade(
         HavingOfferProductData, SQLObjectFixtureCascadeTest, 
         LoaderTest):
     pass
-    
 class TestSQLObjectFixtureCascadeAsType(
         HavingOfferProductAsDataType, SQLObjectFixtureCascadeTest, 
         LoaderTest):
     pass
+# class TestSQLObjectFixtureSeqCascade(
+#         HavingSequencedOfferProduct, SQLObjectFixtureCascadeTest, 
+#         LoaderTest):
+#     pass
             
