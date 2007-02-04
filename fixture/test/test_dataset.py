@@ -117,6 +117,44 @@ class TestDataTypeDrivenDataSet(TestDataSet):
                 title = 'life of pi'
         self.dataset = Books()
 
+class EventData(DataSet):
+    class click:
+        type = 'click'
+        session = 'aaaaaaa'
+        offer = 1
+        time = 'now'
+    
+    class submit(click):
+        type = 'submit'
+    class order(click):
+        type = 'order'
+    class activation(click):
+        type = 'activation'
+
+class TestInheritedRows(DataSetTest):
+    def setUp(self):
+        self.dataset = EventData()
+    
+    def assert_access(self, dataset):
+        def assert_all_attr(type):
+            fxt = getattr(dataset, type)
+            eq_(fxt.type, type)
+            eq_(fxt.session, 'aaaaaaa')
+            eq_(fxt.offer, 1)
+            eq_(fxt.time, 'now')
+        
+        assert_all_attr('click')
+        assert_all_attr('submit')
+        assert_all_attr('order')
+        assert_all_attr('activation')
+    
+    def assert_itered_n_times(self, count):
+        eq_(count, 4)
+    
+    def assert_row_dict_for_iter(self, items, count):
+        # can't test this because keys aren't ordered
+        pass
+
 class TestDataTypeDrivenRefs(TestDataSet):
             
     def setUp(self):
