@@ -133,15 +133,10 @@ class LoadableFixture(Fixture):
         raise NotImplementedError
     
     def load(self, data):
-        self.begin()
-        try:
+        def loader():
             for ds in data:
                 self.load_dataset(ds)
-        except:
-            self.rollback()
-            raise
-        else:
-            self.commit()
+        self.wrap_in_transaction(loader, unloading=False)
         
     def load_dataset(self, ds):
         
@@ -173,19 +168,30 @@ class LoadableFixture(Fixture):
     def rollback(self):
         raise NotImplementedError
     
+    def then_finally(self, unloading=False):
+        pass
+    
     def unload(self):
-        self.begin(unloading=True)
-        try:
+        def unloader():
             for dataset in self.loaded.to_unload():
                 self.unload_dataset(dataset)
-        except:
-            self.rollback()
-            raise
-        else:
-            self.commit()
+        self.wrap_in_transaction(unloader, unloading=True)
     
     def unload_dataset(self, dataset):
         dataset.meta.storage_medium.clearall()
+    
+    def wrap_in_transaction(self, routine, unloading=False):
+        self.begin(unloading=unloading)
+        try:
+            try:
+                routine()
+            except:
+                self.rollback()
+                raise
+            else:
+                self.commit()
+        finally:
+            self.then_finally(unloading=unloading)
                 
 
 class DBLoadableFixture(LoadableFixture):

@@ -35,13 +35,20 @@ class SQLObjectFixture(DBLoadableFixture):
         transaction, so it is possible that an IntegrityError will leave 
         partially loaded data behind.
     
+    - close_conn
+    
+      - True if the connection can be closed, helpful for releasing connections.  
+        If you are passing in a connection object this will be False by default.
+    
     """
             
     def __init__(self,  style=None, dsn=None, medium=None, dataclass=None,
-                        connection=None, env=None, use_transaction=True):
+                        connection=None, env=None, use_transaction=True,
+                        close_conn=False ):
         DBLoadableFixture.__init__(self, style=style, dsn=dsn, env=env, 
                                             medium=medium, dataclass=dataclass)
         self.connection = connection
+        self.close_conn = close_conn
         self.use_transaction = use_transaction
     
     class SQLObjectMedium(DBLoadableFixture.StorageMediumAdapter):
@@ -69,6 +76,7 @@ class SQLObjectFixture(DBLoadableFixture):
         from sqlobject import connectionForURI
         if not self.connection:
             self.connection = connectionForURI(self.dsn)
+            self.close_conn = True # because we made it
         if self.use_transaction:
             return self.connection.transaction()
         else:
@@ -77,6 +85,11 @@ class SQLObjectFixture(DBLoadableFixture):
     def commit(self):
         if self.use_transaction:
             DBLoadableFixture.commit(self)
+    
+    def then_finally(self, unloading=False):
+        if unloading and self.close_conn:
+            self.connection.close()
+            self.connection = None # necessary for gc
     
     def rollback(self):
         if self.use_transaction:

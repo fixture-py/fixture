@@ -39,6 +39,7 @@ class SQLObjectFixtureTest:
         """should unload the dataset."""
         teardown_db(self.transaction)
         self.transaction.commit()
+        self.conn.close()
 
 class SQLObjectFixtureForKeysTest(SQLObjectFixtureTest):
     def setUp(self):
@@ -106,8 +107,8 @@ class TestSQLObjectFixtureCascadeAsType(
         HavingOfferProductAsDataType, SQLObjectFixtureCascadeTest, 
         LoaderTest):
     pass
-# class TestSQLObjectFixtureSeqCascade(
-#         HavingSequencedOfferProduct, SQLObjectFixtureCascadeTest, 
-#         LoaderTest):
-#     pass
+class TestSQLObjectFixtureSeqCascade(
+        HavingSequencedOfferProduct, SQLObjectFixtureCascadeTest, 
+        LoaderTest):
+    pass
             
