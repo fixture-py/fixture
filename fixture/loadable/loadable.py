@@ -54,7 +54,7 @@ class LoadableFixture(Fixture):
             raise NotImplementedError
         
         def clearall(self):
-            for obj in self.dataset.meta.stored_objects:
+            for obj in self.dataset.meta._stored_objects:
                 self.clear(obj)
             
         def save(self, row):
@@ -161,7 +161,7 @@ class LoadableFixture(Fixture):
         for key, row in ds:
             try:
                 obj = ds.meta.storage_medium.save(row)
-                ds.meta.stored_objects.append(obj)
+                ds.meta._stored_objects.append(obj)
             except Exception, e:
                 etype, val, tb = sys.exc_info()
                 raise self.LoadError(

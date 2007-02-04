@@ -123,7 +123,6 @@ class TestDataSetCustomMeta(DataSetTest):
         # should also have the same defaults as DataSet :
         eq_(dataset.meta.storage, 'PretendStorage')
         eq_(dataset.meta.row, DataSet.Meta.row)
-        eq_(dataset.meta.loader, DataSet.Meta.loader)
     
     def assert_itered_n_times(self, count):
         eq_(count, 2)

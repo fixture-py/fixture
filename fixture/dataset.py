@@ -242,11 +242,10 @@ class DataSet(DataContainer):
     class Meta(DataContainer.Meta):
         row = DataRow
         refclass = None
-        loader = None
         storage = None
         storage_medium = None
-        stored_objects = []
         references = []
+        _stored_objects = []
         _built = False
     
     def __init__(self, default_refclass=None):
@@ -260,7 +259,7 @@ class DataSet(DataContainer):
                 if not hasattr(self.meta, name):
                     setattr(self.meta, name, getattr(defaults, name))
         
-        self.meta.stored_objects = []
+        self.meta._stored_objects = []
         # dereference from class ...        
         try:
             cl_attr = getattr(self.Meta, 'references')
