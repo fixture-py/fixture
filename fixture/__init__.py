@@ -35,9 +35,8 @@ easy_install fixture
 
 __version__ = "1.0"
 
-from fixture.loadable import SQLAlchemyFixture
-from fixture.loadable import SQLObjectFixture
-from dataset import DataSet
+from fixture.loadable import *
+from dataset import *
 
 
 def setup_test_not_supported():

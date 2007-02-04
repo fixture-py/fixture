@@ -3,13 +3,7 @@
 
 from fixture.util import ObjRegistry
 
-def lazy_meta(obj):
-    # if not hasattr(obj, 'meta'):
-    try:
-        object.__getattribute__(obj, 'meta')
-    except AttributeError:
-        Meta = object.__getattribute__(obj, 'Meta')
-        object.__setattr__(obj, 'meta', Meta())
+__all__ = ['DataSet']
 
 class DataContainer(object):
     """contains data accessible by attribute and/or key.
@@ -63,117 +57,7 @@ class DataContainer(object):
         if key not in self.meta.data:
             self.meta.keys.append(key)
         self.meta.data[key] = value
-
-class DataRow(DataContainer):
-    """a key/attribute accessible dictionary."""
-    _reserved_attr = DataContainer._reserved_attr + ('iteritems', 'items')
-    class Meta(DataContainer.Meta):
-        pass
-    
-    def __init__(self, data):
-        DataContainer.__init__(self, data=data, keys=[k for k in data])
-    
-    def __iter__(self):
-        for k in self.meta.data:
-            yield k
-    
-    def iteritems(self):
-        for k,v in self.meta.data.items():
-            yield (k,v)
-    
-    def items(self):
-        for k,v in self.iteritems():
-            yield (k,v)
-
-class DataSetContainer(object):
-    """yields datasets when itered over."""
-    class Meta:
-        datasets = None
-        dataset_keys = None
         
-    def __init__(self):
-        lazy_meta(self)
-        self.meta.datasets = {}
-        self.meta.dataset_keys = []
-        self.meta._cache = ObjRegistry()
-    
-    def __iter__(self):
-        for k in self.meta.dataset_keys:
-            yield self.meta.datasets[k]
-        
-    def _dataset_to_key(self, dataset):
-        return dataset.__class__.__name__
-        
-    def _setdataset(self, dataset, key=None, isref=False):
-        
-        # due to reference resolution we might get colliding data sets...
-        if dataset in self.meta._cache:
-            return False
-            
-        if key is None:
-            key = self._dataset_to_key(dataset)
-        if not isref:
-            # refs are not yielded
-            self.meta.dataset_keys.append(key)
-            
-        self.meta.datasets[key] = dataset
-        
-        self.meta._cache.register(dataset)
-        return True
-
-class SuperSet(DataContainer, DataSetContainer):
-    """a set of data sets.
-    
-    each attribute/key is a DataSet.
-    """
-    class Meta(DataContainer.Meta, DataSetContainer.Meta):
-        pass
-        
-    def __init__(self, *datasets):
-        DataContainer.__init__(self)
-        DataSetContainer.__init__(self)
-        self._store_datasets(datasets)
-    
-    def _store_datasets(self, datasets):
-        for d in datasets:
-            k = self._dataset_to_key(d)
-            self._setdata(k, d)
-            self._setdataset(d, key=k)
-            
-            for ref_d in d.ref:
-                k = self._dataset_to_key(ref_d)
-                self._setdata(k, ref_d)
-                self._setdataset(ref_d, key=k, isref=True)
-
-class MergedSuperSet(SuperSet):
-    """a collection of data sets.
-    
-    all attributes of all data sets are merged together.
-    """
-    class Meta(SuperSet.Meta):
-        pass
-    def __init__(self, *datasets):
-        lazy_meta(self)
-        self.meta.keys_to_datasets = {}
-        SuperSet.__init__(self, *datasets)
-    
-    def _setdataset(self, dataset, key=None, isref=False):
-        if SuperSet._setdataset(self, dataset, key=key, isref=isref):
-            for k,row in dataset:
-                if k in self.meta.keys_to_datasets:
-                    raise ValueError(
-                        "cannot add key '%s' for %s because it was "
-                        "already added by %s" % (
-                            k, dataset, self.meta.keys_to_datasets[k]))
-                self._setdata(k, row)
-                self.meta.keys_to_datasets[k] = dataset 
-    
-    def _store_datasets(self, datasets):    
-        for dataset in datasets:
-            self._setdataset(dataset)
-            
-            for d in dataset.ref:
-                self._setdataset(d, isref=True)
 
 class Ref(object):
     """A reference to a row in a DataSet class."""
@@ -209,6 +93,27 @@ class DataType(type):
             if is_row_class(attr):
                 # bind a ref method
                 attr.ref = Ref(cls, attr)
+
+class DataRow(DataContainer):
+    """a key/attribute accessible dictionary."""
+    _reserved_attr = DataContainer._reserved_attr + ('iteritems', 'items')
+    class Meta(DataContainer.Meta):
+        pass
+    
+    def __init__(self, data):
+        DataContainer.__init__(self, data=data, keys=[k for k in data])
+    
+    def __iter__(self):
+        for k in self.meta.data:
+            yield k
+    
+    def iteritems(self):
+        for k,v in self.meta.data.items():
+            yield (k,v)
+    
+    def items(self):
+        for k,v in self.iteritems():
+            yield (k,v)
 
 class DataSet(DataContainer):
     """a set of row objects.
@@ -339,3 +244,99 @@ class DataSet(DataContainer):
         if empty:
             raise ValueError("cannot create an empty DataSet")
         self.meta._built = True
+
+class DataSetContainer(object):
+    """yields datasets when itered over."""
+    class Meta:
+        datasets = None
+        dataset_keys = None
+        
+    def __init__(self):
+        lazy_meta(self)
+        self.meta.datasets = {}
+        self.meta.dataset_keys = []
+        self.meta._cache = ObjRegistry()
+    
+    def __iter__(self):
+        for k in self.meta.dataset_keys:
+            yield self.meta.datasets[k]
+        
+    def _dataset_to_key(self, dataset):
+        return dataset.__class__.__name__
+        
+    def _setdataset(self, dataset, key=None, isref=False):
+        
+        # due to reference resolution we might get colliding data sets...
+        if dataset in self.meta._cache:
+            return False
+            
+        if key is None:
+            key = self._dataset_to_key(dataset)
+        if not isref:
+            # refs are not yielded
+            self.meta.dataset_keys.append(key)
+            
+        self.meta.datasets[key] = dataset
+        
+        self.meta._cache.register(dataset)
+        return True
+
+class SuperSet(DataContainer, DataSetContainer):
+    """a set of data sets.
+    
+    each attribute/key is a DataSet.
+    """
+    class Meta(DataContainer.Meta, DataSetContainer.Meta):
+        pass
+        
+    def __init__(self, *datasets):
+        DataContainer.__init__(self)
+        DataSetContainer.__init__(self)
+        self._store_datasets(datasets)
+    
+    def _store_datasets(self, datasets):
+        for d in datasets:
+            k = self._dataset_to_key(d)
+            self._setdata(k, d)
+            self._setdataset(d, key=k)
+            
+            for ref_d in d.ref:
+                k = self._dataset_to_key(ref_d)
+                self._setdata(k, ref_d)
+                self._setdataset(ref_d, key=k, isref=True)
+
+class MergedSuperSet(SuperSet):
+    """a collection of data sets.
+    
+    all attributes of all data sets are merged together.
+    """
+    class Meta(SuperSet.Meta):
+        pass
+    def __init__(self, *datasets):
+        lazy_meta(self)
+        self.meta.keys_to_datasets = {}
+        SuperSet.__init__(self, *datasets)
+    
+    def _setdataset(self, dataset, key=None, isref=False):
+        if SuperSet._setdataset(self, dataset, key=key, isref=isref):
+            for k,row in dataset:
+                if k in self.meta.keys_to_datasets:
+                    raise ValueError(
+                        "cannot add key '%s' for %s because it was "
+                        "already added by %s" % (
+                            k, dataset, self.meta.keys_to_datasets[k]))
+                self._setdata(k, row)
+                self.meta.keys_to_datasets[k] = dataset 
+    
+    def _store_datasets(self, datasets):    
+        for dataset in datasets:
+            self._setdataset(dataset)
+            
+            for d in dataset.ref:
+                self._setdataset(d, isref=True)
+                
+
+def lazy_meta(obj):
+    if not hasattr(obj, 'meta'):
+        setattr(obj, 'meta', obj.Meta())
+        

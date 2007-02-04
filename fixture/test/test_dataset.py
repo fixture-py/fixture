@@ -16,6 +16,55 @@ class Movies(DataSet):
             ('peewee', dict(director='Tim Burton')),
             ('aquatic', dict(director='cant remember his name')),
         )
+        
+        
+class Authors(DataSet):
+    class martel:
+        name = 'Yann Martel'
+    class nabokov:
+        name = 'Vladimir Nabokov'
+class BooksAndAuthors(DataSet):
+    class lolita:
+        title = 'lolita'
+        author = Authors.nabokov.ref('name')
+    class pi:
+        title = 'life of pi'
+        author = Authors.martel.ref('name')
+        
+
+
+class CategoryData(DataSet):
+    class vehicles:
+        id = 1
+        name = 'cars'
+    class free_stuff:
+        id = 2
+        name = 'get free stuff'
+    class discounted:
+        id = 3
+        name = 'discounted stuff'
+        
+class ProductData(DataSet):
+    class truck:
+        id = 1
+        name = 'truck'
+        category_id = CategoryData.vehicles.ref('id')
+    class spaceship:
+        id = 2
+        name = 'spaceship'
+        category_id = CategoryData.vehicles.ref('id')
+
+class OfferData(DataSet):
+    class free_truck:
+        id = 1
+        name = "it's a free truck"
+        product_id = ProductData.truck.ref('id')
+        category_id = CategoryData.free_stuff.ref('id')
+    class discounted_spaceship:
+        id = 2
+        name = "it's a spaceship 1/2 off"
+        product_id = ProductData.spaceship.ref('id')
+        category_id = CategoryData.discounted.ref('id')
 
 class DataSetTest:
     """tests behavior of a DataSet object."""
@@ -67,19 +116,6 @@ class TestDataTypeDrivenDataSet(TestDataSet):
             class pi:
                 title = 'life of pi'
         self.dataset = Books()
-        
-class Authors(DataSet):
-    class martel:
-        name = 'Yann Martel'
-    class nabokov:
-        name = 'Vladimir Nabokov'
-class BooksAndAuthors(DataSet):
-    class lolita:
-        title = 'lolita'
-        author = Authors.nabokov.ref('name')
-    class pi:
-        title = 'life of pi'
-        author = Authors.martel.ref('name')
 
 class TestDataTypeDrivenRefs(TestDataSet):
             
@@ -178,39 +214,6 @@ class TestMergedSuperSet(SuperSetTest):
         eq_(self.superset['pi'].title, 'life of pi')
         eq_(self.superset.peewee.director, 'Tim Burton')
         eq_(self.superset.aquatic.director, 'cant remember his name')
-
-class CategoryData(DataSet):
-    class vehicles:
-        id = 1
-        name = 'cars'
-    class free_stuff:
-        id = 2
-        name = 'get free stuff'
-    class discounted:
-        id = 3
-        name = 'discounted stuff'
-
-class ProductData(DataSet):
-    class truck:
-        id = 1
-        name = 'truck'
-        category_id = CategoryData.vehicles.ref('id')
-    class spaceship:
-        id = 2
-        name = 'spaceship'
-        category_id = CategoryData.vehicles.ref('id')
-
-class OfferData(DataSet):
-    class free_truck:
-        id = 1
-        name = "it's a free truck"
-        product_id = ProductData.truck.ref('id')
-        category_id = CategoryData.free_stuff.ref('id')
-    class discounted_spaceship:
-        id = 2
-        name = "it's a spaceship 1/2 off"
-        product_id = ProductData.spaceship.ref('id')
-        category_id = CategoryData.discounted.ref('id')
         
 class TestComplexRefs:
     def setUp(self):
