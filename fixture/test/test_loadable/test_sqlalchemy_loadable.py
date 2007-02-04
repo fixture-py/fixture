@@ -34,8 +34,7 @@ class SQLAlchemyFixtureTest:
     def tearDown(self):
         teardown_db(self.meta, self.session_context)
 
-class TestSQLAlchemyFixture(
-        HavingCategoryData, SQLAlchemyFixtureTest, LoaderTest):
+class SQLAlchemyCategoryTest(SQLAlchemyFixtureTest):
     def assert_data_loaded(self, dataset):
         eq_(Category.get( dataset.gray_stuff.id).name, 
                             dataset.gray_stuff.name)
@@ -44,6 +43,13 @@ class TestSQLAlchemyFixture(
     
     def assert_data_torndown(self):
         eq_(len(Category.select()), 0)
+        
+class TestSQLAlchemyCategory(
+        HavingCategoryData, SQLAlchemyCategoryTest, LoaderTest):
+    pass
+class TestSQLAlchemyCategoryAsDataType(
+        HavingCategoryAsDataType, SQLAlchemyCategoryTest, LoaderTest):
+    pass
 
 class TestSQLAlchemyPartialRecovery(
         SQLAlchemyFixtureTest, LoaderPartialRecoveryTest):
@@ -52,9 +58,8 @@ class TestSQLAlchemyPartialRecovery(
         eq_(len(Category.select()), 0)
         eq_(len(Offer.select()), 0)
         eq_(len(Product.select()), 0)
-        
-class TestSQLAlchemyFixtureForeignKeys(
-        HavingOfferProductData, SQLAlchemyFixtureTest, LoaderTest):
+
+class SQLAlchemyFixtureForKeysTest(SQLAlchemyFixtureTest):
     def setUp(self):
         if not conf.POSTGRES_DSN:
             raise SkipTest
@@ -75,8 +80,6 @@ class TestSQLAlchemyFixtureForeignKeys(
         eq_(Category.get(
                 dataset.free_stuff.id).name,
                 dataset.free_stuff.name)
-        
-        eq_(dataset.just_some_widget.type, 'foobar')
     
     def assert_data_torndown(self):
         """assert that the dataset was torn down."""
@@ -84,3 +87,11 @@ class TestSQLAlchemyFixtureForeignKeys(
         eq_(len(Offer.select()), 0)
         eq_(len(Product.select()), 0)
         
+class TestSQLAlchemyFixtureForKeys(
+        HavingOfferProductData, SQLAlchemyFixtureForKeysTest, LoaderTest):
+    pass
+        
+class TestSQLAlchemyFixtureForKeysAsType(
+        HavingOfferProductAsDataType, SQLAlchemyFixtureForKeysTest, LoaderTest):
+    pass
+    

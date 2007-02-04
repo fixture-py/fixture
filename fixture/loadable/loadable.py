@@ -93,6 +93,11 @@ class LoadableFixture(Fixture):
             ObjRegistry.__init__(self)
             self.queue = []
         
+        def __repr__(self):
+            return "<%s at %s %s>" % (
+                    self.__class__.__name__, hex(id(self)), 
+                    [self.registry[i].__class__ for i in self.queue])
+        
         def register(self, obj):
             """register this object as "loaded"  
             """
@@ -142,8 +147,8 @@ class LoadableFixture(Fixture):
         
         if not ds.meta.refclass:
             ds.meta.refclass = self.dataclass
-        for req_ds in ds.meta.requires:
-            r = req_ds(default_refclass=self.dataclass)
+        for ref_ds in ds.meta.references:
+            r = ref_ds(default_refclass=self.dataclass)
             self.load_dataset(r)
         
         self.attach_storage_medium(ds)
@@ -162,7 +167,7 @@ class LoadableFixture(Fixture):
                 raise self.LoadError(
                         "%s: %s (while saving '%s' of %s, %s)" % (
                                 etype.__name__, val, key, ds, row)), None, tb
-                                                
+                                
         self.loaded.register(ds)
     
     def rollback(self):

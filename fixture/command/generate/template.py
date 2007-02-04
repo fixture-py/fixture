@@ -2,6 +2,7 @@
 """templates that generate fixture modules."""
 
 from fixture.command.generate import code_str
+import pprint
 
 def _addto(val, list_):
     if val not in list_:
@@ -71,6 +72,9 @@ class Template(object):
             """
             return ['pass']
     
+    class data(tuple):
+        pass
+    
     metabase = """
 class metabase:
     pass"""
@@ -115,21 +119,20 @@ class fixture(Template):
         def fset_to_attr(self, fset, fxt_class):
             # do we need to check for MergedSuperSet ?
             # attribute needs key only
-            return code_str("self.ref.%s.%s" % (
-                        fset.mk_key(), fset.get_id_attr()))
+            return code_str("%s.%s.ref(%s)" % (
+                        fxt_class, fset.mk_key(), repr(fset.get_id_attr())))
             
         def meta(self, fxt_class):
-            if len(self.requires):
-                return ["requires = %s" % str(tuple(self.requires))]
-            else:
-                return ["pass"]
+            return ""
+            # if len(self.requires):
+            #     return ["requires = %s" % str(tuple(self.requires))]
+            # else:
+            #     return ["pass"]
     
     fixture = """
 class %(fxt_class)s(DataSet):
-    class Meta(DataSet.Meta):
-        %(meta)s
-    def data(self):%(data_header)s\
-        return %(data)s"""
+%(meta)s\
+%(data)s"""
     
     metabase = ""
     
@@ -138,6 +141,17 @@ class %(fxt_class)s(DataSet):
         self.add_import("from fixture import DataSet")
         self.add_import("from fixture.dataset import MergedSuperSet")
         self.add_import("from fixture.style import NamedDataStyle")
+    
+    class data(object):
+        def __init__(self, elements):
+            self.elements = elements
+        def __repr__(self):
+            o = []
+            for class_, dict_ in self.elements:
+                o.append("    class %s:" % class_)
+                for k,v in dict_.iteritems():
+                    o.append("        %s = %s" % (k,repr(v)))
+            return "\n".join(o)
     
     def header(self, handler):
         loadable_fxt_class = handler.loadable_fxt_class

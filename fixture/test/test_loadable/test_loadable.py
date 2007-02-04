@@ -102,16 +102,23 @@ class HavingCategoryData:
                     ('yellow_stuff', dict(id=2, name='yellow')),
                 )
         return [CategoryData]
+
+class HavingCategoryAsDataType:
+    def datasets(self):
+        class CategoryData(DataSet):
+            class gray_stuff:
+                id = 1
+                name = 'gray'
+            class yellow_stuff:
+                id = 2
+                name = 'yellow'
+                
+        return [CategoryData]
         
-class HavingOfferProductData:  
+class HavingOfferProductData:   
     """mixin that adds data to a LoaderTest."""
     def datasets(self):
-        """returns some datasets."""
-        
-        class WidgetData(DataSet):
-            def data(self):
-                return (('just_some_widget', dict(type='foobar')),)
-        
+        """returns some datasets.""" 
         class CategoryData(DataSet):
             def data(self):
                 return (
@@ -120,7 +127,7 @@ class HavingOfferProductData:
         
         class ProductData(DataSet):
             class Meta:
-                requires = (CategoryData,)
+                references = (CategoryData,)
             def data(self):
                 return (('truck', dict(
                             id=1, 
@@ -129,18 +136,44 @@ class HavingOfferProductData:
         
         class OfferData(DataSet):
             class Meta:
-                requires = (CategoryData, ProductData)
-                references = (WidgetData,)
+                references = (CategoryData, ProductData)
             def data(self):
                 return (
                     ('free_truck', dict(
                             id=1, 
-                            name=('free truck by %s' % 
-                                    self.ref.just_some_widget.type),
+                            name='free truck',
                             product_id=self.ref.truck.id,
                             category_id=self.ref.free_stuff.id)),
                 )
         return [OfferData, ProductData]
+        
+class HavingOfferProductAsDataType:  
+    """mixin that adds data to a LoaderTest."""
+    def datasets(self):
+        """returns some datasets."""
+        
+        class CategoryData(DataSet):
+            class cars:
+                id = 1
+                name = 'cars'
+            class free_stuff:
+                id = 2
+                name = 'get free stuff'
+        
+        class ProductData(DataSet):
+            class truck:
+                id = 1
+                name = 'truck'
+                category_id = CategoryData.cars.ref('id')
+        
+        class OfferData(DataSet):
+            class free_truck:
+                id = 1
+                name = "it's a free truck"
+                product_id = ProductData.truck.ref('id')
+                category_id = CategoryData.free_stuff.ref('id')
+                
+        return [ProductData, OfferData]
         
 
 class LoaderPartialRecoveryTest(HavingOfferProductData):

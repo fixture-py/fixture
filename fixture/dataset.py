@@ -3,18 +3,26 @@
 
 from fixture.util import ObjRegistry
 
+def lazy_meta(obj):
+    # if not hasattr(obj, 'meta'):
+    try:
+        object.__getattribute__(obj, 'meta')
+    except AttributeError:
+        Meta = object.__getattribute__(obj, 'Meta')
+        object.__setattr__(obj, 'meta', Meta())
+
 class DataContainer(object):
     """contains data accessible by attribute and/or key.
     
     for all internally used attributes, use the inner class Meta.
     """
+    _reserved_attr = ('meta', 'Meta', 'ref', 'get')
     class Meta:
         data = None
         keys = None
         
     def __init__(self, data=None, keys=None):
-        if not hasattr(self, 'meta'):
-            self.meta = self.Meta()
+        lazy_meta(self)
         if not data: 
             data = {}
         self.meta.data = data
@@ -22,10 +30,18 @@ class DataContainer(object):
             keys = []
         self.meta.keys = keys
     
+    def __contains__(self, name):
+        return name in self.meta.data
+    
     def __getitem__(self, key):
         return self.meta.data[key]
         
-    def __getattr__(self, name):
+    def __getattribute__(self, name):
+        
+        # it is necessary to completely override __getattr__
+        # so that class attributes don't interfer
+        if name.startswith('_') or name in self._reserved_attr:
+            return object.__getattribute__(self, name)
         try:
             return self.meta.data[name]
         except KeyError:
@@ -50,6 +66,7 @@ class DataContainer(object):
 
 class DataRow(DataContainer):
     """a key/attribute accessible dictionary."""
+    _reserved_attr = DataContainer._reserved_attr + ('iteritems', 'items')
     class Meta(DataContainer.Meta):
         pass
     
@@ -75,8 +92,7 @@ class DataSetContainer(object):
         dataset_keys = None
         
     def __init__(self):
-        if not hasattr(self, 'meta'):
-            self.meta = self.Meta()
+        lazy_meta(self)
         self.meta.datasets = {}
         self.meta.dataset_keys = []
         self.meta._cache = ObjRegistry()
@@ -137,8 +153,7 @@ class MergedSuperSet(SuperSet):
     class Meta(SuperSet.Meta):
         pass
     def __init__(self, *datasets):
-        if not hasattr(self, 'meta'):
-            self.meta = self.Meta()
+        lazy_meta(self)
         self.meta.keys_to_datasets = {}
         SuperSet.__init__(self, *datasets)
     
@@ -160,6 +175,41 @@ class MergedSuperSet(SuperSet):
             for d in dataset.ref:
                 self._setdataset(d, isref=True)
 
+class Ref(object):
+    """A reference to a row in a DataSet class."""
+    class Value(object):
+        def __init__(self, ref, attr_name):
+            self.ref = ref
+            self.value = ref.getvalue(attr_name)
+            
+    def __init__(self, dataset_class, row):
+        self.dataset_class = dataset_class
+        self.row = row
+    
+    def __call__(self, ref_name):
+        return self.Value(self, ref_name)
+    
+    def __repr__(self):
+        return "<%s to %s.%s at %s>" % (
+            self.__class__.__name__, self.dataset_class.__name__, 
+            self.row.__name__, hex(id(self)))
+    
+    def getvalue(self, attr_name):
+        return getattr(self.row, attr_name)
+
+from types import ClassType
+def is_row_class(attr):
+    return (type(attr)==ClassType and attr.__name__ != 'Meta' and 
+            not issubclass(attr, DataContainer.Meta))
+    
+class DataType(type):
+    def __init__(cls, name, bases, cls_attr):
+        super(DataType, cls).__init__(name, bases, dict)
+        for name, attr in cls_attr.iteritems():
+            if is_row_class(attr):
+                # bind a ref method
+                attr.ref = Ref(cls, attr)
+
 class DataSet(DataContainer):
     """a set of row objects.
     
@@ -174,23 +224,20 @@ class DataSet(DataContainer):
     
     >>> from fixture import DataSet
     >>> class Flowers(DataSet):
-    ...     def data(self):
-    ...         return (
-    ...             ('violets', dict(color='blue')), 
-    ...             ('roses', dict(color='red')))
+    ...     class violets:
+    ...         color = 'blue'
+    ...     class roses:
+    ...         color = 'red'
     ... 
     >>> f = Flowers()
     >>> f.violets.color
     'blue'
     >>> f.violets['color']
     'blue'
-    >>> for key, row in f:
-    ...     print key, 'are', row.color
-    ... 
-    violets are blue
-    roses are red
     
     """
+    __metaclass__ = DataType
+    _reserved_attr = DataContainer._reserved_attr + ('data',)
     ref = None
     class Meta(DataContainer.Meta):
         row = DataRow
@@ -199,8 +246,8 @@ class DataSet(DataContainer):
         storage = None
         storage_medium = None
         stored_objects = []
-        requires = []
         references = []
+        _built = False
     
     def __init__(self, default_refclass=None):
         DataContainer.__init__(self)
@@ -214,25 +261,38 @@ class DataSet(DataContainer):
                     setattr(self.meta, name, getattr(defaults, name))
         
         self.meta.stored_objects = []
+        # dereference from class ...        
+        try:
+            cl_attr = getattr(self.Meta, 'references')
+        except AttributeError:
+            cl_attr = []
+        setattr(self.meta, 'references', [c for c in cl_attr])
         
         if not self.meta.refclass:
             if default_refclass:
                 self.meta.refclass = default_refclass
             else:
                 self.meta.refclass = SuperSet
-                
-        self.ref = self.meta.refclass(*(
-            [ds(default_refclass=default_refclass) \
-                for ds in iter(self.meta.requires)] + 
-            [ds(default_refclass=default_refclass) \
-                for ds in iter(self.meta.references)] ))
         
+        def mkref(references):
+            return self.meta.refclass(*[
+                        ds(default_refclass=default_refclass) \
+                            for ds in iter(references)])
+        
+        # data def style classes, so they have refs when data is walked
+        if len(self.meta.references) > 0:
+            self.ref = mkref(self.meta.references)
+            
         for key, data in self.data():
-            if hasattr(self, key):
+            if key in self:
                 raise ValueError(
                     "data() cannot redeclare key '%s' "
                     "(this is already an attribute)" % key)
             self._setdata(key, self.meta.row(data))
+            
+        if not self.ref:
+            # type style classes, since refs are now discovered
+            self.ref = mkref(self.meta.references)
     
     def __iter__(self):
         for key in self.meta.keys:
@@ -241,5 +301,42 @@ class DataSet(DataContainer):
     def data(self):
         """returns iterable key/dict pairs.                     
         """
-        raise NotImplementedError
+        if self.meta._built:
+            for k,v in self:
+                yield (k,v)
                 
+        def public_dir(obj):
+            for name in dir(obj):
+                if name.startswith("_"):
+                    continue
+                yield name
+                
+        empty = True
+        for name in public_dir(self.__class__):
+            val = getattr(self.__class__, name)
+            if not is_row_class(val):
+                continue
+            
+            empty = False
+            key = name
+            row_class = val
+            row = {}
+            
+            for col_name in public_dir(row_class):
+                col_val = getattr(row_class, col_name)
+                
+                if isinstance(col_val, Ref):
+                    continue
+                if isinstance(col_val, Ref.Value):
+                    ref = col_val.ref
+                    col_val = col_val.value
+                    if ref.dataset_class not in self.meta.references:
+                        # store the reference:
+                        self.meta.references.append(ref.dataset_class)
+                
+                row[col_name] = col_val
+            yield (key, row)
+            
+        if empty:
+            raise ValueError("cannot create an empty DataSet")
+        self.meta._built = True

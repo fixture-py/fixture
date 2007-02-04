@@ -7,7 +7,6 @@ import sys
 import os
 import optparse
 import inspect
-import pprint
 from warnings import warn
 from fixture.command.generate.template import templates, is_template
 handler_registry = []
@@ -129,7 +128,7 @@ class FixtureGenerator(object):
                 
             tpl['meta'] = "\n        ".join(datadef.meta(kls))
             tpl['data_header'] = "\n        ".join(datadef.data_header) + "\n"
-            tpl['data'] = pprint.pformat(self.template.tuple(tpl['data']))
+            tpl['data'] = self.template.data(tpl['data'])
             code.append(self.template.render(tpl))
             
         code = "\n".join(self.template.import_header + code)

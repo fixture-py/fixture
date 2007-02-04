@@ -40,16 +40,14 @@ class SQLObjectFixtureTest:
         teardown_db(self.transaction)
         self.transaction.commit()
 
-class SQLObjectFixturePostgresTest(SQLObjectFixtureTest):
+class SQLObjectFixtureForKeysTest(SQLObjectFixtureTest):
     def setUp(self):
         if not conf.POSTGRES_DSN:
             raise SkipTest
             
         SQLObjectFixtureTest.setUp(self, dsn=conf.POSTGRES_DSN)
 
-class TestSQLObjectFixture(
-        HavingCategoryData, SQLObjectFixtureTest, LoaderTest):
-    
+class SQLObjectCategoryTest(SQLObjectFixtureTest):
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""
         eq_(Category.get( dataset.gray_stuff.id).name, 
@@ -60,21 +58,25 @@ class TestSQLObjectFixture(
     def assert_data_torndown(self):
         """assert that the dataset was torn down."""
         eq_(Category.select().count(), 0)
+        
+class TestSQLObjectCategory(
+        HavingCategoryData, SQLObjectCategoryTest, LoaderTest):
+    pass
+    
+class TestSQLObjectCategoryAsDataType(
+        HavingCategoryAsDataType, SQLObjectCategoryTest, LoaderTest):
+    pass
 
 class TestSQLObjectPartialLoad(
-        SQLObjectFixtureTest, LoaderPartialRecoveryTest):
-        
+        SQLObjectFixtureTest, LoaderPartialRecoveryTest):        
    def assert_partial_load_aborted(self):
        # I don't think sqlobject can support this ...
        raise SkipTest
        
         # t = self.conn.transaction()
         # eq_(Category.select(connection=t).count(), 0)
-
-class TestSQLObjectFixtureForeignKeys(
-        HavingOfferProductData, SQLObjectFixturePostgresTest, 
-        LoaderTest):
-    
+        
+class SQLObjectFixtureCascadeTest(SQLObjectFixtureForKeysTest):
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""
         eq_(Offer.get(dataset.free_truck.id).name, dataset.free_truck.name)
@@ -89,12 +91,20 @@ class TestSQLObjectFixtureForeignKeys(
         eq_(Category.get(
                 dataset.free_stuff.id).name,
                 dataset.free_stuff.name)
-        
-        eq_(dataset.just_some_widget.type, 'foobar')
     
     def assert_data_torndown(self):
         """assert that the dataset was torn down."""
         eq_(Category.select().count(), 0)
         eq_(Offer.select().count(), 0)
         eq_(Product.select().count(), 0)
+
+class TestSQLObjectFixtureCascade(
+        HavingOfferProductData, SQLObjectFixtureCascadeTest, 
+        LoaderTest):
+    pass
+    
+class TestSQLObjectFixtureCascadeAsType(
+        HavingOfferProductAsDataType, SQLObjectFixtureCascadeTest, 
+        LoaderTest):
+    pass
             
