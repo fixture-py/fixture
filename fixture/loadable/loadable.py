@@ -192,22 +192,18 @@ class LoadableFixture(Fixture):
                 self.commit()
         finally:
             self.then_finally(unloading=unloading)
-                
 
-class DBLoadableFixture(LoadableFixture):
-    """An abstract fixture that will be loadable into a database.
+class EnvLoadableFixture(LoadableFixture):
+    """An abstract fixture that can resolve DataSet objects from an env.
     
-    More specifically, one that runs atomically (within a 
-    begin/ commit/ rollback block).
+    Keyword "env" should be a dict or a module if not None.
+    According to the style rules, the env will be used to find objects by name.
     
     """
-    def __init__(self, style=None, dsn=None, env=None, medium=None, 
-                        dataclass=None):
+    def __init__(self, style=None, env=None, medium=None, dataclass=None):
         LoadableFixture.__init__(self, style=style, medium=medium, 
                                         dataclass=dataclass)
-        self.dsn = dsn
         self.env = env
-        self.transaction = None
     
     def attach_storage_medium(self, ds):
         
@@ -240,9 +236,22 @@ class DBLoadableFixture(LoadableFixture):
                 "could not find %s '%s' for "
                 "dataset %s in self.env (%s)" % (
                     self.Medium, ds.meta.storage, ds, repr_env))
+
+class DBLoadableFixture(EnvLoadableFixture):
+    """An abstract fixture that will be loadable into a database.
+    
+    More specifically, one that forces its implementation to run atomically 
+    (within a begin/ commit/ rollback block).
+    """
+    def __init__(self, style=None, dsn=None, env=None, medium=None, 
+                        dataclass=None):
+        EnvLoadableFixture.__init__(self, style=style, medium=medium, 
+                                        dataclass=dataclass, env=env)
+        self.dsn = dsn
+        self.transaction = None
     
     def begin(self, unloading=False):
-        LoadableFixture.begin(self, unloading=unloading)
+        EnvLoadableFixture.begin(self, unloading=unloading)
         self.transaction = self.create_transaction()
     
     def commit(self):
