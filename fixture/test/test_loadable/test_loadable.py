@@ -29,11 +29,26 @@ class LoaderTest:
     
     def test_with_data(self):
         """test @fixture.with_data"""
+        import nose, unittest
         
-        @self.fixture.with_data(*self.datasets())
+        class ns:
+            was_setup=False
+            was_torndown=False
+        def setup():
+            ns.was_setup=True
+        def teardown():
+            ns.was_torndown=True
+        
+        kw = dict(setup=setup, teardown=teardown)
+        @self.fixture.with_data(*self.datasets(), **kw)
         def test_data_test(data):
+            eq_(ns.was_setup, True)
             self.assert_data_loaded(data)
-        test_data_test()
+        
+        case = nose.case.FunctionTestCase(test_data_test)
+        case(unittest.TestResult())
+        
+        eq_(ns.was_torndown, True)
         self.assert_data_torndown()
     
     def test_with_data_recovery(self):

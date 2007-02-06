@@ -59,7 +59,7 @@ setup(
                         sys.version_info[1]),
     packages = find_packages(),
     
-    install_requires=('nose',),
+    install_requires=('nose>=0.9.2',),
     # test_suite="nose.collector",
     test_suite="fixture.setup_test_not_supported",
     entry_points = { 
