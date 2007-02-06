@@ -23,6 +23,12 @@ def setup():
     realconn = connectionForURI(conf.POSTGRES_DSN)
     memconn = connectionForURI("sqlite:/:memory:")
 
+def teardown():
+    realconn.close()
+    globals()['realconn'] = None
+    memconn.close()
+    globals()['memconn'] = None
+
 class SQLObjectGenerateTest(GenerateTest):
     args = [
         "fixture.examples.db.sqlobject_examples.Offer", 

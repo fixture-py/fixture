@@ -11,8 +11,16 @@ from fixture.test.test_loadable import *
 from fixture.examples.db.sqlobject_examples import *
 from fixture.test import conf
 
+# getting too many open connections error...
+dsn_conns = {}
+
 def setup():
     if not env_supports.sqlobject: raise SkipTest
+
+def teardown():
+    for dsn, conn in dsn_conns.items():
+        conn.close()
+        del dsn_conns[dsn]
 
 class SQLObjectFixtureTest:
     fixture = SQLObjectFixture(
@@ -24,8 +32,10 @@ class SQLObjectFixtureTest:
     def setUp(self, dsn=conf.MEM_DSN):
         """should load the dataset"""
         from sqlobject import connectionForURI
-        self.conn = connectionForURI(dsn)
-        self.conn.debug = 1
+        if dsn not in dsn_conns:
+            dsn_conns[dsn] = connectionForURI(dsn)
+        self.conn = dsn_conns[dsn]
+        # self.conn.debug = 1
         
         self.fixture.connection = self.conn
         self.transaction = self.conn.transaction()
@@ -39,7 +49,6 @@ class SQLObjectFixtureTest:
         """should unload the dataset."""
         teardown_db(self.transaction)
         self.transaction.commit()
-        self.conn.close()
 
 class SQLObjectFixtureForKeysTest(SQLObjectFixtureTest):
     def setUp(self):
