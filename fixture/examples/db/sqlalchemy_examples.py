@@ -35,7 +35,7 @@ supports interacting with mapper classes, however.
 
 Next you build the DataSet objects that you want to load, in this case they 
 inherit from SequencedSet, an optional DataSet enhancement that simulates 
-auto-incrementing IDs.  The IDs values can be overridden for any row and the 
+auto-incrementing IDs.  The ID values can be overridden for any row and the 
 column name is configurable, but defaults to 'id'::
 
     >>> from fixture import SequencedSet
@@ -71,7 +71,7 @@ there are alternatives to this::
     ...                         style=TrimmedNameStyle(suffix="_data"))
     ...
 
-Now we are ready to write a test that uses the fixtures.  The following is just one way you could write a test module runnable by nose_ ::
+Now we are ready to write a test that uses the fixtures.  The following is just one way you could write a test function runnable by nose_ ::
  
     >>> def setup_data():
     ...     meta.create_all()
@@ -88,6 +88,9 @@ Now we are ready to write a test that uses the fixtures.  The following is just 
     ...     assert click.affiliate is joe
     ...     assert click.type == data.events_data.joes_click.type
     ... 
+    
+The rest will be done for you automatically by nose_::
+
     >>> import nose, unittest
     >>> result = unittest.TestResult()
     >>> case = nose.case.FunctionTestCase(test_event_something)
