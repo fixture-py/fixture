@@ -28,7 +28,9 @@ class TableEnv(object):
                         module = __import__(p)
                 except:
                     etype, val, tb = sys.exc_info()
-                    raise etype, ("%s (while importing %s)" % (val, p)), tb
+                    raise (
+                        ImportError("%s: %s (while importing %s)" % (
+                            etype, val, p)), None, tb)
             else:
                 module = sys.modules[p]
             self._find_objects(module)

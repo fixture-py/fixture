@@ -23,11 +23,13 @@ class SQLAlchemyFixture(DBLoadableFixture):
     
     - session_context
     
-      - An instance of sqlalchemy.ext.sessioncontext.SessionContext.  A session will be created from session_context.current
+      - An instance of sqlalchemy.ext.sessioncontext.SessionContext.  A session 
+        will be created from session_context.current
     
     - session
       
-      - A session from sqlalchemy.create_session().  This will override the session_context.current approach.
+      - A session from sqlalchemy.create_session().  This will override the 
+        session_context.current approach.
     
     - dataclass
     
@@ -49,7 +51,8 @@ class SQLAlchemyFixture(DBLoadableFixture):
     """
     Medium = staticmethod(negotiated_medium)
     
-    def __init__(self,  style=None, medium=None, env=None, session=None, session_context=None, dataclass=None):
+    def __init__(self,  style=None, medium=None, env=None, session=None, 
+                        session_context=None, dataclass=None):
         DBLoadableFixture.__init__(self,   style=style, dsn=None, 
                                     env=env, medium=medium, dataclass=dataclass)
         self.session = session

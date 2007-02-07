@@ -42,8 +42,8 @@ class SQLAlchemyFixtureTest:
                         
     def setUp(self, dsn=conf.MEM_DSN):
         from sqlalchemy import BoundMetaData
+        global shared_conns
         if dsn not in shared_conns:
-            global shared_conns
             meta = BoundMetaData(dsn)
             conn = meta.engine.connect()
             shared_conns[dsn] = meta, conn
