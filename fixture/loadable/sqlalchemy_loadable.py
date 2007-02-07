@@ -58,12 +58,14 @@ class SQLAlchemyFixture(DBLoadableFixture):
     def begin(self, unloading=False):
         
         if self.session is None:
-            ## seems that the problem with supporting dsn and meta is because objects can be attached to sessions already
+            ## seems that the problem with supporting dsn and meta is because 
+            ## objects can be attached to sessions already
             # if self.session_context is None:            
             #     import sqlalchemy
             #     from sqlalchemy.ext.sessioncontext import SessionContext
             # 
-            #     self.session_context = SessionContext(lambda: sqlalchemy.create_session(bind_to=self.meta.engine))
+            #     self.session_context = SessionContext(
+            #       lambda: sqlalchemy.create_session(bind_to=self.meta.engine))
             self.session = self.session_context.current
             
         self.connection = self.session.bind_to.connect()

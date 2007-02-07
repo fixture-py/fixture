@@ -56,7 +56,8 @@ easy_install fixture
 __version__ = "1.0"
 
 from fixture.loadable import *
-from dataset import *
+from fixture.dataset import *
+from fixture.util import *
 
 
 def setup_test_not_supported():

@@ -27,6 +27,32 @@ class LoaderTest:
         """returns some datasets."""
         raise NotImplementedError
     
+    def test_DataTestCase(self):
+        from fixture import DataTestCase
+        import unittest
+        driver = self
+        class ns:
+            tested = False
+        
+        class SomeDataTestCase(DataTestCase, unittest.TestCase):
+            fixture = driver.fixture
+            datasets = driver.datasets()
+            def test_data_test(self):
+                ns.tested = True
+                driver.assert_data_loaded(self.data)
+        
+        res = unittest.TestResult()
+        loader = unittest.TestLoader()
+        suite = loader.loadTestsFromTestCase(SomeDataTestCase)
+        suite(res)
+        
+        eq_(res.failures, [])
+        eq_(res.errors, [])
+        eq_(res.testsRun, 1)
+        eq_(ns.tested, True)
+        
+        self.assert_data_torndown()
+    
     def test_with_data(self):
         """test @fixture.with_data"""
         import nose, unittest
