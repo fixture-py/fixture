@@ -20,15 +20,14 @@ class SQLAlchemyFixture(DBLoadableFixture):
     - style
     
       - A Style object to translate names with
-     
-    - dsn
-    
-      - A dsn to create an engine with.  without one you will have to speficy 
-        session_context
     
     - session_context
     
-      - An instance of sqlalchemy.ext.sessioncontext.SessionContext
+      - An instance of sqlalchemy.ext.sessioncontext.SessionContext.  A session will be created from session_context.current
+    
+    - session
+      
+      - A session from sqlalchemy.create_session().  This will override the session_context.current approach.
     
     - dataclass
     
@@ -50,21 +49,23 @@ class SQLAlchemyFixture(DBLoadableFixture):
     """
     Medium = staticmethod(negotiated_medium)
     
-    def __init__(self,  style=None, dsn=None, medium=None, 
-                        env=None, session_context=None, dataclass=None):
-        DBLoadableFixture.__init__(self,   style=style, dsn=dsn, 
+    def __init__(self,  style=None, medium=None, env=None, session=None, session_context=None, dataclass=None):
+        DBLoadableFixture.__init__(self,   style=style, dsn=None, 
                                     env=env, medium=medium, dataclass=dataclass)
+        self.session = session
         self.session_context = session_context
-        self.session = None
     
     def begin(self, unloading=False):
         
-        if self.session_context is None:            
-            import sqlalchemy
-            from sqlalchemy.ext.sessioncontext import SessionContext
-            self.session_context = SessionContext(sqlalchemy.create_session)
-        
-        self.session = self.session_context.current
+        if self.session is None:
+            ## seems that the problem with supporting dsn and meta is because objects can be attached to sessions already
+            # if self.session_context is None:            
+            #     import sqlalchemy
+            #     from sqlalchemy.ext.sessioncontext import SessionContext
+            # 
+            #     self.session_context = SessionContext(lambda: sqlalchemy.create_session(bind_to=self.meta.engine))
+            self.session = self.session_context.current
+            
         self.connection = self.session.bind_to.connect()
         
         DBLoadableFixture.begin(self, unloading=unloading)

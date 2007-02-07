@@ -46,7 +46,12 @@ class LoaderTest:
             self.assert_data_loaded(data)
         
         case = nose.case.FunctionTestCase(test_data_test)
-        case(unittest.TestResult())
+        res = unittest.TestResult() 
+        case(res)
+        
+        eq_(res.failures, [])
+        eq_(res.errors, [])
+        eq_(res.testsRun, 1)
         
         eq_(ns.was_torndown, True)
         self.assert_data_torndown()
