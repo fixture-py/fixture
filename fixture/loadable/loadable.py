@@ -210,32 +210,33 @@ class EnvLoadableFixture(LoadableFixture):
         if ds.meta.storage_medium is not None:
             # already attached...
             return
-            
-        if not ds.meta.storage:
-            ds.meta.storage = self.style.guess_storage(ds.__class__.__name__)
         
-        storable = None
+        storable = ds.meta.storable
         
-        if hasattr(self.env, 'get'):
-            storable = self.env.get(ds.meta.storage, None)
         if not storable:
-            if hasattr(self.env, ds.meta.storage):
-                try:
-                    storable = getattr(self.env, ds.meta.storage)
-                except AttributeError:
-                    pass
+            if not ds.meta.storable_name:
+                ds.meta.storable_name = self.style.guess_storable_name(ds.__class__.__name__)
         
-        if storable:
-            ds.meta.storage_medium = self.Medium(storable, ds)
-        else:
-            repr_env = repr(type(self.env))
-            if hasattr(self.env, '__module__'):
-                repr_env = "%s from '%s'" % (repr_env, repr_env.__module__)
+            if hasattr(self.env, 'get'):
+                storable = self.env.get(ds.meta.storable_name, None)
+            if not storable:
+                if hasattr(self.env, ds.meta.storable_name):
+                    try:
+                        storable = getattr(self.env, ds.meta.storable_name)
+                    except AttributeError:
+                        pass
+        
+            if not storable:
+                repr_env = repr(type(self.env))
+                if hasattr(self.env, '__module__'):
+                    repr_env = "%s from '%s'" % (repr_env, repr_env.__module__)
                 
-            raise self.StorageMediaNotFound(
-                "could not find %s '%s' for "
-                "dataset %s in self.env (%s)" % (
-                    self.Medium, ds.meta.storage, ds, repr_env))
+                raise self.StorageMediaNotFound(
+                    "could not find %s '%s' for "
+                    "dataset %s in self.env (%s)" % (
+                        self.Medium, ds.meta.storable_name, ds, repr_env))
+                        
+        ds.meta.storage_medium = self.Medium(storable, ds)
 
 class DBLoadableFixture(EnvLoadableFixture):
     """An abstract fixture that will be loadable into a database.

@@ -56,11 +56,28 @@ class SQLObjectCategoryTest(SQLObjectFixtureTest):
     def assert_data_torndown(self):
         """assert that the dataset was torn down."""
         eq_(Category.select().count(), 0)
-        
+         
 class TestSQLObjectCategory(
         HavingCategoryData, SQLObjectCategoryTest, LoaderTest):
+    pass 
+
+class HavingCategoryDataStorable:
+    """mixin that adds data to a LoaderTest."""
+    def datasets(self):
+        class WhateverIWantToCallIt(DataSet):
+            class Meta:
+                storable = Category
+            class gray_stuff:
+                id=1
+                name='gray'
+            class yellow_stuff:
+                id=2
+                name='yellow'
+        return [WhateverIWantToCallIt]
+        
+class TestSQLObjectCategoryStorable(
+        HavingCategoryDataStorable, SQLObjectCategoryTest, LoaderTest):
     pass
-    
 class TestSQLObjectCategoryAsDataType(
         HavingCategoryAsDataType, SQLObjectCategoryTest, LoaderTest):
     pass

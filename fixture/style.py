@@ -13,7 +13,7 @@ class Style(object):
         """converts name to a new name suitable for an attribute."""
         raise NotImplementedError
     
-    def guess_storage(self, name):
+    def guess_storable_name(self, name):
         """converts a dataset class name to a storage class name."""
         return name
     
@@ -52,7 +52,7 @@ class OriginalStyle(Style):
     """style that honors all original names."""
     def to_attr(self, name):
         return name
-    def guess_storage(self, name):
+    def guess_storable_name(self, name):
         return name
 
 class CamelAndUndersStyle(Style):
@@ -63,7 +63,7 @@ class CamelAndUndersStyle(Style):
         """
         return camel_to_under(name)
     
-    def guess_storage(self, name):
+    def guess_storable_name(self, name):
         """assume a storage name is the same as original.
         
         i.e. Employee becomes Employee
@@ -94,7 +94,7 @@ class TrimmedNameStyle(Style):
     def to_attr(self, name):
         return self._trim(name)
     
-    def guess_storage(self, name):
+    def guess_storable_name(self, name):
         return self._trim(name)
 
 class PaddedNameStyle(Style):
@@ -113,7 +113,7 @@ class PaddedNameStyle(Style):
     def to_attr(self, name):
         return self._pad(name)
     
-    def guess_storage(self, name):
+    def guess_storable_name(self, name):
         return self._pad(name)
 
 class NamedDataStyle(TrimmedNameStyle):

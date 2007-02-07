@@ -84,6 +84,29 @@ class TestSQLAlchemyCategoryInContext(
 class TestSQLAlchemyCategory(
         HavingCategoryData, SessionFixture, SQLAlchemyCategoryTest, LoaderTest):
     pass
+    
+
+class HavingCategoryDataStorable:
+    def datasets(self):
+        class WhateverIWantToCallIt(DataSet):
+            class Meta:
+                storable = Category
+            class gray_stuff:
+                id=1
+                name='gray'
+            class yellow_stuff:
+                id=2
+                name='yellow'
+        return [WhateverIWantToCallIt]
+        
+class TestSQLAlchemyCategoryStorable(
+        HavingCategoryDataStorable, SessionFixture, SQLAlchemyCategoryTest, LoaderTest):
+    pass
+class TestSQLAlchemyCategoryStorableInContext(
+        HavingCategoryDataStorable, SessionContextFixture, SQLAlchemyCategoryTest, LoaderTest):
+    pass
+    
+    
 class TestSQLAlchemyCategoryAsDataType(
         HavingCategoryAsDataType, SessionContextFixture, SQLAlchemyCategoryTest, LoaderTest):
     pass

@@ -182,7 +182,7 @@ class TestDataSetCustomMeta(DataSetTest):
         # the default config.  should be ok
         class Chairs(DataSet):
             class Meta:
-                storage = 'PretendStorage'
+                storable_name = 'PretendStorage'
             def data(self):
                 return (
                     ('recliner', dict(type='recliner')),
@@ -195,7 +195,7 @@ class TestDataSetCustomMeta(DataSetTest):
         eq_(dataset['Lazy-boy'].type, 'Lazy-boy')
         
         # should also have the same defaults as DataSet :
-        eq_(dataset.meta.storage, 'PretendStorage')
+        eq_(dataset.meta.storable_name, 'PretendStorage')
         eq_(dataset.meta.row, DataSet.Meta.row)
     
     def assert_itered_n_times(self, count):

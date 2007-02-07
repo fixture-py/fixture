@@ -135,6 +135,25 @@ class DataSet(DataContainer):
       
       - a SuperSet to use if None has already been specified in Meta
     
+    special inner Meta class
+    ------------------------
+    
+    The inner class Meta is used to configure a DataSet.  The following are 
+    acknowledged attributes:
+    
+    - storable
+    
+      - an object that should be used to store this DataSet.  If omitted the 
+        loader's style object will look for a storable object in its env, using 
+        storable_name
+    
+    - storable_name
+    
+      - the name of the storable object that the loader should fetch from its 
+        env to load this DataSet with.  If omitted, the loader's style object 
+        will try to guess the storable_name based on its env and the name of the 
+        DataSet class
+    
     a loader will typically want to load a dataset into a 
     single storage medium.  I.E. a table in a database.
     
@@ -158,7 +177,8 @@ class DataSet(DataContainer):
     class Meta(DataContainer.Meta):
         row = DataRow
         refclass = None
-        storage = None
+        storable = None
+        storable_name = None
         storage_medium = None
         references = []
         _stored_objects = []
