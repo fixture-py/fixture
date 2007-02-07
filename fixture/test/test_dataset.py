@@ -1,7 +1,7 @@
 
 from nose.tools import with_setup, eq_, raises
 from fixture import DataSet
-from fixture.dataset import DataRow, SuperSet, MergedSuperSet
+from fixture.dataset import DataRow, SuperSet, MergedSuperSet, SequencedSet
 
 class Books(DataSet):
     def data(self):
@@ -206,6 +206,65 @@ class TestDataSetCustomMeta(DataSetTest):
             eq_(items, {'type': 'recliner'})
         elif count == 2:
             eq_(items, {'type': 'Lazy-boy'})
+        else:
+            raise ValueError("unexpected row %s, count %s" % (items, count))
+
+class TestSequencedSet(DataSetTest):
+    def setUp(self):
+        class EventData(SequencedSet):
+            class click:
+                name="click"
+            class submit:
+                name="submit"
+            class install:
+                name="install"
+        self.dataset = EventData()
+        
+    def assert_access(self, dataset):
+        pass
+    def assert_itered_n_times(self, count):
+        eq_(count, 3)
+    
+    def assert_row_dict_for_iter(self, items, count):        
+        if count == 1:
+            eq_(items, {'name': 'click', 'id': 1})
+        elif count == 2:
+            eq_(items, {'name': 'install', 'id': 2})
+        elif count == 3:
+            eq_(items, {'name': 'submit', 'id': 3})
+        else:
+            raise ValueError("unexpected row %s, count %s" % (items, count))
+
+class TestInheritedSequencedSet(TestSequencedSet):
+    def setUp(self):
+        class EventData(SequencedSet):
+            class click:
+                name="click"
+            class submit(click):
+                name="submit"
+            class install(click):
+                name="install"
+        self.dataset = EventData()
+
+class TestExplicitSequencedSet(TestSequencedSet):
+    def setUp(self):
+        class EventData(SequencedSet):
+            class click:
+                name="click"
+            class install:
+                name="install"
+                id=99
+            class submit:
+                name="submit"
+        self.dataset = EventData()
+    
+    def assert_row_dict_for_iter(self, items, count):        
+        if count == 1:
+            eq_(items, {'name': 'click', 'id': 1})
+        elif count == 2:
+            eq_(items, {'name': 'install', 'id': 99})
+        elif count == 3:
+            eq_(items, {'name': 'submit', 'id': 100})
         else:
             raise ValueError("unexpected row %s, count %s" % (items, count))
     

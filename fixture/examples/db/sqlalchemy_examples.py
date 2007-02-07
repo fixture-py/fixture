@@ -1,6 +1,11 @@
 
 """examples for using sqlalchemy fixtures.
 
+SequencedSet Fixtures with SQLAlchemy and nose
+----------------------------------------------
+
+Create your tables::
+
     >>> from sqlalchemy import *
     >>> from sqlalchemy.ext.sessioncontext import SessionContext
     >>> from sqlalchemy.ext.assignmapper import assign_mapper
@@ -9,7 +14,6 @@
     >>> session_context = SessionContext(
     ...     lambda: create_session(bind_to=meta.engine))
     ... 
-    >>> # your table definitions...
     >>> affiliates = Table('affiliates', meta,
     ...     Column('id', INT, primary_key=True),
     ...     Column('name', String),)
@@ -23,44 +27,87 @@
     ...         ForeignKey('affiliates.id')),)
     ...         
     >>> class Event(object): pass
-    >>> m = assign_mapper(session_context, Event, events) 
-    >>> from fixture import SequencedSet, SQLAlchemyFixture
-    >>> from fixture.style import TrimmedNameStyle
-     
-    >>> # some datasets you want to load in a test...
+    >>> m = assign_mapper(session_context, Event, events, properties = {
+    ...                                 'affiliate': relation(Affiliate), }) 
+
+Note that using mappers above is not necessary.  The fixture module also 
+supports interacting with mapper classes, however.
+
+Next you build the DataSet objects that you want to load, in this case they 
+inherit from SequencedSet, an optional DataSet enhancement that simulates 
+auto-incrementing IDs.  The IDs values can be overridden for any row and the 
+column name is configurable, but defaults to 'id'::
+
+    >>> from fixture import SequencedSet
     >>> class affiliates_data(SequencedSet):
     ...     class joe:
     ...         name="Joe, The Affiliate"
     ... 
     >>> class events_data(SequencedSet):
     ...     class joes_click:
-    ...         affiliate_id = affiliates_data.joe.ref('id'),
+    ...         affiliate_id = affiliates_data.joe.ref('id')
     ...         type="click"
     ...     class joes_submit(joes_click):
     ...         type="submit"
     ...     class joes_activation(joes_click):
     ...         type="activation" 
+    ...
+
+Note how joes_submit inherits from joes_click.  Inheritance is a natural way to 
+share common column values (in this case, all events belong to the same 
+affiliate).
+
+Next you need a module-level Fixture instance that knows how to load the above 
+DataSet object(s).  We are also going to tell it to derive SQLAlchemy table 
+names by looking in the global scope and chopping off "_data" from the DataSet 
+class name (there are other ways to do this more or less explicitly).
+
+We are going to pass it a session_context to create connections with, but again 
+there are alternatives to this::
+
+    >>> from fixture.style import TrimmedNameStyle    
+    >>> from fixture import SQLAlchemyFixture
     >>> db = SQLAlchemyFixture( env=globals(), session_context=session_context,
     ...                         style=TrimmedNameStyle(suffix="_data"))
-    ...         
+    ...
+
+Now we are ready to write a test that uses the fixtures.  The following is just one way you could write a test module runnable by nose_ ::
+ 
     >>> def setup_data():
     ...     meta.create_all()
     ...
     >>> def teardown_data():
     ...     meta.drop_all()
     ...     clear_mappers()
-    ...     # and clear mappers et cetera ...
-    ... 
+    ...     # and do whatever else ...
+    ...
     >>> @db.with_data(events_data, setup=setup_data, teardown=teardown_data)
     ... def test_event_something(data):
     ...     joe = Affiliate.get(data.affiliates_data.joe.id)
-    ...     click = Events.get(data.events_data.joes_click.id)
+    ...     click = Event.get(data.events_data.joes_click.id)
     ...     assert click.affiliate is joe
     ...     assert click.type == data.events_data.joes_click.type
     ... 
     >>> import nose, unittest
+    >>> result = unittest.TestResult()
     >>> case = nose.case.FunctionTestCase(test_event_something)
-    >>> case(unittest.TestResult())
+    >>> case(result)
+    >>> result.testsRun
+    1
+    >>> result.errors
+    []
+    >>> result.failures
+    []
+
+Here are some things to note.  @db.with_data() takes an arbitrary number of 
+DataSet classes as an argument and passes an instance of Fixture.Data to the 
+test function.  Because of the reference to affiliates_data, you don't have to 
+specify that set since it will be discovered by reference.  Also note that there 
+are other ways to load data.  Say, if you want to work with unittest.TestCase 
+classes you could create the data instance you see above manually in a setUp() 
+def, like data = db.data(events_data)
+
+.. _nose: http://somethingaboutorange.com/mrl/projects/nose/
 
 """
 

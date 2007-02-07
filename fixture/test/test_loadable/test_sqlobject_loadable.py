@@ -1,5 +1,5 @@
 
-import os
+import os, sys
 from nose.tools import eq_
 from nose.exc import SkipTest
 from fixture import SQLObjectFixture
@@ -11,16 +11,8 @@ from fixture.test.test_loadable import *
 from fixture.examples.db.sqlobject_examples import *
 from fixture.test import conf
 
-# getting too many open connections error...
-dsn_conns = {}
-
 def setup():
     if not env_supports.sqlobject: raise SkipTest
-
-def teardown():
-    for dsn, conn in dsn_conns.items():
-        conn.close()
-        del dsn_conns[dsn]
 
 class SQLObjectFixtureTest:
     fixture = SQLObjectFixture(
@@ -32,23 +24,19 @@ class SQLObjectFixtureTest:
     def setUp(self, dsn=conf.MEM_DSN):
         """should load the dataset"""
         from sqlobject import connectionForURI
-        if dsn not in dsn_conns:
-            dsn_conns[dsn] = connectionForURI(dsn)
-        self.conn = dsn_conns[dsn]
-        # self.conn.debug = 1
-        
+        self.conn = connectionForURI(dsn)
         self.fixture.connection = self.conn
-        self.transaction = self.conn.transaction()
         
         from sqlobject import sqlhub
-        sqlhub.threadConnection = self.transaction
+        sqlhub.processConnection = self.conn
         
         setup_db(self.conn)
     
     def tearDown(self):
         """should unload the dataset."""
-        teardown_db(self.transaction)
-        self.transaction.commit()
+        conn = self.conn
+        teardown_db(conn)
+        conn.close()
 
 class SQLObjectFixtureForKeysTest(SQLObjectFixtureTest):
     def setUp(self):
@@ -83,8 +71,8 @@ class TestSQLObjectPartialLoad(
        # I don't think sqlobject can support this ...
        raise SkipTest
        
-        # t = self.conn.transaction()
-        # eq_(Category.select(connection=t).count(), 0)
+       # t = self.conn.transaction()
+       # eq_(Category.select(connection=t).count(), 0)
         
 class SQLObjectFixtureCascadeTest(SQLObjectFixtureForKeysTest):
     def assert_data_loaded(self, dataset):

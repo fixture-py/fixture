@@ -1,6 +1,7 @@
 
 """representations of data."""
 
+import sys
 from fixture.util import ObjRegistry
 
 __all__ = ['DataSet', 'SequencedSet']
@@ -89,7 +90,13 @@ def is_row_class(attr):
 class DataType(type):
     def __init__(cls, name, bases, cls_attr):
         super(DataType, cls).__init__(name, bases, dict)
-        for name, attr in cls_attr.iteritems():
+        
+        # just like dir(), we should do this in alpha order 
+        # for things like SequencedSet ...
+        
+        ### dropping support for <2.4 here...
+        for name in sorted(cls_attr.keys()):
+            attr = cls_attr[name]
             if is_row_class(attr):
                 cls.decorate_row(attr, name, bases, cls_attr)
     
@@ -112,7 +119,7 @@ class DataRow(DataContainer):
             yield k
     
     def iteritems(self):
-        for k,v in self.meta.data.items():
+        for k,v in self.meta.data.iteritems():
             yield (k,v)
     
     def items(self):
@@ -254,6 +261,11 @@ class Sequence(object):
         self.name = name
         self.value = 0
     
+    def __repr__(self):
+        return "<%s %s %s at %s>" % (
+                self.__class__.__name__, repr(self.name), 
+                hex(id(self)), self.value)
+    
     def currval(self):
         return self.value
     
@@ -271,21 +283,22 @@ class SeqRegistry(dict):
         else:            
             if len(bases) > 1:
                 raise NotImplementedError(
-                    "finding Meta when there are multiple bases "
-                    "is not implemented")
+                    "haven't gotten around to finding Meta when there are "
+                    "multiple bases (if you have a patch please send it)")
             dataset_class = bases[0]
             Meta = dataset_class.Meta
                 
-        k = "%s:%s" % (cls_attr['__module__'], name)
-        self.setdefault(k, Sequence(name=Meta.seqname))
+        k = "%s.%s.%s" % (cls_attr['__module__'], name, hex(id(cls_attr)))
+        if k not in self:
+            self[k] = Sequence(name=Meta.seqname)
         return self[k]
         
 sequence_registry = SeqRegistry()
 
 class SequenceType(DataType):
-    def __init__(cls, name, bases, cls_attr):        
+    def __init__(cls, name, bases, cls_attr):
         cls_attr['_sequence'] = sequence_registry.getsequence(
-                                                    bases, name, cls_attr)
+                                                bases, name, cls_attr)
         DataType.__init__(cls, name, bases, cls_attr)
         del cls_attr['_sequence']
         
@@ -293,6 +306,7 @@ class SequenceType(DataType):
         DataType.decorate_row(cls, row, name, bases, cls_attr)
         
         sequence = cls_attr['_sequence']
+        
         if not hasattr(row, sequence.name):
             setattr(row, sequence.name, sequence.nextval())
         else:
@@ -300,6 +314,9 @@ class SequenceType(DataType):
             if defval > sequence.currval():
                 # avoid collision by incrementing...
                 sequence.setval(defval)
+            else:
+                # it's no good, reset it...
+                setattr(row, sequence.name, sequence.nextval())
 
 class SequencedSet(DataSet):
     __metaclass__ = SequenceType
