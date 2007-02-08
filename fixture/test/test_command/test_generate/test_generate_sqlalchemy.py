@@ -18,19 +18,6 @@ memcontext = None
 def setup():
     if not env_supports.sqlalchemy:
         raise SkipTest
-    
-    global realmeta, realcontext, memmeta, memcontext
-    import sqlalchemy
-    from sqlalchemy import BoundMetaData
-    from sqlalchemy.ext.sessioncontext import SessionContext
-    
-    realmeta = BoundMetaData(conf.POSTGRES_DSN)
-    realcontext = SessionContext(
-            lambda: sqlalchemy.create_session(bind_to=realmeta.engine))
-            
-    memmeta = BoundMetaData(conf.MEM_DSN)
-    memcontext = SessionContext(
-            lambda: sqlalchemy.create_session(bind_to=memmeta.engine))
 
 class SQLAlchemyGenerateTest(GenerateTest):
     args = [
@@ -86,6 +73,19 @@ class SQLAlchemyGenerateTest(GenerateTest):
         return data
     
     def setUp(self):
+        import sqlalchemy
+        from sqlalchemy import BoundMetaData
+        from sqlalchemy.ext.sessioncontext import SessionContext
+        
+        global realmeta, realcontext, memmeta, memcontext
+        realmeta = BoundMetaData(conf.POSTGRES_DSN)
+        realcontext = SessionContext(
+                lambda: sqlalchemy.create_session(bind_to=realmeta.engine))
+            
+        memmeta = BoundMetaData(conf.MEM_DSN)
+        memcontext = SessionContext(
+                lambda: sqlalchemy.create_session(bind_to=memmeta.engine))
+            
         setup_db(realmeta, realcontext)
         
         session = realcontext.current
@@ -110,10 +110,10 @@ class SQLAlchemyGenerateTest(GenerateTest):
     
     def tearDown(self):
         teardown_db(realmeta, realcontext)
-        realcontext.current.clear()
+        # realcontext.current.clear()
         
         teardown_db(memmeta, memcontext)
-        memcontext.current.clear()
+        # memcontext.current.clear()
 
 class TestGenerateSQLAlchemyFixture(
         UsingFixtureTemplate, SQLAlchemyGenerateTest):        

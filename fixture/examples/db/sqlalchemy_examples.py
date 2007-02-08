@@ -177,11 +177,17 @@ def setup_db(meta, session_context, **kw):
 
 def teardown_db(meta, session_context):
     import sqlalchemy
+    engine = session_context.current.bind_to
     meta.drop_all()
+    if hasattr(engine, 'engine'):
+        # then it is a connectable...
+        engine = engine.engine
+    engine.dispose()
     
     # session = session_context.current
     # session.flush()
     
     sqlalchemy.orm.clear_mappers()
-    
+    session_context.current.clear()
+    session_context.current = None
     

@@ -5,7 +5,7 @@ from nose.exc import SkipTest
 import unittest
 from fixture import DataSet, SequencedSet
 from fixture.loadable import LoadableFixture
-from fixture.test import env_supports
+from fixture.test import env_supports, PrudentTestResult
 
 
 class LoaderTest:
@@ -41,7 +41,18 @@ class LoaderTest:
                 ns.tested = True
                 driver.assert_data_loaded(self.data)
         
-        res = unittest.TestResult()
+        class PrudentTestResult(unittest.TestResult):
+            """A test result that raises an exception immediately"""
+            def _raise_err(self, err):
+                exctype, value, tb = err
+                raise Exception("%s: %s" % (exctype, value)), None, tb
+        
+            def addFailure(self, test, err):
+                self._raise_err(err)
+            def addError(self, test, err):
+                self._raise_err(err)
+        
+        res = PrudentTestResult()
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromTestCase(SomeDataTestCase)
         suite(res)
@@ -72,7 +83,7 @@ class LoaderTest:
             self.assert_data_loaded(data)
         
         case = nose.case.FunctionTestCase(test_data_test)
-        res = unittest.TestResult() 
+        res = PrudentTestResult()
         case(res)
         
         eq_(res.failures, [])
