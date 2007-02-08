@@ -101,6 +101,26 @@ class TestSQLAlchemyCategoryStorableInContext(
         SQLAlchemyCategoryTest, LoaderTest):
     pass
     
+class TestSQLAlchemyCategoryWithMapper(
+        SessionContextFixture, SQLAlchemyCategoryTest, LoaderTest):
+    
+    def datasets(self):
+        from sqlalchemy import mapper
+        class MappedCategory(object):
+            pass
+        mapper(MappedCategory, categories)
+        
+        class CategoryData(DataSet):
+            class Meta:
+                storable = MappedCategory
+            class gray_stuff:
+                id=1
+                name='gray'
+            class yellow_stuff:
+                id=2
+                name='yellow'
+        return [CategoryData]
+    
     
 class TestSQLAlchemyCategoryAsDataType(
         HavingCategoryAsDataType, SessionContextFixture, 

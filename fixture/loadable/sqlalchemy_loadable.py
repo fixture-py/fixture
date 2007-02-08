@@ -4,10 +4,12 @@
 from fixture.loadable import DBLoadableFixture
 
 def negotiated_medium(obj, dataset):
-    if is_assigned_mapper(obj):
-        return AssignedMapperMedium(obj, dataset)
-    elif is_table(obj):
+    if is_table(obj):
         return TableMedium(obj, dataset)
+    elif is_assigned_mapper(obj):
+        return MappedClassMedium(obj, dataset)
+    elif is_mapped_class(obj):
+        return MappedClassMedium(obj, dataset)
     else:
         raise NotImplementedError("object %s is not supported by %s" % (
                                                     obj, SQLAlchemyFixture))
@@ -70,8 +72,15 @@ class SQLAlchemyFixture(DBLoadableFixture):
             #     self.session_context = SessionContext(
             #       lambda: sqlalchemy.create_session(bind_to=self.meta.engine))
             self.session = self.session_context.current
-            
-        self.connection = self.session.bind_to.connect()
+        
+        if self.session.bind_to is None:
+            raise NotImplementedError(
+                    "use of a session not bound to an engine is not "
+                    "implemented.  needs work in transaction land to make that "
+                    "happen, I think.  otherwise, you can use "
+                    "create_session(bind_to=engine) instead")
+        else:
+            self.connection = self.session.bind_to.connect()
         
         DBLoadableFixture.begin(self, unloading=unloading)
     
@@ -87,7 +96,7 @@ class SQLAlchemyFixture(DBLoadableFixture):
     def rollback(self):
         DBLoadableFixture.rollback(self)
 
-class AssignedMapperMedium(DBLoadableFixture.StorageMediumAdapter):
+class MappedClassMedium(DBLoadableFixture.StorageMediumAdapter):
     def __init__(self, *a,**kw):
         DBLoadableFixture.StorageMediumAdapter.__init__(self, *a,**kw)
         
@@ -99,11 +108,7 @@ class AssignedMapperMedium(DBLoadableFixture.StorageMediumAdapter):
         self.session = loader.session
         
     def save(self, row):
-        from sqlalchemy.orm.mapper import Mapper
         obj = self.medium()
-        if not isinstance(obj.mapper, Mapper):
-            raise ValueError("medium %s must be an instance of %s" % (
-                                                            obj, Mapper))
         for attname, val in row.items():
             setattr(obj, attname, val)
         self.session.save(obj)
@@ -151,6 +156,14 @@ class TableMedium(DBLoadableFixture.StorageMediumAdapter):
 def is_assigned_mapper(obj):
     from sqlalchemy.orm.mapper import Mapper
     return hasattr(obj, 'mapper') and isinstance(obj.mapper, Mapper)
+
+def is_mapped_class(obj):
+    from sqlalchemy import util
+    return hasattr(obj, 'c') and isinstance(obj.c, util.OrderedProperties)
+    
+    ## what about this??
+    # from sqlalchemy.orm.mapper import Mapper
+    # return hasattr(obj, '_mapper') and isinstance(obj._mapper, Mapper)
 
 def is_table(obj):
     from sqlalchemy.schema import Table
