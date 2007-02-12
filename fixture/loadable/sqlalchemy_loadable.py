@@ -62,6 +62,12 @@ class SQLAlchemyFixture(DBLoadableFixture):
     
     def begin(self, unloading=False):
         
+        # note to self:
+        # if we don't have a session or session_context, this is the way to 
+        # manage engine transactions:
+        # http://www.sqlalchemy.org/docs/dbengine.myt#dbengine_transactions
+        # (not yet implemented)
+        
         if self.session is None:
             ## seems that the problem with supporting dsn and meta is because 
             ## objects can be attached to sessions already
