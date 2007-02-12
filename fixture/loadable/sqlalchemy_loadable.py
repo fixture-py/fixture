@@ -101,6 +101,18 @@ class MappedClassMedium(DBLoadableFixture.StorageMediumAdapter):
         DBLoadableFixture.StorageMediumAdapter.__init__(self, *a,**kw)
         
     def clear(self, obj):
+        
+        # hopefully there is a more future proof way to do this...
+        
+        from sqlalchemy.orm.mapper import object_mapper as _object_mapper
+        for c in [obj] + list(_object_mapper(obj).cascade_iterator(
+                                                        'delete', obj)):
+            if c not in self.session.uow.deleted:
+                if not self.session.uow._is_valid(c):
+                    # it must have been deleted elsewhere.  is there any other 
+                    # reason for this scenario?
+                    return
+                    
         self.session.delete(obj)
         self.session.flush()
     

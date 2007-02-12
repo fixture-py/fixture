@@ -8,7 +8,7 @@ from fixture.loadable import LoadableFixture
 from fixture.test import env_supports, PrudentTestResult
 
 
-class LoadableTest:
+class LoadableTest(object):
     """tests the behavior of fixture.loadable.LoadableFixture object.
     
     to test combinations of loaders and datasets, mix this into a TestCase.

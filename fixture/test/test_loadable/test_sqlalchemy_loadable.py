@@ -14,6 +14,11 @@ def setup():
 
 def teardown():
     pass
+    
+class HavingCategoryData(HavingCategoryData):
+    # it's the same as the generic category dataset except for sqlalchemy we 
+    # need the mapper itself for some tests
+    MappedCategory = Category
 
 class SessionContextFixture(object):
     def new_fixture(self):
@@ -31,7 +36,7 @@ class SessionFixture(object):
                         env=globals(),
                         dataclass=MergedSuperSet )
 
-class SQLAlchemyFixtureTest:
+class SQLAlchemyFixtureTest(object):
     style = (NamedDataStyle() + CamelAndUndersStyle())
     
     def new_fixture(self):
@@ -53,7 +58,7 @@ class SQLAlchemyFixtureTest:
         
         self.session_context = SessionContext(
             lambda: sqlalchemy.create_session(bind_to=self.conn))
-            
+        
         self.fixture = self.new_fixture()
         setup_db(self.meta, self.session_context)
     
@@ -101,19 +106,18 @@ class TestSQLAlchemyCategoryStorableInContext(
         HavingCategoryDataStorable, SessionContextFixture, 
         SQLAlchemyCategoryTest, LoadableTest):
     pass
-    
-class TestSQLAlchemyMappedCategory(
-        SessionContextFixture, SQLAlchemyCategoryTest, LoadableTest):
+
+class HavingMappedCategory(object):
+    class MappedCategory(object):
+        pass
     
     def datasets(self):
         from sqlalchemy import mapper
-        class MappedCategory(object):
-            pass
-        mapper(MappedCategory, categories)
+        mapper(self.MappedCategory, categories)
         
         class CategoryData(DataSet):
             class Meta:
-                storable = MappedCategory
+                storable = self.MappedCategory
             class gray_stuff:
                 id=1
                 name='gray'
@@ -121,6 +125,36 @@ class TestSQLAlchemyMappedCategory(
                 id=2
                 name='yellow'
         return [CategoryData]
+    
+class TestSQLAlchemyMappedCategory(
+        HavingMappedCategory, SessionContextFixture, SQLAlchemyCategoryTest, 
+        LoadableTest):
+    pass
+
+
+class SQLAlchemyCatExplicitDeleteTest(SQLAlchemyCategoryTest):
+    """test that an explicitly deleted object isn't deleted again.
+    
+    thanks to Allen Bierbaum for this test case.
+    """
+    def assert_data_loaded(self, data):
+        super(SQLAlchemyCatExplicitDeleteTest, self).assert_data_loaded(data)
+        
+        # explicitly delete the object to assert that 
+        # teardown avoids the conflict :
+        session = self.session_context.current
+        cat = session.query(self.MappedCategory).get(data.gray_stuff.id)
+        session.delete(cat)
+        session.flush()
+    
+class TestSQLAlchemyCategoryExplicitDelete(
+        HavingMappedCategory, SessionContextFixture, 
+        SQLAlchemyCatExplicitDeleteTest, LoadableTest):
+    pass    
+class TestSQLAlchemyAssignedCategoryExplicitDelete(
+        HavingCategoryData, SessionContextFixture, 
+        SQLAlchemyCatExplicitDeleteTest, LoadableTest):
+    pass
     
     
 class TestSQLAlchemyCategoryAsDataType(
