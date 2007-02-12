@@ -56,8 +56,9 @@ setup(
                 'database stubs IO tempfile'),
     url = 'http://farmdev.com/',
     
-    # only provide this for a final release:
-    download_url="",
+    # for trunk ...
+    download_url="http://fixture.googlecode.com/svn/trunk/#egg=fixture-dev",
+    
     # download_url = 'http://farmdev.com/src/fixture-%s-py%s.%s.egg' % \
     #                 (   package.version, sys.version_info[0], 
     #                     sys.version_info[1]),
