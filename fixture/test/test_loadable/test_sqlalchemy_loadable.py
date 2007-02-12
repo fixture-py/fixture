@@ -72,10 +72,11 @@ class SQLAlchemyCategoryTest(SQLAlchemyFixtureTest):
         
 class TestSQLAlchemyCategoryInContext(
         HavingCategoryData, SessionContextFixture, 
-        SQLAlchemyCategoryTest, LoaderTest):
+        SQLAlchemyCategoryTest, LoadableTest):
     pass
 class TestSQLAlchemyCategory(
-        HavingCategoryData, SessionFixture, SQLAlchemyCategoryTest, LoaderTest):
+        HavingCategoryData, SessionFixture, SQLAlchemyCategoryTest, 
+        LoadableTest):
     pass
     
 
@@ -94,15 +95,15 @@ class HavingCategoryDataStorable:
         
 class TestSQLAlchemyCategoryStorable(
         HavingCategoryDataStorable, SessionFixture, 
-        SQLAlchemyCategoryTest, LoaderTest):
+        SQLAlchemyCategoryTest, LoadableTest):
     pass
 class TestSQLAlchemyCategoryStorableInContext(
         HavingCategoryDataStorable, SessionContextFixture, 
-        SQLAlchemyCategoryTest, LoaderTest):
+        SQLAlchemyCategoryTest, LoadableTest):
     pass
     
-class TestSQLAlchemyCategoryWithMapper(
-        SessionContextFixture, SQLAlchemyCategoryTest, LoaderTest):
+class TestSQLAlchemyMappedCategory(
+        SessionContextFixture, SQLAlchemyCategoryTest, LoadableTest):
     
     def datasets(self):
         from sqlalchemy import mapper
@@ -124,11 +125,11 @@ class TestSQLAlchemyCategoryWithMapper(
     
 class TestSQLAlchemyCategoryAsDataType(
         HavingCategoryAsDataType, SessionContextFixture, 
-        SQLAlchemyCategoryTest, LoaderTest):
+        SQLAlchemyCategoryTest, LoadableTest):
     pass
 class TestSQLAlchemyCategoryAsDataTypeInContext(
         HavingCategoryAsDataType, SessionFixture, 
-        SQLAlchemyCategoryTest, LoaderTest):
+        SQLAlchemyCategoryTest, LoadableTest):
     pass
 
 class SQLAlchemyPartialRecoveryTest(SQLAlchemyFixtureTest):
@@ -147,11 +148,6 @@ class TestSQLAlchemyPartialRecovery(
     pass
 
 class SQLAlchemyFixtureForKeysTest(SQLAlchemyFixtureTest):
-    def setUp(self):
-        if not conf.POSTGRES_DSN:
-            raise SkipTest
-            
-        SQLAlchemyFixtureTest.setUp(self, dsn=conf.POSTGRES_DSN)
     
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""
@@ -173,29 +169,50 @@ class SQLAlchemyFixtureForKeysTest(SQLAlchemyFixtureTest):
         eq_(len(Category.select()), 0)
         eq_(len(Offer.select()), 0)
         eq_(len(Product.select()), 0)
+
+class SQLAlchemyFixtureForKeysTestWithPsql(SQLAlchemyFixtureForKeysTest):
+    def setUp(self):
+        if not conf.POSTGRES_DSN:
+            raise SkipTest
+            
+        SQLAlchemyFixtureForKeysTest.setUp(self, dsn=conf.POSTGRES_DSN)
         
-class TestSQLAlchemyFixtureForKeysInContext(
-        HavingOfferProductData, SessionContextFixture, 
-        SQLAlchemyFixtureForKeysTest, LoaderTest):
-    pass
 class TestSQLAlchemyFixtureForKeys(
         HavingOfferProductData, SessionFixture, 
-        SQLAlchemyFixtureForKeysTest, LoaderTest):
+        SQLAlchemyFixtureForKeysTest, LoadableTest):
+    pass
+class TestSQLAlchemyFixtureForKeysWithPgsql(
+        HavingOfferProductData, SessionFixture, 
+        SQLAlchemyFixtureForKeysTestWithPsql, LoadableTest):
+    pass
+class TestSQLAlchemyFixtureForKeysInContext(
+        HavingOfferProductData, SessionContextFixture, 
+        SQLAlchemyFixtureForKeysTest, LoadableTest):
+    pass
+    
+class TestSQLAlchemyFixtureForKeysAsType(
+        HavingOfferProductAsDataType, SessionFixture, 
+        SQLAlchemyFixtureForKeysTest, LoadableTest):
     pass
 class TestSQLAlchemyFixtureForKeysAsTypeInContext(
         HavingOfferProductAsDataType, SessionContextFixture, 
-        SQLAlchemyFixtureForKeysTest, LoaderTest):
+        SQLAlchemyFixtureForKeysTest, LoadableTest):
     pass
-class TestSQLAlchemyFixtureForKeysAsType(
-        HavingOfferProductAsDataType, SessionFixture, 
-        SQLAlchemyFixtureForKeysTest, LoaderTest):
-    pass
-class TestSQLAlchemyFixtureSeqForKeysInContext(
-        HavingSequencedOfferProduct, SessionContextFixture, 
-        SQLAlchemyFixtureForKeysTest, LoaderTest):
-    pass
-class TestSQLAlchemyFixtureSeqForKeys(
-        HavingSequencedOfferProduct, SessionFixture, 
-        SQLAlchemyFixtureForKeysTest, LoaderTest):
+class TestSQLAlchemyFixtureForKeysAsTypeInContextWithPgsql(
+        HavingOfferProductAsDataType, SessionContextFixture, 
+        SQLAlchemyFixtureForKeysTestWithPsql, LoadableTest):
     pass
     
+class TestSQLAlchemyFixtureRefForKeys(
+        HavingReferencedOfferProduct, SessionFixture, 
+        SQLAlchemyFixtureForKeysTest, LoadableTest):
+    pass
+    
+class TestSQLAlchemyFixtureRefInheritForKeys(
+        HavingRefInheritedOfferProduct, SessionFixture, 
+        SQLAlchemyFixtureForKeysTest, LoadableTest):
+    pass
+class TestSQLAlchemyFixtureRefInheritForKeysWithPgsql(
+        HavingRefInheritedOfferProduct, SessionFixture, 
+        SQLAlchemyFixtureForKeysTestWithPsql, LoadableTest):
+    pass

@@ -59,11 +59,11 @@ class SQLObjectFixture(DBLoadableFixture):
             from sqlobject.styles import getStyle
             so_style = getStyle(self.medium)
     
-            if 'connection' in row:
+            if hasattr(row, 'connection'):
                 raise ValueError(
                         "cannot name a key 'connection' in row %s" % row)
-            dbvals = dict([(so_style.dbColumnToPythonAttr(k), v) 
-                                                    for k,v in row.items()])
+            dbvals = dict([(so_style.dbColumnToPythonAttr(k), getattr(row, k)) 
+                                                        for k in row.columns()])
             dbvals['connection'] = self.transaction
             return self.medium(**dbvals)
         

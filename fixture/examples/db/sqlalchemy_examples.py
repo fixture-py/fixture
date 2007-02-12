@@ -1,49 +1,56 @@
 
 """examples for using sqlalchemy fixtures.
 
-SequencedSet Fixtures with SQLAlchemy and nose
-----------------------------------------------
+Fixtures with SQLAlchemy and nose
+---------------------------------
 
-Create your tables::
+Create your tables and mappers.  Note that sqlalchemy extensions are used here 
+only to make the assertions easier to read.::
 
     >>> from sqlalchemy import *
-    >>> from sqlalchemy.ext.sessioncontext import SessionContext
     >>> from sqlalchemy.ext.assignmapper import assign_mapper
-     
+    >>> from sqlalchemy.ext.sessioncontext import SessionContext
+    
     >>> meta = BoundMetaData("sqlite:///:memory:")
     >>> session_context = SessionContext(
     ...     lambda: create_session(bind_to=meta.engine))
-    ... 
+    ...
     >>> affiliates = Table('affiliates', meta,
     ...     Column('id', INT, primary_key=True),
     ...     Column('name', String),)
     ...     
-    >>> class Affiliate(object): pass
-    >>> m = assign_mapper(session_context, Affiliate, affiliates) 
+    >>> class Affiliate(object): 
+    ...     pass
+    >>> m = assign_mapper(session_context, Affiliate, affiliates)
+    
     >>> events = Table('events', meta,
     ...     Column('id', INT, primary_key=True),
     ...     Column('type', String),
     ...     Column('affiliate_id', INT,
     ...         ForeignKey('affiliates.id')),)
-    ...         
-    >>> class Event(object): pass
+    ... 
+    >>> class Event(object): 
+    ...     pass
     >>> m = assign_mapper(session_context, Event, events, properties = {
-    ...                                 'affiliate': relation(Affiliate), }) 
+    ...                 'affiliate': relation(Affiliate), }) 
+    ...
 
-Note that using mappers above is not necessary.  The fixture module also 
-supports interacting with mapper classes, however.
+Note that using mappers above is not necessary.  The fixture module supports 
+interacting with assigned mappers, mapped classes, and tables.
 
-Next you build the DataSet objects that you want to load, in this case they 
-inherit from SequencedSet, an optional DataSet enhancement that simulates 
-auto-incrementing IDs.  The ID values can be overridden for any row and the 
-column name is configurable, but defaults to 'id'::
+Next you build the DataSet objects that you want to load.  Note that ID values 
+are not specified in the row classes.  This is an optional feature where anytime 
+the id attribute is referenced later on, it is found from the actual database 
+object loaded, instead of the DataSet.  If you do specify an id attribute it 
+will be recognized.  (Note that "id" names are configurable in 
+Dataset.Meta.primary_key.)::
 
-    >>> from fixture import SequencedSet
-    >>> class affiliates_data(SequencedSet):
+    >>> from fixture import DataSet
+    >>> class affiliates_data(DataSet):
     ...     class joe:
     ...         name="Joe, The Affiliate"
     ... 
-    >>> class events_data(SequencedSet):
+    >>> class events_data(DataSet):
     ...     class joes_click:
     ...         affiliate_id = affiliates_data.joe.ref('id')
     ...         type="click"
@@ -71,14 +78,38 @@ there are alternatives to this::
     ...                         style=TrimmedNameStyle(suffix="_data"))
     ...
 
-Now we are ready to write a test that uses the fixtures.  The following is just one way you could write a test function runnable by nose_ ::
+Now we are ready to write a test that uses the fixture.  Here is a test class 
+using the provided TestCase mixin with python's builtin unittest module
+    
+    >>> from fixture import DataTestCase
+    >>> import unittest
+    >>> class TestWithEventData(DataTestCase, unittest.TestCase):
+    ...     fixture = db
+    ...     datasets = [events_data]
+    ...     
+    ...     def setUp(self):
+    ...         meta.create_all()
+    ...         super(TestWithEventData, self).setUp()
+    ...     
+    ...     def tearDown(self):
+    ...         super(TestWithEventData, self).tearDown()
+    ...         meta.drop_all()
+    ...         # and do whatever else ...
+    ...     
+    ...     def test_event_something(self):
+    ...         joe = Affiliate.get(self.data.affiliates_data.joe.id)
+    ...         click = Event.get(self.data.events_data.joes_click.id)
+    ...         assert click.affiliate is joe
+    ...         assert click.type == self.data.events_data.joes_click.type
+    ... 
+
+Another way to write simpler tests is to use the builtin decorator, @with_data, designed for use with nose_ ::
  
     >>> def setup_data():
     ...     meta.create_all()
     ...
     >>> def teardown_data():
     ...     meta.drop_all()
-    ...     clear_mappers()
     ...     # and do whatever else ...
     ...
     >>> @db.with_data(events_data, setup=setup_data, teardown=teardown_data)
@@ -89,14 +120,19 @@ Now we are ready to write a test that uses the fixtures.  The following is just 
     ...     assert click.type == data.events_data.joes_click.type
     ... 
     
-The rest will be done for you automatically by nose_::
+The below is just code to run the tests (this is done automatically for 
+you automatically by nose_ or unittest)::
 
-    >>> import nose, unittest
-    >>> result = unittest.TestResult()
+    >>> import nose
+    >>> from fixture.test import PrudentTestResult
+    >>> result = PrudentTestResult()
+    >>> loader = unittest.TestLoader()
+    >>> suite = loader.loadTestsFromTestCase(TestWithEventData)
+    >>> s = suite(result)
     >>> case = nose.case.FunctionTestCase(test_event_something)
     >>> case(result)
     >>> result.testsRun
-    1
+    2
     >>> result.errors
     []
     >>> result.failures
@@ -163,17 +199,10 @@ def setup_db(meta, session_context, **kw):
         assign_mapper(session_context, obj, table, **sendkw)
         checkfirst=False
         table.create(meta.engine, checkfirst=checkfirst)
-        # if checkfirst:
-        #     meta.engine.execute(table.delete(cascade=True))
-    
     
     assign_and_create(Category, categories)
     assign_and_create(Product, products)
     assign_and_create(Offer, offers)
-    
-    # session = session_context.current
-    # session.flush()
-    # session.clear()
 
 def teardown_db(meta, session_context):
     import sqlalchemy
@@ -183,9 +212,6 @@ def teardown_db(meta, session_context):
         # then it is a connectable...
         engine = engine.engine
     engine.dispose()
-    
-    # session = session_context.current
-    # session.flush()
     
     sqlalchemy.orm.clear_mappers()
     session_context.current.clear()

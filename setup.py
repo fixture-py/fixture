@@ -31,6 +31,7 @@ class Package(object):
     description = property(fget=lambda s: s._get_from_doc(0))
     long_description = property(fget=lambda s: s._get_from_doc(1))
     version = property(fget=lambda s: getattr(s.module, '__version__'))
+    
 package = Package()
 
 setup(
@@ -59,13 +60,12 @@ setup(
                         sys.version_info[1]),
     packages = find_packages(),
     
-    install_requires=('nose>=0.9.2',),
-    # test_suite="nose.collector",
     test_suite="fixture.setup_test_not_supported",
     entry_points = { 
         'console_scripts': [ 'fixture = fixture.command.generate:main' ] 
         },
     extras_require = {
+        'nose': ['nose>=0.9.2'],
         'sqlobject': ['SQLObject>=0.7'],
         'sqlalchemy': ['sqlalchemy>=0.3'],
         'lxml': ['lxml'],

@@ -48,7 +48,7 @@ class SQLAlchemyGenerateTest(GenerateTest):
         def get(table, id):
             c = conn.execute(table.select(table.c.id==id))
             return c.fetchone()
-            
+        
         eq_(get(categories, fxt.products_1.category_id), parkas )
         eq_(get(categories, fxt.offers_1.category_id), rebates )
     

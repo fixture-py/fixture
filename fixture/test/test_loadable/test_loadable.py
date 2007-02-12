@@ -3,15 +3,15 @@ import nose
 from nose.tools import raises, eq_
 from nose.exc import SkipTest
 import unittest
-from fixture import DataSet, SequencedSet
+from fixture import DataSet
 from fixture.loadable import LoadableFixture
 from fixture.test import env_supports, PrudentTestResult
 
 
-class LoaderTest:
+class LoadableTest:
     """tests the behavior of fixture.loadable.LoadableFixture object.
     
-    to test combinations of loaders and datasets, implement this base tester.
+    to test combinations of loaders and datasets, mix this into a TestCase.
     """
     fixture = None
     
@@ -40,17 +40,6 @@ class LoaderTest:
             def test_data_test(self):
                 ns.tested = True
                 driver.assert_data_loaded(self.data)
-        
-        class PrudentTestResult(unittest.TestResult):
-            """A test result that raises an exception immediately"""
-            def _raise_err(self, err):
-                exctype, value, tb = err
-                raise Exception("%s: %s" % (exctype, value)), None, tb
-        
-            def addFailure(self, test, err):
-                self._raise_err(err)
-            def addError(self, test, err):
-                self._raise_err(err)
         
         res = PrudentTestResult()
         loader = unittest.TestLoader()
@@ -148,7 +137,7 @@ class LoaderTest:
         self.assert_data_torndown()
 
 class HavingCategoryData:
-    """mixin that adds data to a LoaderTest."""
+    """mixin that adds data to a LoadableTest."""
     def datasets(self):
         """returns a single category data set."""
         
@@ -173,7 +162,7 @@ class HavingCategoryAsDataType:
         return [CategoryData]
         
 class HavingOfferProductData:   
-    """mixin that adds data to a LoaderTest."""
+    """mixin that adds data to a LoadableTest."""
     def datasets(self):
         """returns some datasets.""" 
         class CategoryData(DataSet):
@@ -205,7 +194,7 @@ class HavingOfferProductData:
         return [OfferData, ProductData]
         
 class HavingOfferProductAsDataType:  
-    """mixin that adds data to a LoaderTest."""
+    """mixin that adds data to a LoadableTest."""
     def datasets(self):
         """returns some datasets."""
         
@@ -232,27 +221,56 @@ class HavingOfferProductAsDataType:
                 
         return [ProductData, OfferData]
         
-class HavingSequencedOfferProduct:  
-    """mixin that adds data to a LoaderTest."""
+class HavingReferencedOfferProduct:  
+    """mixin that adds data to a LoadableTest."""
     def datasets(self):
         """returns some datasets."""
         
-        class CategoryData(SequencedSet):
+        class CategoryData(DataSet):
             class cars:
                 name = 'cars'
             class free_stuff:
                 name = 'get free stuff'
         
-        class ProductData(SequencedSet):
+        class ProductData(DataSet):
             class truck:
                 name = 'truck'
                 category_id = CategoryData.cars.ref('id')
         
-        class OfferData(SequencedSet):
+        class OfferData(DataSet):
             class free_truck:
                 name = "it's a free truck"
                 product_id = ProductData.truck.ref('id')
                 category_id = CategoryData.free_stuff.ref('id')
+                
+        return [ProductData, OfferData]
+        
+class HavingRefInheritedOfferProduct:  
+    """mixin that adds data to a LoadableTest."""
+    def datasets(self):
+        """returns some datasets."""
+        
+        class CategoryData(DataSet):
+            class cars:
+                name = 'cars'
+            class free_stuff:
+                name = 'get free stuff'
+        
+        class ProductData(DataSet):
+            class truck:
+                name = 'truck'
+                category_id = CategoryData.cars.ref('id')
+        
+        class OfferData(DataSet):
+            class free_truck:
+                name = "it's a free truck"
+                product_id = ProductData.truck.ref('id')
+                category_id = CategoryData.free_stuff.ref('id')
+            class free_spaceship(free_truck):
+                id = 99
+                name = "it's a free spaceship"
+            class free_tv(free_spaceship):
+                name = "it's a free TV"
                 
         return [ProductData, OfferData]
         

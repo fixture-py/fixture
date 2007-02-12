@@ -109,22 +109,44 @@ class MappedClassMedium(DBLoadableFixture.StorageMediumAdapter):
         
     def save(self, row):
         obj = self.medium()
-        for attname, val in row.items():
-            setattr(obj, attname, val)
+        for c in row.columns():
+            setattr(obj, c, getattr(row, c))
         self.session.save(obj)
         self.session.flush()
         return obj
         
 class TableMedium(DBLoadableFixture.StorageMediumAdapter):
+    class LoadedTableRow(object):
+        def __init__(self, table, inserted_key, connection):
+            self.table = table
+            self.inserted_key = [k for k in inserted_key]
+            self.connection = connection
+            self.row = None
+        
+        def __getattr__(self, col):
+            if not self.row:
+                if len(self.inserted_key) > 1:
+                    raise NotImplementedError(
+                        "%s does not support making a select statement with a "
+                        "composite key, %s.  probably fixable" % (
+                                            self.__class__.__name__, 
+                                            self.table.primary_key))
+                
+                first_pk = [k for k in self.table.primary_key][0]
+                id = getattr(self.table.c, first_pk.key)
+                c = self.connection.execute(self.table.select(
+                                                id==self.inserted_key[0]))
+                self.row = c.fetchone()
+            return getattr(self.row, col)
+            
     def __init__(self, *a,**kw):
         DBLoadableFixture.StorageMediumAdapter.__init__(self, *a,**kw)
         
     def clear(self, obj):
-        table, primary_key = obj
         i=0
-        for k in table.primary_key:
-            id = getattr(table.c, k.key)
-            stmt = table.delete(id==primary_key[i])
+        for k in obj.table.primary_key:
+            id = getattr(obj.table.c, k.key)
+            stmt = obj.table.delete(id==obj.inserted_key[i])
             c = self.connection.execute(stmt)
             i+=1
     
@@ -139,7 +161,7 @@ class TableMedium(DBLoadableFixture.StorageMediumAdapter):
                 
         stmt = self.medium.insert()
         c = self.connection.execute(stmt, 
-                                    dict([(k,v) for k,v in row.iteritems()]))
+                            dict([(c, getattr(row, c)) for c in row.columns()]))
         primary_key = c.last_inserted_ids()
         if primary_key is None:
             raise NotImplementedError(
@@ -151,7 +173,7 @@ class TableMedium(DBLoadableFixture.StorageMediumAdapter):
                 "expected primary_key %s, got %s (using table %s)" % (
                                 table_keys, inserted_keys, self.medium))
         
-        return (self.medium, primary_key)
+        return self.LoadedTableRow(self.medium, primary_key, self.connection)
 
 def is_assigned_mapper(obj):
     from sqlalchemy.orm.mapper import Mapper

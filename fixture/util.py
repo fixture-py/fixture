@@ -1,7 +1,9 @@
 
 """fixture utilties."""
 
+import sys
 import unittest
+import types
 
 __all__ = ['DataTestCase']
 
@@ -71,18 +73,48 @@ class DataTestCase(object):
         self.data.teardown()
 
 class ObjRegistry:
-    """registers objects by class."""
+    """registers objects by class.
+    
+    all lookup methods expect to get either an instance or a class type.
+    """
     def __init__(self):
         self.registry = {}
     
+    def __repr__(self):
+        return repr(self.registry)
+    
+    def __getitem__(self, obj):
+        try:
+            return self.registry[self.id(obj)]
+        except KeyError:
+            etype, val, tb = sys.exc_info()
+            raise KeyError("object %s is not in registry" % obj), None, tb
+    
     def __contains__(self, object):
         return self.has(object)
+    
+    def clear(self):
+        self.registry = {}
     
     def has(self, object):
         return self.id(object) in self.registry
     
     def id(self, object):
-        return id(object.__class__)
+        if hasattr(object, '__class__'):
+            if issubclass(object.__class__, type):
+                # then it's a class...
+                cls = object
+            else:
+                # instance ...
+                cls = object.__class__
+        elif type(object)==types.ClassType:
+            # then it's a classic class (no metaclass)...
+            cls = object
+        else:
+            raise ValueError(
+                    "cannot identify object %s because it isn't an "
+                    "instance or a class" % object)
+        return id(cls)
     
     def register(self, object):
         id = self.id(object)

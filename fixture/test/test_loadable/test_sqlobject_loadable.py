@@ -38,13 +38,6 @@ class SQLObjectFixtureTest:
         teardown_db(conn)
         conn.close()
 
-class SQLObjectFixtureForKeysTest(SQLObjectFixtureTest):
-    def setUp(self):
-        if not conf.POSTGRES_DSN:
-            raise SkipTest
-            
-        SQLObjectFixtureTest.setUp(self, dsn=conf.POSTGRES_DSN)
-
 class SQLObjectCategoryTest(SQLObjectFixtureTest):
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""
@@ -58,11 +51,11 @@ class SQLObjectCategoryTest(SQLObjectFixtureTest):
         eq_(Category.select().count(), 0)
          
 class TestSQLObjectCategory(
-        HavingCategoryData, SQLObjectCategoryTest, LoaderTest):
+        HavingCategoryData, SQLObjectCategoryTest, LoadableTest):
     pass 
 
 class HavingCategoryDataStorable:
-    """mixin that adds data to a LoaderTest."""
+    """mixin that adds data to a LoadableTest."""
     def datasets(self):
         class WhateverIWantToCallIt(DataSet):
             class Meta:
@@ -76,10 +69,10 @@ class HavingCategoryDataStorable:
         return [WhateverIWantToCallIt]
         
 class TestSQLObjectCategoryStorable(
-        HavingCategoryDataStorable, SQLObjectCategoryTest, LoaderTest):
+        HavingCategoryDataStorable, SQLObjectCategoryTest, LoadableTest):
     pass
 class TestSQLObjectCategoryAsDataType(
-        HavingCategoryAsDataType, SQLObjectCategoryTest, LoaderTest):
+        HavingCategoryAsDataType, SQLObjectCategoryTest, LoadableTest):
     pass
 
 class TestSQLObjectPartialLoad(
@@ -91,7 +84,7 @@ class TestSQLObjectPartialLoad(
        # t = self.conn.transaction()
        # eq_(Category.select(connection=t).count(), 0)
         
-class SQLObjectFixtureCascadeTest(SQLObjectFixtureForKeysTest):
+class SQLObjectFixtureCascadeTest(SQLObjectFixtureTest):
     def assert_data_loaded(self, dataset):
         """assert that the dataset was loaded."""
         eq_(Offer.get(dataset.free_truck.id).name, dataset.free_truck.name)
@@ -113,16 +106,35 @@ class SQLObjectFixtureCascadeTest(SQLObjectFixtureForKeysTest):
         eq_(Offer.select().count(), 0)
         eq_(Product.select().count(), 0)
 
+class SQLObjectFixtureCascadeTestWithPgsql(SQLObjectFixtureCascadeTest):
+    def setUp(self):
+        if not conf.POSTGRES_DSN:
+            raise SkipTest
+            
+        SQLObjectFixtureCascadeTest.setUp(self, dsn=conf.POSTGRES_DSN)
+
 class TestSQLObjectFixtureCascade(
         HavingOfferProductData, SQLObjectFixtureCascadeTest, 
-        LoaderTest):
+        LoadableTest):
+    pass
+class TestSQLObjectFixtureCascadeWithPgsql(
+        HavingOfferProductData, SQLObjectFixtureCascadeTestWithPgsql, 
+        LoadableTest):
     pass
 class TestSQLObjectFixtureCascadeAsType(
         HavingOfferProductAsDataType, SQLObjectFixtureCascadeTest, 
-        LoaderTest):
+        LoadableTest):
     pass
-class TestSQLObjectFixtureSeqCascade(
-        HavingSequencedOfferProduct, SQLObjectFixtureCascadeTest, 
-        LoaderTest):
+class TestSQLObjectFixtureCascadeAsRef(
+        HavingReferencedOfferProduct, SQLObjectFixtureCascadeTest, 
+        LoadableTest):
+    pass
+class TestSQLObjectFixtureCascadeAsRefInherit(
+        HavingRefInheritedOfferProduct, SQLObjectFixtureCascadeTest, 
+        LoadableTest):
+    pass
+class TestSQLObjectFixtureCascadeAsRefInheritWithPgsql(
+        HavingRefInheritedOfferProduct, SQLObjectFixtureCascadeTestWithPgsql, 
+        LoadableTest):
     pass
             

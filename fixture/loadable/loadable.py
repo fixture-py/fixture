@@ -3,6 +3,7 @@ import sys
 from fixture.base import Fixture
 from fixture.util import ObjRegistry
 from fixture.style import NamedDataStyle
+from fixture.dataset import Ref, dataset_registry, DataRow
 
 class LoadableFixture(Fixture):
     """A fixture that knows how to load and unload a DataSet.
@@ -45,6 +46,9 @@ class LoadableFixture(Fixture):
             self.medium = medium
             self.dataset = dataset
             self.transaction = None
+        
+        def __getattr__(self, name):
+            return getattr(self.obj, name)
         
         def __repr__(self):
             return "%s at %s for %s" % (
@@ -140,10 +144,8 @@ class LoadableFixture(Fixture):
         
     def load_dataset(self, ds):
         
-        if not ds.meta.refclass:
-            ds.meta.refclass = self.dataclass
         for ref_ds in ds.meta.references:
-            r = ref_ds(default_refclass=self.dataclass)
+            r = ref_ds.shared_instance(default_refclass=self.dataclass)
             self.load_dataset(r)
         
         self.attach_storage_medium(ds)
@@ -155,13 +157,26 @@ class LoadableFixture(Fixture):
         ds.meta.storage_medium.visit_loader(self)
         for key, row in ds:
             try:
+                # resolve this row's referenced values :
+                for k in row.columns():
+                    v = getattr(row, k)
+                    if isinstance(v, Ref.Value):
+                        ref = v.ref
+                        ref.dataset_obj = self.loaded[ref.dataset_class]
+                        isref=True
+                
+                if not isinstance(row, DataRow):
+                    row = row(ds)
                 obj = ds.meta.storage_medium.save(row)
-                ds.meta._stored_objects.append(obj)
+                ds.meta._stored_objects.store(key, obj)
+                # save the instance in place of the class...
+                ds._setdata(key, row)
+                
             except Exception, e:
                 etype, val, tb = sys.exc_info()
                 raise self.LoadError(
                         "%s: %s (while saving '%s' of %s, %s)" % (
-                                etype.__name__, val, key, ds, row)), None, tb
+                            etype.__name__, val, key, ds, row)), None, tb
                                 
         self.loaded.register(ds)
     
@@ -175,6 +190,7 @@ class LoadableFixture(Fixture):
         def unloader():
             for dataset in self.loaded.to_unload():
                 self.unload_dataset(dataset)
+            dataset_registry.clear()
         self.wrap_in_transaction(unloader, unloading=True)
     
     def unload_dataset(self, dataset):
@@ -215,7 +231,8 @@ class EnvLoadableFixture(LoadableFixture):
         
         if not storable:
             if not ds.meta.storable_name:
-                ds.meta.storable_name = self.style.guess_storable_name(ds.__class__.__name__)
+                ds.meta.storable_name = self.style.guess_storable_name(
+                                                        ds.__class__.__name__)
         
             if hasattr(self.env, 'get'):
                 storable = self.env.get(ds.meta.storable_name, None)

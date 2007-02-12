@@ -15,11 +15,11 @@ fixture provides an interface for loading tabular data into storage media. You c
 !DataSet objects are written as python classes, without the need to type auto-incrementing IDs; referencing other data sets is simple::
 {{{
 
-    >>> class BannerData(SequencedSet):
+    >>> class BannerData(DataSet):
     ...     class free_spaceship:
     ...         text="Get a free spaceship with any purchase"
     ...
-    >>> class EventData(SequencedSet):
+    >>> class EventData(DataSet):
     ...     class click:
     ...         name="click"
     ...         banner_id=BannerData.free_spaceship.ref('id')

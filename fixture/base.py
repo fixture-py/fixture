@@ -1,8 +1,6 @@
 
 """base fixture components."""
 
-from nose.util import is_generator
-from nose.tools import with_setup
 try:
     from functools import wraps
 except ImportError:
@@ -64,7 +62,7 @@ class Fixture(object):
     
         def setup(self):
             self.data = self.dataclass(*[
-                            ds( default_refclass=self.dataclass ) \
+                        ds.shared_instance( default_refclass=self.dataclass ) \
                             for ds in iter(self.datasets)])
             self.loader.load(self.data)
     
@@ -97,6 +95,8 @@ class Fixture(object):
           - optional callable to be executed (finally) after test
 
         """
+        from nose.util import is_generator
+        from nose.tools import with_setup
 
         setup = cfg.get('setup', None)
         teardown = cfg.get('teardown', None)
