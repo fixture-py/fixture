@@ -55,9 +55,12 @@ setup(
     keywords = ('test testing tools unittest fixtures setup teardown '
                 'database stubs IO tempfile'),
     url = 'http://farmdev.com/',
-    download_url = 'http://farmdev.com/src/fixture-%s-py%s.%s.egg' % \
-                    (   package.version, sys.version_info[0], 
-                        sys.version_info[1]),
+    
+    # only provide this for a final release:
+    download_url="",
+    # download_url = 'http://farmdev.com/src/fixture-%s-py%s.%s.egg' % \
+    #                 (   package.version, sys.version_info[0], 
+    #                     sys.version_info[1]),
     packages = find_packages(),
     
     test_suite="fixture.setup_test_not_supported",
