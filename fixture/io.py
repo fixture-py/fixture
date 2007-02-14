@@ -79,7 +79,7 @@ def putfile(filename, contents, filelike=None, mode=None):
     filelike.write(contents)
     filelike.close()
     
-class Path(str, object):
+class DirPath(str, object):
     """a directory path.
     
     functions exactly like the builtin str object except it is bound to the 
@@ -91,7 +91,6 @@ class Path(str, object):
     - exists()
     - join(path1, path2, ...)
     - realpath()
-    - split()
     - splitext()
     
     """
@@ -99,7 +98,7 @@ class Path(str, object):
         self._path = path
         self._pnames = (
             'abspath', 'basename', 'dirname', 'exists', 'join', 
-            'realpath', 'split', 'splitext')
+            'realpath', 'splitext')
         str.__init__(self, path)
     
     def __getattribute__(self, n):
@@ -107,7 +106,7 @@ class Path(str, object):
             p_method = getattr(os.path, n)
             val = p_method(self._path, *a,**kw)
             if issubclass(type(val), str):
-                return self.__class__(val)
+                return DirPath(val)
             else:
                 return val
                 
@@ -116,7 +115,60 @@ class Path(str, object):
         else:
             return object.__getattribute__(self, n)
     
-class TempIO(object):
+    def __setattr__(self, name, val):
+        if not name.startswith('_'):
+            path = self.mkdir(val)
+            val = DirPath(path)
+        object.__setattr__(self, name, val)
+    
+    def mkdir(self, name):
+        """makes a directory in the root and returns its full path.
+        
+        the path is split each non-existant directory is made.  
+        returns full path to new directory.
+        
+        """
+        # force it into an relative path...
+        if name.startswith(os.path.sep):
+            name = name[len(os.path.sep):]
+            
+        path = self.join(name)
+        mkdirall(path)
+        return path
+    
+    def putfile(self, fname, contents, mode=None):
+        """puts new filename relative to your `TempIO` root.
+        Makes all directories along the path to the final file.
+        
+        returns absolute filename.
+        """
+        relpath, fname = split(fname)
+        if relpath and not self.join(relpath).exists():
+            if relpath.startswith(os.path.sep):
+                relpath = relpath[1:]
+            self.mkdir(relpath)
+            
+        f = self.join(relpath, fname)
+        putfile(f, contents, mode=mode)
+        return f
+
+class DeletableDirPath(DirPath):
+    def __del__(self):
+        """removes the root directory and everything under it.
+        """
+        if self._deferred:
+            # let atexit handle it ...
+            return
+        try:
+            _expunge(self)
+        except:
+            # means atexit didn't get it ...
+            # this is the last resort.  let this raise an exception?
+            # apparently we can even get import errors in __del__,
+            # like for shutil.
+            pass
+    
+def TempIO(deferred=False, **kw):
     """self-destructing, temporary directory object.
     
     Takes the same keyword args as tempfile.mkdtemp with these additional 
@@ -143,82 +195,13 @@ class TempIO(object):
     .. _nosetests: http://nose.python-hosting.com/
     
     """
+    if not 'prefix' in kw:
+        # a breadcrumb ...
+        kw['prefix'] = 'tmp_fixture_'
     
-    def __init__(self, **kw):
-        
-        if 'deferred' in kw:
-            self._deferred = kw['deferred']
-            del kw['deferred']
-        else:
-            self._deferred = False
-        
-        if not 'prefix' in kw:
-            # a breadcrumb ...
-            kw['prefix'] = 'tmp_fixture_'
-        
-        object.__setattr__(self, 'root', Path(path.realpath(mkdtemp(**kw))))
-        _tmpdirs.add(self.root)
-    
-    
-    def __repr__(self):
-        return "<%s at '%s'>" % (self.__class__.__name__, self.root)
-    
-    def __getattr__(self, name):
-        try:
-            return getattr(self.root, name)
-        except AttributeError:
-            etype, val, tb = sys.exc_info()
-            raise AttributeError(
-                    "%s has no attribute %s" % (self, repr(name))), None, tb
-    
-    def __setattr__(self, name, val):
-        if name=='root':
-            raise ValueError("cannot set the 'root' attribute")
-        if not name.startswith('_'):
-            path = self.mkdir(val)
-            val = Path(path)
-        object.__setattr__(self, name, val)
-        
-    def __del__(self):
-        """removes the root directory and everything under it.
-        """
-        if self._deferred:
-            # let atexit handle it ...
-            return
-        try:
-            _expunge(self.root)
-        except:
-            # means atexit didn't get it ...
-            # this is the last resort.  let this raise an exception?
-            # apparently we can even get import errors in __del__,
-            # like for shutil.
-            pass
-    
-    def mkdir(self, name):
-        """makes a directory in the root and returns its full path.
-        
-        the path is split each non-existant directory is made.  
-        returns full path to new directory.
-        
-        """
-        path = os.path.join(self.root, name)
-        mkdirall(path)
-        return path
-    
-    def putfile(self, fname, contents, mode=None):
-        """puts new filename relative to your `TempIO` root.
-        
-        see `mkfile` for how fname is handled.
-        
-        returns absolute filename.
-        """
-        relpath, fname = split(fname)
-        if relpath and not self.root.join(relpath).exists():
-            if relpath.startswith(os.path.sep):
-                relpath = relpath[1:]
-            self.mkdir(relpath)
-            
-        f = self.root.join(relpath, fname)
-        putfile(f, contents, mode=mode)
-        return f
+    tmp_path = path.realpath(mkdtemp(**kw))
+    root = DeletableDirPath(tmp_path)
+    root._deferred = deferred
+    _tmpdirs.add(tmp_path)
+    return root
         
