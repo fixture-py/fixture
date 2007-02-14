@@ -58,6 +58,7 @@ __version__ = "1.0"
 from fixture.loadable import *
 from fixture.dataset import *
 from fixture.util import *
+from fixture.io import *
 
 
 def setup_test_not_supported():
