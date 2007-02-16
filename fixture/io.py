@@ -1,19 +1,9 @@
 
 """Disk I/O-like fixture tools.
 
-An example ...
-    
-    >>> from fixture import TempIO
-    >>> tmp = TempIO()
-    >>> assert exists(tmp.putfile('data.txt', 'lots of nonsense'))
-    >>> f = tmp.join('data.txt')
-    >>> open(f,'r').read()
-    'lots of nonsense'
-    >>> tmp.incoming = "files/incoming"
-    >>> assert tmp.incoming.exists()
+see TempIO for usage
 
 """
-
 __all__ = ['TempIO']
 
 import os, sys
@@ -21,8 +11,65 @@ from os import path
 from os.path import join, exists, split, basename
 from tempfile import mkdtemp
 import atexit
-
 _tmpdirs = set()
+
+def TempIO(deferred=False, **kw):
+    """self-destructing, temporary directory.
+    
+    Takes the same keyword args as tempfile.mkdtemp with these additional 
+    keywords:
+    
+    - deferred
+    
+        - if True, destruction will be put off until atexit.  Otherwise, 
+          it will be destructed when it falls out of scope
+    
+    This object is useful for tests that need to set up a directory structure 
+    and work with its files and paths.
+    
+    With an instance::
+    
+        >>> tmp = TempIO()
+    
+    You can create a directory simply by setting an attribute to the new 
+    directory's path::
+    
+        >>> tmp.incoming = "incoming"
+        >>> tmp.incoming.exists()
+        True
+    
+    The value "incoming" created a subdirectory named incoming of the tmp root 
+    and stored a new DirPath object in the object.
+    
+    The new attribute is now an absolute path to a subdirectory, "incoming", of 
+    the tmp root.  Note that tmp and tmp.incoming are string objects but with 
+    several os.path methods mixed in for convenience.  However, you can pass it 
+    to other objects and it will represent itself as its absolute path.
+    
+    You can also insert files to the directory with putfile()::
+    
+        >>> foopath = tmp.incoming.putfile("foo.txt", "contents of foo")
+        >>> tmp.incoming.join("foo.txt").exists()
+        True
+    
+    The directory root will self-destruct when it goes out of scope or atexit. 
+    You can explicitly delete the object at your test's teardown if you like::
+    
+        >>> tmpdir = str(tmp) # making sure it's a copy
+        >>> del tmp
+        >>> os.path.exists(tmpdir)
+        False
+    
+    """
+    if not 'prefix' in kw:
+        # a breadcrumb ...
+        kw['prefix'] = 'tmp_fixture_'
+    
+    tmp_path = path.realpath(mkdtemp(**kw))
+    root = DeletableDirPath(tmp_path)
+    root._deferred = deferred
+    _tmpdirs.add(tmp_path)
+    return root
 
 def _expunge(tmpdir):
     """called internally to remove a tmp dir."""
@@ -36,7 +83,7 @@ def _expunge_all():
         _expunge(d)
     
 # this seems to be a safer way to clean up since __del__ can
-# be called in a volatile environment :
+# be called in an unpredictable environment :
 atexit.register(_expunge_all)
 
 def mkdirall(path, mkdir=os.mkdir):
@@ -82,44 +129,49 @@ def putfile(filename, contents, filelike=None, mode=None):
 class DirPath(str, object):
     """a directory path.
     
-    functions exactly like the builtin str object except it is bound to the 
-    following os.path methods:
-    
-    - abspath()
-    - basename()
-    - dirname()
-    - exists()
-    - join(path1, path2, ...)
-    - realpath()
-    - splitext()
+    The instance will function exactly like a string but is enhanced with a few 
+    common methods from os.path.  Note that path.split() is implemented as 
+    self.splitpath() since otherwise paths may not work right in other 
+    applications.
     
     """
     def __init__(self, path):
-        self._path = path
-        self._pnames = (
-            'abspath', 'basename', 'dirname', 'exists', 'join', 
-            'realpath', 'splitext')
         str.__init__(self, path)
-    
-    def __getattribute__(self, n):
-        def proxy_to_path(*a,**kw):
-            p_method = getattr(os.path, n)
-            val = p_method(self._path, *a,**kw)
-            if issubclass(type(val), str):
-                return DirPath(val)
-            else:
-                return val
-                
-        if not n.startswith('_') and n in self._pnames:
-            return proxy_to_path
-        else:
-            return object.__getattribute__(self, n)
-    
+        
     def __setattr__(self, name, val):
+        """self.new_directory = "rel/path/to/directory" 
+        
+        a new attribute will be created as a relative directory and the value 
+        will be stored as a new DirPath object.
+        
+        """
         if not name.startswith('_'):
             path = self.mkdir(val)
-            val = DirPath(path)
+            val = self._wrap(path)
         object.__setattr__(self, name, val)
+    
+    def _wrap(self, path):
+        return DirPath(path)
+        
+    def abspath(self):
+        """os.path.abspath(self)"""
+        return self._wrap(path.abspath(self))
+    
+    def basename(self):
+        """os.path.basename(self)"""
+        return self._wrap(path.basename(self))
+    
+    def dirname(self):
+        """os.path.dirname(self)"""
+        return self._wrap(path.dirname(self))
+        
+    def exists(self):
+        """os.path.exists(self)"""
+        return path.exists(self)
+    
+    def join(self, *dirs):
+        """os.path.join(self, *dirs)"""
+        return self._wrap(path.join(self, *dirs))
     
     def mkdir(self, name):
         """makes a directory in the root and returns its full path.
@@ -136,6 +188,10 @@ class DirPath(str, object):
         mkdirall(path)
         return path
     
+    def normpath(self):
+        """os.path.normpath(self)"""
+        return self._wrap(path.normpath(self))
+    
     def putfile(self, fname, contents, mode=None):
         """puts new filename relative to your `TempIO` root.
         Makes all directories along the path to the final file.
@@ -151,57 +207,32 @@ class DirPath(str, object):
         f = self.join(relpath, fname)
         putfile(f, contents, mode=mode)
         return f
+    
+    def realpath(self):
+        """os.path.realpath(self)"""
+        return self._wrap(path.realpath(self))
+    
+    def splitext(self):
+        """os.path.splitext(self)"""
+        return path.splitext(self)
+    
+    def splitpath(self):
+        """os.path.split(self)
+        """
+        return path.split(self)
 
 class DeletableDirPath(DirPath):
     def __del__(self):
         """removes the root directory and everything under it.
         """
-        if self._deferred:
-            # let atexit handle it ...
+        if hasattr(self, '_deferred') and self._deferred:
+            # atexit will handle it ...
             return
         try:
             _expunge(self)
         except:
-            # means atexit didn't get it ...
-            # this is the last resort.  let this raise an exception?
-            # apparently we can even get import errors in __del__,
-            # like for shutil.
+            # means atexit didn't get it and there was some other exception
+            # due to the unpredictable state of python's destructors; there is
+            # nothing really to do
             pass
-    
-def TempIO(deferred=False, **kw):
-    """self-destructing, temporary directory object.
-    
-    Takes the same keyword args as tempfile.mkdtemp with these additional 
-    keywords:
-    
-    - deferred
-    
-        - if True, destruction will be put off until atexit.  Otherwise, 
-          it will be destructed when it falls out of scope
-    
-    You will most likely create this in a test module like so 
-    (`nosetests`_ style) :
-    
-        >>> tmp = None
-        >>> def setup(self):
-        ...     self.tmp = TempIO()
-        >>> def teardown(self):
-        ...     del self.tmp
-        >>> def test_something():
-        ...     tmp
-        ...     # ...
-        >>>
-    
-    .. _nosetests: http://nose.python-hosting.com/
-    
-    """
-    if not 'prefix' in kw:
-        # a breadcrumb ...
-        kw['prefix'] = 'tmp_fixture_'
-    
-    tmp_path = path.realpath(mkdtemp(**kw))
-    root = DeletableDirPath(tmp_path)
-    root._deferred = deferred
-    _tmpdirs.add(tmp_path)
-    return root
         

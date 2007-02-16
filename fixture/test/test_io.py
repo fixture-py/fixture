@@ -130,6 +130,7 @@ class TestTempIO(object):
                 path.abspath(path.join(self.tmp, "processed/dupes")))
         eq_(self.tmp.dupes.basename(), "dupes")
         eq_(self.tmp.dupes.dirname(), path.join(self.tmp, "processed"))
+        eq_(self.tmp.dupes.normpath(), path.normpath(self.tmp.dupes))
         eq_(self.tmp.dupes.exists(), True)
         eq_(self.tmp.dupes.join("foo", "bar"), path.abspath(path.join(
                                     self.tmp, "processed/dupes/foo/bar")))
@@ -141,8 +142,7 @@ class TestTempIO(object):
         
         eq_(self.tmp.dupes.realpath(), 
                 path.realpath(path.join(self.tmp, "processed/dupes")))
-        # eq_(self.tmp.dupes.split(), 
-        #         (path.realpath(path.join(self.tmp, "processed")), "dupes"))
+        eq_(self.tmp.dupes.splitpath(), path.split(self.tmp.dupes))
         eq_(self.tmp.dupes.splitext(), (path.realpath(path.join(self.tmp, 
                                                     "processed/dupes")), ""))
 
