@@ -42,11 +42,9 @@ class SQLObjectFixture(DBLoadableFixture):
     
     """
             
-    def __init__(self,  style=None, dsn=None, medium=None, dataclass=None,
-                        connection=None, env=None, use_transaction=True,
-                        close_conn=False ):
-        DBLoadableFixture.__init__(self, style=style, dsn=dsn, env=env, 
-                                            medium=medium, dataclass=dataclass)
+    def __init__(self,  connection=None, use_transaction=True, 
+                        close_conn=False, **kw ):
+        DBLoadableFixture.__init__(self, **kw)
         self.connection = connection
         self.close_conn = close_conn
         self.use_transaction = use_transaction

@@ -216,9 +216,8 @@ class EnvLoadableFixture(LoadableFixture):
     According to the style rules, the env will be used to find objects by name.
     
     """
-    def __init__(self, style=None, env=None, medium=None, dataclass=None):
-        LoadableFixture.__init__(self, style=style, medium=medium, 
-                                        dataclass=dataclass)
+    def __init__(self, env=None, **kw):
+        LoadableFixture.__init__(self, **kw)
         self.env = env
     
     def attach_storage_medium(self, ds):
@@ -261,10 +260,8 @@ class DBLoadableFixture(EnvLoadableFixture):
     More specifically, one that forces its implementation to run atomically 
     (within a begin/ commit/ rollback block).
     """
-    def __init__(self, style=None, dsn=None, env=None, medium=None, 
-                        dataclass=None):
-        EnvLoadableFixture.__init__(self, style=style, medium=medium, 
-                                        dataclass=dataclass, env=env)
+    def __init__(self, dsn=None, **kw):
+        EnvLoadableFixture.__init__(self, **kw)
         self.dsn = dsn
         self.transaction = None
     

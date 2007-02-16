@@ -53,10 +53,8 @@ class SQLAlchemyFixture(DBLoadableFixture):
     """
     Medium = staticmethod(negotiated_medium)
     
-    def __init__(self,  style=None, medium=None, env=None, session=None, 
-                        session_context=None, dataclass=None):
-        DBLoadableFixture.__init__(self,   style=style, dsn=None, 
-                                    env=env, medium=medium, dataclass=dataclass)
+    def __init__(self,  session=None, session_context=None, **kw):
+        DBLoadableFixture.__init__(self, **kw)
         self.session = session
         self.session_context = session_context
     
@@ -200,10 +198,6 @@ def is_assigned_mapper(obj):
 def is_mapped_class(obj):
     from sqlalchemy import util
     return hasattr(obj, 'c') and isinstance(obj.c, util.OrderedProperties)
-    
-    ## what about this??
-    # from sqlalchemy.orm.mapper import Mapper
-    # return hasattr(obj, '_mapper') and isinstance(obj._mapper, Mapper)
 
 def is_table(obj):
     from sqlalchemy.schema import Table
