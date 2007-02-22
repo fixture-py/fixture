@@ -6,6 +6,21 @@ import unittest
 from fixture import DataSet
 from fixture.loadable import LoadableFixture
 from fixture.test import env_supports, PrudentTestResult
+from fixture import TempIO
+
+def exec_if_supported(code, globals={}, locals={}):
+    # seems that for using from __future__ exec needs to think it's compiling a 
+    # module
+    tmp = TempIO()
+    try:
+        try:
+            mod = compile(code, tmp.join("code.py"), 'exec')
+        except SyntaxError:
+            raise SkipTest
+        else:
+            eval(mod, globals, locals)
+    finally:
+        del tmp
 
 
 class LoadableTest(object):
@@ -119,15 +134,7 @@ with self.fixture.data(*self.datasets()) as d:
     self.assert_data_loaded(d)
 
 """
-        from fixture import TempIO
-        t = TempIO()
-        try:
-            mod = compile(c, t.join("test_with_data_as_d.py"), 'exec')
-        except SyntaxError:
-            raise SkipTest
-        else:
-            eval(mod, globals(), locals())
-        
+        exec_if_supported(c, globals(), locals())
         self.assert_data_torndown()
         
     def test_with_data_as_d_recovery(self):
@@ -145,16 +152,7 @@ with fixture.data(*self.datasets()) as d:
     raise RuntimeError
 
 """
-            # refactor me .... !
-            from fixture import TempIO
-            t = TempIO()
-            try:
-                mod = compile(c, 
-                        t.join("test_with_data_as_d_recovery.py"), 'exec')
-            except SyntaxError:
-                raise SkipTest
-            else:
-                eval(mod, globals(), locals())
+            exec_if_supported(c, globals(), locals())
             
         doomed_with_statement()
         self.assert_data_torndown()
