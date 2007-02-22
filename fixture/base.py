@@ -48,8 +48,9 @@ class Fixture(object):
     
         def __enter__(self):
             self.setup()
+            return self
     
-        def __exit__(self):
+        def __exit__(self, type, value, traceback):
             self.teardown()
     
         def __getattr__(self, name):

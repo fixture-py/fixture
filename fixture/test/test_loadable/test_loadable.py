@@ -110,29 +110,52 @@ class LoadableTest(object):
     
     def test_with_data_as_d(self):
         """test with: fixture.data() as d"""
-        if not env_supports.with_statement:
-            raise SkipTest
+        # if not env_supports.with_statement:
+        #     raise SkipTest
         
-        c = """    
-        with self.fixture.data(*self.datasets()) as d:
-            self.assert_data_loaded(d)
-        """
-        eval(c)
+        c = """
+from __future__ import with_statement
+with self.fixture.data(*self.datasets()) as d:
+    self.assert_data_loaded(d)
+
+"""
+        from fixture import TempIO
+        t = TempIO()
+        try:
+            mod = compile(c, t.join("test_with_data_as_d.py"), 'exec')
+        except SyntaxError:
+            raise SkipTest
+        else:
+            eval(mod, globals(), locals())
+        
         self.assert_data_torndown()
         
     def test_with_data_as_d_recovery(self):
         """test with: fixture.data() as d recovery"""
-        if not env_supports.with_statement:
-            raise SkipTest
+        # if not env_supports.with_statement:
+        #     raise SkipTest
             
         @raises(RuntimeError)
         def doomed_with_statement():
+            fixture = self.fixture
             c = """
-            with self.fixture.data(*self.datasets()) as d:
-                self.assert_data_loaded(d)
-                raise RuntimeError
-            """
-            eval(c)
+from __future__ import with_statement
+with fixture.data(*self.datasets()) as d:
+    self.assert_data_loaded(d)
+    raise RuntimeError
+
+"""
+            # refactor me .... !
+            from fixture import TempIO
+            t = TempIO()
+            try:
+                mod = compile(c, 
+                        t.join("test_with_data_as_d_recovery.py"), 'exec')
+            except SyntaxError:
+                raise SkipTest
+            else:
+                eval(mod, globals(), locals())
+            
         doomed_with_statement()
         self.assert_data_torndown()
 

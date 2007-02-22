@@ -1,6 +1,20 @@
 
 """each attribute indicates a supported module or feature."""
 
+# hopefully there's a better way to do this....
+# from fixture import TempIO
+# t = TempIO()
+# mod = compile("""
+# from __future__ import with_statement
+# """, 
+#                 t.join("bootstrap_with.py"), 'exec')
+# try:
+#     eval(mod)
+# except SyntaxError:
+#     with_statement = False
+# else:
+#     with_statement = True
+    
 def supported(mod):
     try:
         __import__(mod)
@@ -11,15 +25,3 @@ def supported(mod):
 
 sqlobject = supported('sqlobject')
 sqlalchemy = supported('sqlalchemy')
-
-class b:
-    def __enter__(): pass
-    def __exit__(): pass
-c = """
-with b():
-    with_statement = True
-"""
-try:
-    eval(c)
-except SyntaxError:
-    with_statement = None
