@@ -103,13 +103,27 @@ class Fixture(object):
         teardown = cfg.get('teardown', None)
 
         def decorate_with_data(routine):
+            # passthrough an already decorated routine:
+            # (could this be any uglier?)
+            if hasattr(routine, 'setup'):
+                def passthru_setup():
+                    routine.setup()
+                    if setup: setup()
+            else:
+                passthru_setup = setup
+            if hasattr(routine, 'teardown'):
+                def passthru_teardown():
+                    routine.teardown()
+                    if teardown: teardown()
+            else:
+                passthru_teardown = teardown
+            
             def setup_data():
                 data = self.data(*datasets)
                 data.setup()
                 return data
             def teardown_data(data):
                 data.teardown()
-                if teardown: teardown()
         
             @wraps(routine)
             def call_routine(*a,**kw):
@@ -148,7 +162,9 @@ class Fixture(object):
             else:
                 wrapped_routine = call_routine
         
-            return with_setup( setup=setup )( wrapped_routine )
+            decorate = with_setup(  setup=passthru_setup, 
+                                    teardown=passthru_teardown )
+            return decorate( wrapped_routine )
         return decorate_with_data
     
     def data(self, *datasets):

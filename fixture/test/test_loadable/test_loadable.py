@@ -97,6 +97,48 @@ class LoadableTest(object):
         eq_(ns.was_torndown, True)
         self.assert_data_torndown()
     
+    def test_with_data_nested_setup(self):
+        """test @fixture.with_data on existing test"""
+        import nose, unittest
+        from nose.tools import with_setup
+        
+        # refactor me.  oh, the ugliness
+        class ns:
+            was_setup=False
+            was_setup_nested=False
+            was_torndown=False
+            was_torndown_nested=False
+        def setup():
+            ns.was_setup=True
+        def setup_nested():
+            ns.was_setup_nested=True
+        def teardown():
+            ns.was_torndown=True
+        def teardown_nested():
+            ns.was_torndown_nested=True
+        
+        # nested setups must be obeyed
+        
+        kw = dict(setup=setup, teardown=teardown)
+        @self.fixture.with_data(*self.datasets(), **kw)
+        @with_setup(setup=setup_nested, teardown=teardown_nested)
+        def test_data_test(data):
+            eq_(ns.was_setup, True)
+            eq_(ns.was_setup_nested, True)
+            self.assert_data_loaded(data)
+        
+        case = nose.case.FunctionTestCase(test_data_test)
+        res = PrudentTestResult()
+        case(res)
+        
+        eq_(res.failures, [])
+        eq_(res.errors, [])
+        eq_(res.testsRun, 1)
+        
+        eq_(ns.was_torndown, True)
+        eq_(ns.was_torndown_nested, True)
+        self.assert_data_torndown()
+    
     def test_with_data_recovery(self):
         """test @fixture.with_data recovery"""
         @raises(RuntimeError)
