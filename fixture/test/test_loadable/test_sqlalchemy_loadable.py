@@ -4,7 +4,7 @@ from nose.exc import SkipTest
 from fixture import SQLAlchemyFixture
 from fixture.dataset import MergedSuperSet
 from fixture import SQLAlchemyFixture
-from fixture.style import NamedDataStyle, CamelAndUndersStyle
+from fixture.style import NamedDataStyle, CamelAndUndersStyle, TrimmedNameStyle
 from fixture.test import conf, env_supports
 from fixture.test.test_loadable import *
 from fixture.examples.db.sqlalchemy_examples import *
@@ -106,6 +106,28 @@ class TestSQLAlchemyCategoryStorableInContext(
         HavingCategoryDataStorable, SessionContextFixture, 
         SQLAlchemyCategoryTest, LoadableTest):
     pass
+
+class TestSQLAlchemyCategoryPrefixed(
+        SQLAlchemyCategoryTest, LoadableTest):
+    """test finding and loading Category, using a data set named with a prefix 
+    and a data suffix style
+    """
+    def new_fixture(self):
+        return SQLAlchemyFixture(  
+                    session=self.session_context.current,
+                    style=(TrimmedNameStyle(prefix="Foo_") + NamedDataStyle()),
+                    env=globals(),
+                    dataclass=MergedSuperSet )
+                        
+    def datasets(self):
+        class Foo_CategoryData(DataSet):
+            class gray_stuff:
+                id=1
+                name='gray'
+            class yellow_stuff:
+                id=2
+                name='yellow'
+        return [Foo_CategoryData]
 
 class HavingMappedCategory(object):
     class MappedCategory(object):
