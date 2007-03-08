@@ -39,9 +39,10 @@ To load data into a database (or anything suitable) you create subclasses of
     >>> 
 }}}
 
-===Source===
+===Documentation===
 
-[http://fixture.googlecode.com/svn/trunk/#egg=fixture-dev browse] the source online or [http://code.google.com/p/fixture/source follow these instructions] to checkout the code. 
+ * [http://farmdev.com/projects/fixture/apidocs/ API Documentation]
+ * End User Documentation -- It's in the works!
 
 ===Install===
 
@@ -57,6 +58,9 @@ Or ... if you're old school, this works with or without [http://peak.telecommuni
 
 {{{python setup.py install}}}
 
+===Source===
+
+[http://fixture.googlecode.com/svn/trunk/#egg=fixture-dev browse] the source online or [http://code.google.com/p/fixture/source follow these instructions] to checkout the code. 
 
 
 Note that this module is more or less a complete rewrite of the fixtures interface first distributed in [http://testtools.python-hosting.com/ testtools].  The new interface still has room to evolve and there are probably a couple undiscovered bugs so please don't hesitate to [http://code.google.com/p/fixture/issues/list submit an issue].
