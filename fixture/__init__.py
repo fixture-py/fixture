@@ -41,8 +41,8 @@ To load data into a database (or anything suitable) you create subclasses of
 
 ===Documentation===
 
- * [http://farmdev.com/projects/fixture/apidocs/ API Documentation]
  * End User Documentation -- It's in the works!
+ * [http://farmdev.com/projects/fixture/apidocs/ API Documentation]
 
 ===Install===
 
@@ -58,12 +58,33 @@ Or ... if you're old school, this works with or without [http://peak.telecommuni
 
 {{{python setup.py install}}}
 
+===Requirements===
+
+At the moment fixture is only tested on Python 2.4 and 2.5 so it may or may not 
+work with earlier versions.  If you submit a patch to support an earlier 
+version, I will try my best to accommodate it.
+
+The module does not depend on external libraries for its core functionality but 
+to so something interesting you will need one of several libraries, detailed in 
+the documentation.  You can also run the test suite if to see what was skipped 
+due to dependency error.
+
 ===Source===
 
 [http://fixture.googlecode.com/svn/trunk/#egg=fixture-dev browse] the source online or [http://code.google.com/p/fixture/source follow these instructions] to checkout the code. 
 
+===Status===
 
-Note that this module is more or less a complete rewrite of the fixtures interface first distributed in [http://testtools.python-hosting.com/ testtools].  The new interface still has room to evolve and there are probably a couple undiscovered bugs so please don't hesitate to [http://code.google.com/p/fixture/issues/list submit an issue].
+fixture is more or less a complete rewrite of 
+[http://testtools.python-hosting.com/ testtools.fixtures].  Since testtools went 
+through several versions, fixture claims to be a 1.0 release.  All 
+that means is that the implementation is now thought to be more mature and at 
+any final release, a major effort will be made to preserve the interface through 
+regression testing.
+
+However, the new interface still has room to evolve and there are probably 
+undiscovered bugs so please don't hesitate to 
+[http://code.google.com/p/fixture/issues/list submit an issue].
 
 """
 
