@@ -4,6 +4,11 @@ from fixture.base import Fixture
 from fixture.util import ObjRegistry
 from fixture.style import NamedDataStyle
 from fixture.dataset import Ref, dataset_registry, DataRow
+from fixture.exc import LoadError, UnloadError
+import logging
+
+log = logging.getLogger('fixture.loadable')
+log.setLevel(logging.INFO)
 
 class LoadableFixture(Fixture):
     """A fixture that knows how to load and unload a DataSet.
@@ -37,9 +42,6 @@ class LoadableFixture(Fixture):
             self.style = style
         if medium:
             self.Medium = medium
-        
-    class LoadError(Exception):
-        pass
     
     class StorageMediumAdapter(object):
         def __init__(self, medium, dataset):
@@ -58,8 +60,14 @@ class LoadableFixture(Fixture):
             raise NotImplementedError
         
         def clearall(self):
+            log.info("CLEARING stored objects for %s", self.dataset)
             for obj in self.dataset.meta._stored_objects:
-                self.clear(obj)
+                try:
+                    self.clear(obj)
+                except Exception, e:
+                    etype, val, tb = sys.exc_info()
+                    raise UnloadError(etype, val, self.dataset, 
+                                         stored_object=obj), None, tb
             
         def save(self, row):
             raise NotImplementedError
@@ -154,6 +162,7 @@ class LoadableFixture(Fixture):
             self.loaded.referenced(ds)
             return
         
+        log.info("LOADING rows in %s", ds)
         ds.meta.storage_medium.visit_loader(self)
         for key, row in ds:
             try:
@@ -174,10 +183,8 @@ class LoadableFixture(Fixture):
                 
             except Exception, e:
                 etype, val, tb = sys.exc_info()
-                raise self.LoadError(
-                        "%s: %s (while saving '%s' of %s, %s)" % (
-                            etype.__name__, val, key, ds, row)), None, tb
-                                
+                raise self.LoadError(etype, val, ds, key=key, row=row), None, tb
+        
         self.loaded.register(ds)
     
     def rollback(self):
