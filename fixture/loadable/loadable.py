@@ -103,30 +103,38 @@ class LoadableFixture(Fixture):
 
         def __init__(self):
             ObjRegistry.__init__(self)
-            self.levels = {}
+            self.tree = {}
+            self.limit = {}
         
         def __repr__(self):
             return "<%s at %s %s>" % (
                     self.__class__.__name__, hex(id(self)), 
                     [self.registry[i].__class__ for i in self.unload_queue])
         
+        def _pushid(self, id, level):
+            if id in self.limit:
+                # only store the object at its highest level:
+                if level > self.limit[id]:
+                    self.tree[self.limit[id]].remove(id)
+                    del self.limit[id]
+                else:
+                    return
+            self.tree.setdefault(level, [])
+            self.tree[level].append(id)
+            self.limit[id] = level
+        
         def register(self, obj, level):
             """register this object as "loaded"  
             """
             id = ObjRegistry.register(self, obj)
-            self.levels.setdefault(level, [])
-            self.levels[level].insert(0, id)
+            self._pushid(id, level)
             return id
         
         def referenced(self, obj, level):
             """tell the queue that this object is referenced again.
             """
             id = self.id(obj)
-            self.levels.setdefault(level, [])
-            self.levels[level].append(id)
-            # if id in self.levels[level]:
-            #     self.levels[level].remove(id)
-            # self.levels[level].insert(0, id)
+            self._pushid(id, level)
         
         def to_unload(self):
             """yields a list of objects suitable for unloading.
@@ -135,17 +143,19 @@ class LoadableFixture(Fixture):
             of row objects and their dependent objects (foreign keys), allowing 
             foreign keys to be referenced more than once.
             """
-            level_nums = self.levels.keys()
+            level_nums = self.tree.keys()
             level_nums.sort()
-            unloaded = set() # only unload once
+            treelog.info("*** unload order ***")
             for level in level_nums:
-                unload_queue = [id for id in self.levels[level] 
-                                                if id not in unloaded]
-                # print level, [self.registry[i].__class__.__name__ 
-                #                                 for i in unload_queue]
-                for id in unload_queue: 
-                    yield self.registry[id]
-                    unloaded.add(id)
+                unload_queue = self.tree[level]
+                verbose_obj = []
+                
+                for id in unload_queue:
+                    obj = self.registry[id]
+                    verbose_obj.append(obj.__class__.__name__)
+                    yield obj
+                
+                treelog.info("%s. %s", level, verbose_obj)
     
     def attach_storage_medium(self):
         pass
@@ -163,15 +173,19 @@ class LoadableFixture(Fixture):
                 self.load_dataset(ds)
         self.wrap_in_transaction(loader, unloading=False)
         
-    def load_dataset(self, ds, level=0):
+    def load_dataset(self, ds, level=1):
         
-        levsep = level==0 and "/--------" or "|__.."
+        is_parent = level==1
+        
+        levsep = is_parent and "/--------" or "|__.."
         treelog.info(
-            "%s%s%s (%s)", level * '  ', levsep, ds.__class__.__name__, level)
+            "%s%s%s (%s)", level * '  ', levsep, ds.__class__.__name__, 
+                                            (is_parent and "parent" or level))
         
         for ref_ds in ds.meta.references:
             r = ref_ds.shared_instance(default_refclass=self.dataclass)
-            self.load_dataset(r, level=level+1)
+            new_level = level+1
+            self.load_dataset(r,  level=new_level)
         
         self.attach_storage_medium(ds)
         

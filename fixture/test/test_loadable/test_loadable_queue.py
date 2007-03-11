@@ -8,10 +8,10 @@ import datetime
 
 class TestComplexLoadQueue(unittest.TestCase):
     def setUp(self):
-        # start_debug("fixture.loadable.tree")
+        start_debug("fixture.loadable.tree")
         pass
     def tearDown(self):
-        # stop_debug("fixture.loadable.tree")
+        stop_debug("fixture.loadable.tree")
         pass
     def test_circular_dependencies(self):
         """test_nested_dependencies
@@ -24,7 +24,6 @@ class TestComplexLoadQueue(unittest.TestCase):
         #### here's a complex load that was confusing the unload order.
         #### it looked like:
         
-        # /--------StatusData (0)
         # /--------EventLogData (0)
         #   |__..ActivityLogData (1)
         #     |__..LinkRequestData (2)
@@ -32,29 +31,46 @@ class TestComplexLoadQueue(unittest.TestCase):
         #         |__..PartnerChannelsData (4)
         #           |__..PartnersData (5)
         #             |__..ContactsData (6)
+        #               |__..StatusData (7)
+        #             |__..StatusData (6)
+        #           |__..StatusData (5)
         #         |__..InternalCommissionSchedData (4)
+        #           |__..StatusData (5)
         #         |__..PartnerInsertOrdersData (4)
+        #           |__..StatusData (5)
         #         |__..OffersData (4)
         #           |__..ProductsData (5)
         #             |__..ClientsData (6)
         #               |__..ContactsData (7)
+        #                 |__..StatusData (8)
         #               |__..ClientTypesData (7)
+        #               |__..StatusData (7)
         #           |__..ClientCompensationCalcData (5)
+        #             |__..StatusData (6)
         #         |__..PartnerCommissionCalcData (4)
+        #           |__..StatusData (5)
         #         |__..ContactsData (4)
+        #           |__..StatusData (5)
         #       |__..ClientsData (3)
         #         |__..ContactsData (4)
+        #           |__..StatusData (5)
         #         |__..ClientTypesData (4)
+        #         |__..StatusData (4)
         #   |__..OffersData (1)
         #     |__..ProductsData (2)
         #       |__..ClientsData (3)
         #         |__..ContactsData (4)
+        #           |__..StatusData (5)
         #         |__..ClientTypesData (4)
+        #         |__..StatusData (4)
         #     |__..ClientCompensationCalcData (2)
+        #       |__..StatusData (3)
         #   |__..ClientEventTypeData (1)
         #     |__..ClientsData (2)
         #       |__..ContactsData (3)
+        #         |__..StatusData (4)
         #       |__..ClientTypesData (3)
+        #       |__..StatusData (3)
         #     |__..EventClassData (2)
         
         class StatusData(DataSet):
@@ -90,75 +106,75 @@ class TestComplexLoadQueue(unittest.TestCase):
 
         class ContactsData(DataSet):
             class contacts_1682:
-                status = 1
+                status = StatusData.status_1.ref('id')
             class contacts_1742:
-                status = 1
+                status = StatusData.status_1.ref('id')
             class contacts_1779:
-                status = 1
+                status = StatusData.status_1.ref('id')
             class contacts_5091:
-                status = 1
+                status = StatusData.status_1.ref('id')
             class contacts_5099:
-                status = 1
+                status = StatusData.status_1.ref('id')
             class contacts_5176:
-                status = 1
+                status = StatusData.status_1.ref('id')
             class contacts_5177:
-                status = 1
+                status = StatusData.status_1.ref('id')
             class contacts_5200:
-                status = 1
+                status = StatusData.status_1.ref('id')
             class contacts_5543:
-                status = 1
+                status = StatusData.status_1.ref('id')
             class contacts_5720:
-                status = 1
+                status = StatusData.status_1.ref('id')
             class contacts_5421:
-                status = 1
+                status = StatusData.status_1.ref('id')
 
         class PartnersData(DataSet):
             class partners_2131:
-                status = 1
+                status = StatusData.status_1.ref('id')
                 primary_contact_id = ContactsData.contacts_5177.ref('id')
                 remit_to_contact_id = ContactsData.contacts_5176.ref('id')
                 lfo_media_ops_id = ContactsData.contacts_5200.ref('id')
             class partners_1988:
-                status = 1
+                status = StatusData.status_1.ref('id')
                 primary_contact_id = ContactsData.contacts_1682.ref('id')
                 remit_to_contact_id = ContactsData.contacts_1682.ref('id')
                 lfo_media_ops_id = ContactsData.contacts_5091.ref('id')
             class partners_2418:
-                status = 1
+                status = StatusData.status_1.ref('id')
                 primary_contact_id = ContactsData.contacts_5720.ref('id')
                 remit_to_contact_id = ContactsData.contacts_5720.ref('id')
                 lfo_media_ops_id = ContactsData.contacts_5543.ref('id')
 
         class PartnerChannelsData(DataSet):
             class partner_channels_1468:
-                status = 1
+                status = StatusData.status_1.ref('id')
                 partner_id = PartnersData.partners_2131.ref('id')
             class partner_channels_1563:
-                status = 1
+                status = StatusData.status_1.ref('id')
                 partner_id = PartnersData.partners_1988.ref('id')
             class partner_channels_2000:
-                status = 1
+                status = StatusData.status_1.ref('id')
                 partner_id = PartnersData.partners_2418.ref('id')
 
         class InternalCommissionSchedData(DataSet):
             class internal_commission_sched_1:
-                status = 1
+                status = StatusData.status_1.ref('id')
 
         class PartnerInsertOrdersData(DataSet):
             class partner_insert_orders_4248:
-                status = 1
+                status = StatusData.status_1.ref('id')
             class partner_insert_orders_3946:
-                status = 1
+                status = StatusData.status_1.ref('id')
 
         class ClientCompensationCalcData(DataSet):
             class client_compensation_calc_3:
-                status = 1
+                status = StatusData.status_1.ref('id')
             class client_compensation_calc_4:
-                status = 1
+                status = StatusData.status_1.ref('id')
 
         class ClientsData(DataSet):
             class clients_106:
-                status = 1
+                status = StatusData.status_1.ref('id')
                 primary_contact_id = ContactsData.contacts_5099.ref('id')
                 client_type_id = ClientTypesData.client_types_2.ref('id')
                 account_manager_id = ContactsData.contacts_5421.ref('id')
@@ -262,7 +278,7 @@ class TestComplexLoadQueue(unittest.TestCase):
 
         class PartnerCommissionCalcData(DataSet):
             class partner_commission_calc_16:
-                status = 1
+                status = StatusData.status_1.ref('id')
 
         class CampaignsData(DataSet):
             class campaigns_50805:
@@ -336,10 +352,10 @@ class TestComplexLoadQueue(unittest.TestCase):
             def commit(self): pass
         
         fixture = NoOpFixture(medium=NoOpMedium)
-        data = fixture.data(StatusData, EventLogData)
+        data = fixture.data(EventLogData)
         data.setup()
         data.teardown()
-        print [d.__class__.__name__ for d in cleared_datasets]
+        # print [d.__class__.__name__ for d in cleared_datasets]
         
         class ds(object):
             """class name of a dataset."""
@@ -365,3 +381,5 @@ class TestComplexLoadQueue(unittest.TestCase):
         
         ds('OffersData').was_cleared_before(ds('ProductsData'))
         ds('ProductsData').was_cleared_before(ds('ClientsData'))
+        ds('CampaignsData').was_cleared_before(ds('OffersData'))
+        

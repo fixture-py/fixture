@@ -122,22 +122,23 @@ class ObjRegistry:
         self.registry[id] = object
         return id
 
-def with_debug(*channels):
+def with_debug(*channels, **kw):
     """A nose decorator calls start_debug/start_debug before and after the 
     decorated method.
     
-    All arguments are considered channels that should be debugged.
+    All positional arguments are considered channels that should be debugged.  
+    Keyword arguments are passed to start_debug()
     """
     from nose.tools import with_setup
     def setup():
         for ch in channels:
-            start_debug(ch)
+            start_debug(ch, **kw)
     def teardown():
         for ch in channels:
             stop_debug(ch)
     return with_setup(setup=setup, teardown=teardown)
 
-def start_debug(channel, stream=sys.stderr, handler=None):
+def start_debug(channel, stream=sys.stdout, handler=None):
     """A shortcut to start logging a channel to a stream.
     
     For example::
@@ -145,8 +146,8 @@ def start_debug(channel, stream=sys.stderr, handler=None):
         >>> from fixture.util import start_debug, stop_debug
         >>> start_debug("fixture.loadable")
     
-    starts logging messages logged to the fixture.loadable channel to
-    stderr (the default stream).  Then... ::
+    starts logging messages from the fixture.loadable channel to the stream.  
+    Then... ::
     
         >>> stop_debug("fixture.loadable")
     
@@ -168,7 +169,7 @@ def start_debug(channel, stream=sys.stderr, handler=None):
         -----------------
         - stream
         
-          - stream to create a loggin.StreamHandler with.  defaults to stderr
+          - stream to create a loggin.StreamHandler with.  defaults to stdout
         
         - handler
         
