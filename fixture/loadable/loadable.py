@@ -1,14 +1,14 @@
 
 import sys
 from fixture.base import Fixture
-from fixture.util import ObjRegistry
+from fixture.util import ObjRegistry, _mklog
 from fixture.style import NamedDataStyle
 from fixture.dataset import Ref, dataset_registry, DataRow
 from fixture.exc import LoadError, UnloadError
 import logging
 
-log = logging.getLogger('fixture.loadable')
-log.setLevel(logging.INFO)
+log = _mklog("fixture.loadable")
+treelog = _mklog("fixture.loadable.tree")
 
 class LoadableFixture(Fixture):
     """A fixture that knows how to load and unload a DataSet.
@@ -83,46 +83,50 @@ class LoadableFixture(Fixture):
     class LoadQueue(ObjRegistry):
         """Keeps track of what class instances were loaded
         
-        >>> class Foo: 
-        ...     name = 'foo'
-        ...
-        >>> class Bar: 
-        ...     name = 'bar'
-        ...
-        >>> q = LoadableFixture.LoadQueue()
-        >>> assert q.register(Foo()) is not None
-        >>> Foo() in q
-        True
-        >>> assert q.register(Bar()) is not None
-        >>> [ o.name for o in q.to_unload() ]
-        ['bar', 'foo']
-        >>> q.referenced(Foo())
-        >>> [ o.name for o in q.to_unload() ]
-        ['foo', 'bar']
-        
         """
+        # >>> class Foo: 
+        # ...     name = 'foo'
+        # ...
+        # >>> class Bar: 
+        # ...     name = 'bar'
+        # ...
+        # >>> q = LoadableFixture.LoadQueue()
+        # >>> assert q.register(Foo()) is not None
+        # >>> Foo() in q
+        # True
+        # >>> assert q.register(Bar()) is not None
+        # >>> [ o.name for o in q.to_unload() ]
+        # ['bar', 'foo']
+        # >>> q.referenced(Foo())
+        # >>> [ o.name for o in q.to_unload() ]
+        # ['foo', 'bar']
+
         def __init__(self):
             ObjRegistry.__init__(self)
-            self.queue = []
+            self.levels = {}
         
         def __repr__(self):
             return "<%s at %s %s>" % (
                     self.__class__.__name__, hex(id(self)), 
-                    [self.registry[i].__class__ for i in self.queue])
+                    [self.registry[i].__class__ for i in self.unload_queue])
         
-        def register(self, obj):
+        def register(self, obj, level):
             """register this object as "loaded"  
             """
             id = ObjRegistry.register(self, obj)
-            self.queue.insert(0, id)
+            self.levels.setdefault(level, [])
+            self.levels[level].insert(0, id)
             return id
         
-        def referenced(self, obj):
+        def referenced(self, obj, level):
             """tell the queue that this object is referenced again.
             """
             id = self.id(obj)
-            self.queue.pop(self.queue.index(id))
-            self.queue.insert(0, id)
+            self.levels.setdefault(level, [])
+            self.levels[level].append(id)
+            # if id in self.levels[level]:
+            #     self.levels[level].remove(id)
+            # self.levels[level].insert(0, id)
         
         def to_unload(self):
             """yields a list of objects suitable for unloading.
@@ -131,8 +135,17 @@ class LoadableFixture(Fixture):
             of row objects and their dependent objects (foreign keys), allowing 
             foreign keys to be referenced more than once.
             """
-            for id in self.queue: 
-                yield self.registry[id]
+            level_nums = self.levels.keys()
+            level_nums.sort()
+            unloaded = set() # only unload once
+            for level in level_nums:
+                unload_queue = [id for id in self.levels[level] 
+                                                if id not in unloaded]
+                # print level, [self.registry[i].__class__.__name__ 
+                #                                 for i in unload_queue]
+                for id in unload_queue: 
+                    yield self.registry[id]
+                    unloaded.add(id)
     
     def attach_storage_medium(self):
         pass
@@ -150,16 +163,20 @@ class LoadableFixture(Fixture):
                 self.load_dataset(ds)
         self.wrap_in_transaction(loader, unloading=False)
         
-    def load_dataset(self, ds):
+    def load_dataset(self, ds, level=0):
+        
+        levsep = level==0 and "/--------" or "|__.."
+        treelog.info(
+            "%s%s%s (%s)", level * '  ', levsep, ds.__class__.__name__, level)
         
         for ref_ds in ds.meta.references:
             r = ref_ds.shared_instance(default_refclass=self.dataclass)
-            self.load_dataset(r)
+            self.load_dataset(r, level=level+1)
         
         self.attach_storage_medium(ds)
         
         if ds in self.loaded:
-            self.loaded.referenced(ds)
+            self.loaded.referenced(ds, level)
             return
         
         log.info("LOADING rows in %s", ds)
@@ -185,7 +202,7 @@ class LoadableFixture(Fixture):
                 etype, val, tb = sys.exc_info()
                 raise self.LoadError(etype, val, ds, key=key, row=row), None, tb
         
-        self.loaded.register(ds)
+        self.loaded.register(ds, level)
     
     def rollback(self):
         raise NotImplementedError

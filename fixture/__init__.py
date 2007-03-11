@@ -90,11 +90,13 @@ undiscovered bugs so please don't hesitate to
 
 __version__ = "1.0"
 
+import logging
+import sys
+
 from fixture.loadable import *
 from fixture.dataset import *
 from fixture.util import *
 from fixture.io import *
-
 
 def setup_test_not_supported():
     """hook for setup for the test command."""

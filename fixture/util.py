@@ -4,6 +4,7 @@
 import sys
 import unittest
 import types
+import logging
 
 __all__ = ['DataTestCase']
 
@@ -120,5 +121,86 @@ class ObjRegistry:
         id = self.id(object)
         self.registry[id] = object
         return id
+
+def with_debug(*channels):
+    """A nose decorator calls start_debug/start_debug before and after the 
+    decorated method.
+    
+    All arguments are considered channels that should be debugged.
+    """
+    from nose.tools import with_setup
+    def setup():
+        for ch in channels:
+            start_debug(ch)
+    def teardown():
+        for ch in channels:
+            stop_debug(ch)
+    return with_setup(setup=setup, teardown=teardown)
+
+def start_debug(channel, stream=sys.stderr, handler=None):
+    """A shortcut to start logging a channel to a stream.
+    
+    For example::
+    
+        >>> from fixture.util import start_debug, stop_debug
+        >>> start_debug("fixture.loadable")
+    
+    starts logging messages logged to the fixture.loadable channel to
+    stderr (the default stream).  Then... ::
+    
+        >>> stop_debug("fixture.loadable")
+    
+    ...turns it off.
+    
+    Available Channels
+    ------------------
+    - fixture.loadable
+    
+      - logs LOAD and CLEAR messages, referring to dataset actions
+    
+    - fixture.loadable.tree
+    
+      - logs a tree view of datasets loaded by datasets (recursion)
+    
+    .. _api::
         
+        Keyword Arguments
+        -----------------
+        - stream
+        
+          - stream to create a loggin.StreamHandler with.  defaults to stderr
+        
+        - handler
+        
+          - a preconfigured handler to add to the log
+    
+    """
+    log = logging.getLogger(channel)
+    stop_debug(channel)
+    if not handler:
+        handler = logging.StreamHandler(stream)
+    log.addHandler(handler)
+
+def stop_debug(channel):
+    """The reverse of start_debug()."""
+    log = logging.getLogger(channel)
+    # reset all handlers (are you going to kill me?)
+    for h in log.handlers:
+        if not issubclass(h.stream.__class__, _dummy_stream):
+            log.removeHandler(h)
+
+class _dummy_stream(object):
+    def write(self, *a,**kw): pass
+    def flush(self, *a, **kw): pass
+
+def _mklog(channel, default_level=logging.INFO, default_stream=None):
+    """returns a log object that does nothing until something adds a 
+    useful handler to it
+    """
+    log = logging.getLogger(channel)
+    log.setLevel(default_level)
+    if not default_stream:
+        default_stream = logging.StreamHandler(_dummy_stream())
+    log.addHandler(default_stream)
+    return log
         
