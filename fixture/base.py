@@ -17,21 +17,23 @@ except ImportError:
 from fixture.dataset import SuperSet
 
 class Fixture(object):
-    """Defines an environment for loading data.
+    """An environment for loading data.
     
     An instance of this class can safely be a module-level object.
     It may be more useful to use a concrete LoadableFixture, such as
     SQLAlchemyFixture
     
-    Keywords
-    --------
-    - dataclass
-      
-      - class to instantiate with datasets (defaults to SuperSet)
+    _api::
     
-    - loader
+        Keywords
+        --------
+        - dataclass
       
-      - class to instantiate and load data sets with.
+          - class to instantiate with datasets (defaults to SuperSet)
+    
+        - loader
+      
+          - class to instantiate and load data sets with.
       
     """
     dataclass = SuperSet
