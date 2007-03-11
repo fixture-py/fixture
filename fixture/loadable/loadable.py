@@ -252,7 +252,7 @@ class EnvLoadableFixture(LoadableFixture):
             if not storable:
                 repr_env = repr(type(self.env))
                 if hasattr(self.env, '__module__'):
-                    repr_env = "%s from '%s'" % (repr_env, repr_env.__module__)
+                    repr_env = "%s from '%s'" % (repr_env, self.env.__module__)
                 
                 raise self.StorageMediaNotFound(
                     "could not find %s '%s' for "
