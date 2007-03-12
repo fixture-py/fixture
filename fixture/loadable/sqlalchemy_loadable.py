@@ -60,12 +60,6 @@ class SQLAlchemyFixture(DBLoadableFixture):
     
     def begin(self, unloading=False):
         
-        # note to self:
-        # if we don't have a session or session_context, this is the way to 
-        # manage engine transactions:
-        # http://www.sqlalchemy.org/docs/dbengine.myt#dbengine_transactions
-        # (not yet implemented)
-        
         if self.session is None:
             ## seems that the problem with supporting dsn and meta is because 
             ## objects can be attached to sessions already
@@ -77,7 +71,12 @@ class SQLAlchemyFixture(DBLoadableFixture):
             #       lambda: sqlalchemy.create_session(bind_to=self.meta.engine))
             self.session = self.session_context.current
         
-        if self.session.bind_to is None:
+        if self.session.bind_to is None:            
+            # note to self:
+            # if we don't have a session or session_context, this is the way to 
+            # manage engine transactions:
+            # http://www.sqlalchemy.org/docs/dbengine.myt#dbengine_transactions
+            # (not yet implemented)
             raise NotImplementedError(
                     "use of a session not bound to an engine is not "
                     "implemented.  needs work in transaction land to make that "
@@ -96,6 +95,18 @@ class SQLAlchemyFixture(DBLoadableFixture):
         transaction = self.session.create_transaction()
         transaction.add(self.connection)
         return transaction
+    
+    def dispose(self):
+        from fixture.dataset import dataset_registry
+        dataset_registry.clear()
+        if self.connection:
+            self.connection.close()
+        if self.session.bind_to:
+            self.session.bind_to.dispose()
+        if self.session:
+            self.session.close()
+        if self.transaction:
+            self.transaction.close()
     
     def rollback(self):
         DBLoadableFixture.rollback(self)

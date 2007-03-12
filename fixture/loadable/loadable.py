@@ -7,7 +7,7 @@ from fixture.dataset import Ref, dataset_registry, DataRow
 from fixture.exc import LoadError, UnloadError
 import logging
 
-log = _mklog("fixture.loadable")
+log     = _mklog("fixture.loadable")
 treelog = _mklog("fixture.loadable.tree")
 
 class LoadableFixture(Fixture):
@@ -107,9 +107,8 @@ class LoadableFixture(Fixture):
             self.limit = {}
         
         def __repr__(self):
-            return "<%s at %s %s>" % (
-                    self.__class__.__name__, hex(id(self)), 
-                    [self.registry[i].__class__ for i in self.unload_queue])
+            return "<%s at %s>" % (
+                    self.__class__.__name__, hex(id(self)))
         
         def _pushid(self, id, level):
             if id in self.limit:
@@ -122,6 +121,11 @@ class LoadableFixture(Fixture):
             self.tree.setdefault(level, [])
             self.tree[level].append(id)
             self.limit[id] = level
+        
+        def clear(self):
+            ObjRegistry.clear(self)
+            self.tree = {}
+            self.limit = {}
         
         def register(self, obj, level):
             """register this object as "loaded"  
@@ -228,6 +232,7 @@ class LoadableFixture(Fixture):
         def unloader():
             for dataset in self.loaded.to_unload():
                 self.unload_dataset(dataset)
+            self.loaded.clear()
             dataset_registry.clear()
         self.wrap_in_transaction(unloader, unloading=True)
     
