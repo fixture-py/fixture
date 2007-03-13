@@ -232,7 +232,7 @@ class LoadableFixture(Fixture):
                 
             except Exception, e:
                 etype, val, tb = sys.exc_info()
-                raise self.LoadError(etype, val, ds, key=key, row=row), None, tb
+                raise LoadError(etype, val, ds, key=key, row=row), None, tb
         
         self.loaded.register(ds, level)
     
