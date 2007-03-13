@@ -49,8 +49,10 @@ def include_docstring(
     else:
         obj = mod
     
-    #, nodes.bullet_list()
-    return [publish_doctree(inspect.getdoc(obj))]
+    source = inspect.getdoc(obj)
+    if source is None:
+        raise ValueError("cannot find docstring for %s" % obj)
+    return [publish_doctree(source)]
 
 include_docstring.arguments = (1, 0, 0)
 include_docstring.options = {}

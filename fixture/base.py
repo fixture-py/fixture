@@ -1,7 +1,7 @@
 
 """Fixture
 
-.. contents:
+.. contents::
     
 Storable objects, how to find them
 ----------------------------------

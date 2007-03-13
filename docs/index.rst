@@ -5,17 +5,6 @@ The fixture module
 
 .. contents::
 
-.. - Loading and referencing test data
-   
-     - DataSet: defines data to be loaded
-     - Fixture: an environment for loading data
-     - LoadableFixture: knows how to load data into something useful
-     - The fixture command: generate DataSet classes from real data
-   
-   - TempIO: a temporary file system
-   
-
-
 Loading and referencing test data
 ---------------------------------
 
@@ -32,15 +21,15 @@ Fixture: an environment for loading data
 LoadableFixture: knows how to load data into something useful
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
+.. include_docstring:: fixture.loadable
 
 The fixture command: generate DataSet classes from real data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. include_docstring:: fixture.command.generate
 
-
-TempIO: a temporary file system
--------------------------------
+TempIO: working with temporary file systems
+-------------------------------------------
 
 .. include_docstring:: fixture.io
 

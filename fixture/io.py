@@ -1,7 +1,42 @@
 
-"""Disk I/O-like fixture tools.
+"""Working with temporary file systems.
 
-see TempIO for usage
+.. contents::
+
+TempIO: a self-destructing, temporary file system
+-------------------------------------------------
+
+This object is useful for tests that need to set up a directory structure 
+and work with its files and paths.  You can create a directory simply by setting 
+an attribute to the new directory's path::
+
+    >>> from fixture import TempIO
+    >>> tmp = TempIO()
+    >>> tmp.incoming = "incoming"
+    >>> tmp.incoming.exists()
+    True
+
+The value "incoming" created a subdirectory named incoming of the tmp root 
+and stored a new DirPath object in the object.
+
+The new attribute is now an absolute path to a subdirectory, "incoming", of 
+the tmp root.  Note that tmp and tmp.incoming are string objects but with 
+several os.path methods mixed in for convenience.  However, you can pass it 
+to other objects and it will represent itself as its absolute path.
+
+You can also insert files to the directory with putfile()::
+
+    >>> foopath = tmp.incoming.putfile("foo.txt", "contents of foo")
+    >>> tmp.incoming.join("foo.txt").exists()
+    True
+
+The directory root will self-destruct when it goes out of scope or atexit. 
+You can explicitly delete the object at your test's teardown if you like::
+
+    >>> tmpdir = str(tmp) # making sure it's a copy
+    >>> del tmp
+    >>> os.path.exists(tmpdir)
+    False
 
 """
 __all__ = ['TempIO']
@@ -23,43 +58,7 @@ def TempIO(deferred=False, **kw):
     
         - if True, destruction will be put off until atexit.  Otherwise, 
           it will be destructed when it falls out of scope
-    
-    This object is useful for tests that need to set up a directory structure 
-    and work with its files and paths.
-    
-    With an instance::
-    
-        >>> tmp = TempIO()
-    
-    You can create a directory simply by setting an attribute to the new 
-    directory's path::
-    
-        >>> tmp.incoming = "incoming"
-        >>> tmp.incoming.exists()
-        True
-    
-    The value "incoming" created a subdirectory named incoming of the tmp root 
-    and stored a new DirPath object in the object.
-    
-    The new attribute is now an absolute path to a subdirectory, "incoming", of 
-    the tmp root.  Note that tmp and tmp.incoming are string objects but with 
-    several os.path methods mixed in for convenience.  However, you can pass it 
-    to other objects and it will represent itself as its absolute path.
-    
-    You can also insert files to the directory with putfile()::
-    
-        >>> foopath = tmp.incoming.putfile("foo.txt", "contents of foo")
-        >>> tmp.incoming.join("foo.txt").exists()
-        True
-    
-    The directory root will self-destruct when it goes out of scope or atexit. 
-    You can explicitly delete the object at your test's teardown if you like::
-    
-        >>> tmpdir = str(tmp) # making sure it's a copy
-        >>> del tmp
-        >>> os.path.exists(tmpdir)
-        False
-    
+              
     """
     if not 'prefix' in kw:
         # a breadcrumb ...

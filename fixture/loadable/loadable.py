@@ -1,7 +1,7 @@
 
-"""Loadable Fixtures
+"""Loadable fixtures
 
-.. _contents:
+.. contents::
     
 Loading data into SQLAlchemy objects
 ------------------------------------

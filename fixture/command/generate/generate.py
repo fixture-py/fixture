@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 
-"""query real data sources and generate python code to load that data.
+"""generate DataSet classes from real data.
+
+.. contents::
+
+The fixture command
+-------------------
+
 """
 
 import sys
