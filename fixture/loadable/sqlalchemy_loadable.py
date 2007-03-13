@@ -61,14 +61,6 @@ class SQLAlchemyFixture(DBLoadableFixture):
     def begin(self, unloading=False):
         
         if self.session is None:
-            ## seems that the problem with supporting dsn and meta is because 
-            ## objects can be attached to sessions already
-            # if self.session_context is None:            
-            #     import sqlalchemy
-            #     from sqlalchemy.ext.sessioncontext import SessionContext
-            # 
-            #     self.session_context = SessionContext(
-            #       lambda: sqlalchemy.create_session(bind_to=self.meta.engine))
             self.session = self.session_context.current
         
         if self.session.bind_to is None:            
@@ -77,11 +69,17 @@ class SQLAlchemyFixture(DBLoadableFixture):
             # manage engine transactions:
             # http://www.sqlalchemy.org/docs/dbengine.myt#dbengine_transactions
             # (not yet implemented)
+            
+            # ... OR ... can we not just accept a connection keyword, create an 
+            # empty transaction, then add the connection to the transaction?
+            # This would cause MappedClassMedium to fail, because it needs a 
+            # session
+            
             raise NotImplementedError(
-                    "use of a session not bound to an engine is not "
-                    "implemented.  needs work in transaction land to make that "
-                    "happen, I think.  otherwise, you can use "
-                    "create_session(bind_to=engine) instead")
+                    "Use of an unbound session is not implemented.  It needs "
+                    "work in transaction land to make that happen.  "
+                    "Otherwise, you can bind your session with "
+                    "create_session(bind_to=engine)" )
         else:
             self.connection = self.session.bind_to.connect()
         
