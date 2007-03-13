@@ -4,7 +4,7 @@ import os
 from nose.tools import eq_
 from nose.exc import SkipTest
 from fixture.test import conf
-from fixture.command.generate import FixtureGenerator, run_generator
+from fixture.command.generate import FixtureGenerator, dataset_generator
 
 def setup():
     # every tests needs a real db conn :
@@ -43,13 +43,13 @@ class GenerateTest(object):
     def load_env(self, module):
         raise NotImplementedError
     
-    def run_generator(self, extra_args=[]):
+    def dataset_generator(self, extra_args=[]):
         args = [a for a in self.args]
         if extra_args:
             args.extend(extra_args)
         
         self.assert_env_is_clean()
-        code = run_generator(args)
+        code = dataset_generator(args)
         try:
             e = compile_(code)
             self.assert_env_generated_ok(e)
@@ -60,7 +60,7 @@ class GenerateTest(object):
             raise
     
     def test_query(self):
-        self.run_generator(['-q', "name = 'super cash back!'"])
+        self.dataset_generator(['-q', "name = 'super cash back!'"])
     
     def test_query_no_data(self):
         _stderr = sys.stderr
@@ -70,7 +70,7 @@ class GenerateTest(object):
                     exc and ("(raised: %s: %s)" % (exc.__class__, exc)) or ""))
         try:
             try:
-                self.run_generator(['-q', "name = 'fooobzarius'"])
+                self.dataset_generator(['-q', "name = 'fooobzarius'"])
             except SystemExit, e:
                 eq_(e.code, 2)
             except Exception, e:

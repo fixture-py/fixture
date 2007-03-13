@@ -1,5 +1,15 @@
 
-"""representations of data."""
+"""Representation of Data
+
+.. contents::
+
+A simple DataSet
+----------------
+
+Referencing other DataSet objects
+---------------------------------
+
+"""
 
 import sys
 from fixture.util import ObjRegistry

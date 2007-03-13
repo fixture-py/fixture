@@ -2,7 +2,7 @@
 import os
 from nose.tools import eq_
 from nose.exc import SkipTest
-from fixture.command.generate import FixtureGenerator, run_generator
+from fixture.command.generate import FixtureGenerator, dataset_generator
 from fixture.test.test_command.test_generate import (
         compile_, GenerateTest, UsingTesttoolsTemplate, UsingFixtureTemplate)
 from fixture.test import env_supports, conf

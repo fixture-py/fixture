@@ -1,17 +1,9 @@
 
 - Loading and referencing test data
   
-  - DataSet: defines data to be loaded
-    
-    - A simple DataSet
-    - Referencing other DataSet objects
-    
+  - .. children_from_contents_of:: fixture.dataset DataSet: defines data to be loaded
   - Fixture: an environment for loading data
-    
-    - Storable objects, how to find them
-    - Style objects, when to use them
-    
-  - Loading data into something useful
-    
-    - Loading data into SQLAlchemy objects
-    - Loading data into SQLObject classes
+  - LoadableFixture: knows how to load data into something useful
+  - The fixture command: generate DataSet classes from real data
+
+- TempIO: a temporary file system

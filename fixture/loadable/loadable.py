@@ -1,4 +1,16 @@
 
+"""Loadable Fixtures
+
+.. _contents:
+    
+Loading data into SQLAlchemy objects
+------------------------------------
+
+Loading data into SQLObject classes
+-----------------------------------
+
+"""
+
 import sys
 from fixture.base import Fixture
 from fixture.util import ObjRegistry, _mklog
@@ -11,26 +23,28 @@ log     = _mklog("fixture.loadable")
 treelog = _mklog("fixture.loadable.tree")
 
 class LoadableFixture(Fixture):
-    """A fixture that knows how to load and unload a DataSet.
+    """knows how to load data into something useful.
     
-    This ia an abstract class and cannot be used directly.  You can use a 
-    LoadableFixture that already knows how to load into a specific medium, such 
-    as SQLAlchemyFixture
+    _api::
     
-    Keyword Arguments
-    -----------------
-    - dataclass
+        This is an abstract class and cannot be used directly.  You can use a 
+        LoadableFixture that already knows how to load into a specific medium, 
+        such as SQLAlchemyFixture
+    
+        Keyword Arguments
+        -----------------
+        - dataclass
         
-      - class to instantiate with datasets (defaults to that of Fixture)
+          - class to instantiate with datasets (defaults to that of Fixture)
     
-    - style
+        - style
     
-      - a Style object to translate names with (defaults to NamedDataStyle)
+          - a Style object to translate names with (defaults to NamedDataStyle)
      
-    - medium
+        - medium
     
-      - optional LoadableFixture.StorageMediumAdapter to store DataSet 
-        objects with
+          - optional LoadableFixture.StorageMediumAdapter to store DataSet 
+            objects with
     
     """
     style = NamedDataStyle()
@@ -81,25 +95,9 @@ class LoadableFixture(Fixture):
         pass
     
     class LoadQueue(ObjRegistry):
-        """Keeps track of what class instances were loaded
+        """Keeps track of what class instances were loaded.
         
         """
-        # >>> class Foo: 
-        # ...     name = 'foo'
-        # ...
-        # >>> class Bar: 
-        # ...     name = 'bar'
-        # ...
-        # >>> q = LoadableFixture.LoadQueue()
-        # >>> assert q.register(Foo()) is not None
-        # >>> Foo() in q
-        # True
-        # >>> assert q.register(Bar()) is not None
-        # >>> [ o.name for o in q.to_unload() ]
-        # ['bar', 'foo']
-        # >>> q.referenced(Foo())
-        # >>> [ o.name for o in q.to_unload() ]
-        # ['foo', 'bar']
 
         def __init__(self):
             ObjRegistry.__init__(self)

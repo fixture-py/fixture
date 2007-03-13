@@ -313,15 +313,15 @@ class DataHandler(object):
         """yield a FixtureSet for each set in obj."""
         raise NotImplementedError
 
-def run_generator(argv=sys.argv[1:]):
-    """
-    Using the object specified in the path, generate fixture code to 
+def dataset_generator(argv=sys.argv[1:]):
+    """%prog [options] object_path
+    
+    Using the object specified in the path, generate DataSet classes (code) to 
     reproduce its data.  An object_path can be a python path or a file path
     or anything else that a handler can recognize.
     """
     parser = optparse.OptionParser(
-        usage=('%prog [options] object_path' 
-                                    + "\n\n" + inspect.getdoc(run_generator)))
+        usage=(inspect.getdoc(dataset_generator)))
     parser.add_option('--dsn',
                 help="sets db connection for a handler that uses a db")
     parser.add_option('-q','--query',
@@ -376,7 +376,7 @@ def run_generator(argv=sys.argv[1:]):
         parser.error(e)
 
 def main():
-    print( run_generator())
+    print( dataset_generator())
     return 0
 
 if __name__ == '__main__':

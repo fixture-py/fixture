@@ -1,5 +1,15 @@
 
-"""base fixture components."""
+"""Fixture
+
+.. contents:
+    
+Storable objects, how to find them
+----------------------------------
+
+Style objects, when to use them
+-------------------------------
+
+"""
 
 try:
     from functools import wraps
