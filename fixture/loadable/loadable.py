@@ -97,6 +97,16 @@ class LoadableFixture(Fixture):
     class LoadQueue(ObjRegistry):
         """Keeps track of what class instances were loaded.
         
+        "level" is used like so:
+            
+        The lower the level, the lower that object is on the foreign key chain.  
+        As the level increases, this means more foreign objects depend on the 
+        local object.  Thus, objects need to be unloaded starting at the lowest 
+        level and working up.  Also, since objects can appear multiple times in 
+        foreign key chains, the queue only acknowledges the object at its 
+        highest level, since this will ensure all dependencies get unloaded 
+        before it.  
+        
         """
 
         def __init__(self):
@@ -122,28 +132,25 @@ class LoadableFixture(Fixture):
         
         def clear(self):
             ObjRegistry.clear(self)
+            # this is an attempt to free up refs to database connections:
             self.tree = {}
             self.limit = {}
         
         def register(self, obj, level):
-            """register this object as "loaded"  
+            """register this object as "loaded" at level
             """
             id = ObjRegistry.register(self, obj)
             self._pushid(id, level)
             return id
         
         def referenced(self, obj, level):
-            """tell the queue that this object is referenced again.
+            """tell the queue that this object was referenced again at level.
             """
             id = self.id(obj)
             self._pushid(id, level)
         
         def to_unload(self):
             """yields a list of objects suitable for unloading.
-            
-            in order of last object touched first, so that we can build a stack 
-            of row objects and their dependent objects (foreign keys), allowing 
-            foreign keys to be referenced more than once.
             """
             level_nums = self.tree.keys()
             level_nums.sort()
@@ -176,7 +183,15 @@ class LoadableFixture(Fixture):
         self.wrap_in_transaction(loader, unloading=False)
         
     def load_dataset(self, ds, level=1):
+        """load this dataset and all its dependent datasets.
         
+        level is essentially the order of processing (going from dataset to 
+        dependent datasets).  Child datasets are always loaded before the 
+        parent.  The level is important for visualizing the chain of 
+        dependencies : 0 is the bottom, and thus should be the first set of 
+        objects unloaded
+        
+        """
         is_parent = level==1
         
         levsep = is_parent and "/--------" or "|__.."
@@ -192,6 +207,7 @@ class LoadableFixture(Fixture):
         self.attach_storage_medium(ds)
         
         if ds in self.loaded:
+            # keep track of its order but don't actually load it...
             self.loaded.referenced(ds, level)
             return
         
