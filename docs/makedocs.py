@@ -2,6 +2,7 @@
 
 import os
 from os import path
+import inspect
 from docutils.parsers.rst import directives
 from docutils.core import publish_file, publish_string, publish_doctree
 from docutils.parsers import rst
@@ -10,71 +11,52 @@ from docutils.readers.standalone import Reader
 from docutils.writers.html4css1 import HTMLTranslator, Writer
 from docutils import nodes
 
-## kill me?
-
-# class IndexWriter(Writer):
-#     def __init__(self):
-#         super(IndexWriter, self).__init__()
-#         self.translator_class = IndexTranslator
-#         
-# class IndexTranslator(HTMLTranslator):    
-#     def visit_bullet_list(self, node):
-#         self.list_depth += 1
-#         self.list_item_prefix = (' ' * self.list_depth) + '* '
-# 
-#     def depart_bullet_list(self, node):
-#         self.list_depth -= 1
-#         if self.list_depth == 0:
-#             self.list_item_prefix = None
-#         else:
-#             (' ' * self.list_depth) + '* '
-#         self.output.append('\n\n')
-#                            
-#     def visit_list_item(self, node):
-#         self.old_indent = self.indent
-#         self.indent = self.list_item_prefix
-# 
-#     def depart_list_item(self, node):
-#         self.indent = self.old_indent
-
-def children_from_contents_of(  
+def include_docstring(  
         name, arguments, options, content, lineno,
         content_offset, block_text, state, state_machine):
+    """include reStructuredText from a docstring.  use the directive like::
         
-    # bulletlist = nodes.bullet_list()
-    # self.parent += bulletlist
-    # bulletlist['bullet'] = match.string[0]
-    # i, blank_finish = self.list_item(match.end())
-    # bulletlist += i
-    # offset = self.state_machine.line_offset + 1   # next line
-    # new_line_offset, blank_finish = self.nested_list_parse(
-    #       self.state_machine.input_lines[offset:],
-    #       input_offset=self.state_machine.abs_line_offset() + 1,
-    #       node=bulletlist, initial_state='BulletList',
-    #       blank_finish=blank_finish)
-    # self.goto_line(new_line_offset)
-    # if not blank_finish:
-    #     self.parent += self.unindent_warning('Bullet list')
-    # return [], next_state, []
+        | .. include_docstring:: path.to.module
+        | .. include_docstring:: path.to.module:SomeClass
+        | .. include_docstring:: path.to.module:SomeClass.method
     
-    # state_machine.run(block, input_offset, memo=self.memo,
-    #                       node=bulletlist, match_titles=match_titles)
+    """
+    rawpath = arguments[0]
+    parts = rawpath.split(u':')
+    if len(parts) > 1:
+        modpath, obj = parts
+    else:
+        modpath = parts[0]
+        obj = None
     
-    pos = arguments[0].find(u' ')
-    modpath = arguments[0][:pos]
-    title = arguments[0][pos+1:]
+    dot = modpath.rfind(u'.')
+    if dot != -1:
+        fromlist = [str(modpath[dot+1:])]
+        mod = str(modpath[:dot])
+    else:
+        fromlist = []
+        mod = str(modpath)
     
-    print (modpath, title)
+    # print mod, fromlist
+    mod = __import__(mod, globals(), locals(), fromlist)
+    if len(fromlist):
+        mod = getattr(mod, fromlist[0])
+    if obj:
+        if obj.find('.') != -1:
+            raise NotImplementedError(
+                "todo: need to split the object in a getattr loop")
+        obj = getattr(mod, obj)
+    else:
+        obj = mod
     
     #, nodes.bullet_list()
-    return [nodes.paragraph(title)]
+    return [publish_doctree(inspect.getdoc(obj))]
 
-children_from_contents_of.arguments = (1, 0, 1)
-children_from_contents_of.options = {}
-children_from_contents_of.content = 0
+include_docstring.arguments = (1, 0, 0)
+include_docstring.options = {}
+include_docstring.content = 0
 
-directives.register_directive(
-    'children_from_contents_of', children_from_contents_of)
+directives.register_directive('include_docstring', include_docstring)
 
 def main():
     heredir = path.dirname(__file__)
