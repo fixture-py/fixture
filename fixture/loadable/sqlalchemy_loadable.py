@@ -72,8 +72,8 @@ class SQLAlchemyFixture(DBLoadableFixture):
             
             # ... OR ... can we not just accept a connection keyword, create an 
             # empty transaction, then add the connection to the transaction?
-            # This would cause MappedClassMedium to fail, because it needs a 
-            # session
+            # MappedClassMedium may not work on the same connection, however, 
+            # which might be confusing
             
             raise NotImplementedError(
                     "Use of an unbound session is not implemented.  It needs "
