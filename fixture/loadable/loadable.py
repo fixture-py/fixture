@@ -25,26 +25,24 @@ treelog = _mklog("fixture.loadable.tree")
 class LoadableFixture(Fixture):
     """knows how to load data into something useful.
     
-    _api::
+    This is an abstract class and cannot be used directly.  You can use a 
+    LoadableFixture that already knows how to load into a specific medium, 
+    such as SQLAlchemyFixture
+
+    Keyword Arguments
+    -----------------
+    - dataclass
     
-        This is an abstract class and cannot be used directly.  You can use a 
-        LoadableFixture that already knows how to load into a specific medium, 
-        such as SQLAlchemyFixture
-    
-        Keyword Arguments
-        -----------------
-        - dataclass
-        
-          - class to instantiate with datasets (defaults to that of Fixture)
-    
-        - style
-    
-          - a Style object to translate names with (defaults to NamedDataStyle)
-     
-        - medium
-    
-          - optional LoadableFixture.StorageMediumAdapter to store DataSet 
-            objects with
+      - class to instantiate with datasets (defaults to that of Fixture)
+
+    - style
+
+      - a Style object to translate names with (defaults to NamedDataStyle)
+ 
+    - medium
+
+      - optional LoadableFixture.StorageMediumAdapter to store DataSet 
+        objects with
     
     """
     style = NamedDataStyle()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os
+import os, sys
 from os import path
 import inspect
 from docutils.parsers.rst import directives
@@ -10,6 +10,10 @@ from docutils.nodes import SparseNodeVisitor
 from docutils.readers.standalone import Reader
 from docutils.writers.html4css1 import HTMLTranslator, Writer
 from docutils import nodes
+
+heredir = path.dirname(__file__)
+srcdir = heredir
+builddir = path.join(heredir, '..', 'build')
 
 def include_docstring(  
         name, arguments, options, content, lineno,
@@ -60,29 +64,54 @@ include_docstring.content = 0
 
 directives.register_directive('include_docstring', include_docstring)
 
-def main():
-    heredir = path.dirname(__file__)
-    srcdir = heredir
-    builddir = path.join(heredir, '..', 'build')
+def user():
     docsdir = path.join(builddir, 'docs')
-    
-    if not path.exists(builddir):
-        os.mkdir(builddir)
     if not path.exists(docsdir):
         os.mkdir(docsdir)
     
     basename = 'index'
-    # tree = publish_doctree(
-    #             open(path.join(srcdir, basename + '.rst'), 'r').read())
-    # # print dir(tree)
-    # print tree
-    
     body = publish_file(open(path.join(srcdir, basename + '.rst'), 'r'),
                 destination=open(path.join(docsdir, basename + '.html'), 'w'),
                 writer_name='html',
                 settings_overrides={'halt_level':2,
                                     'report_level':5})
-    
+    print "built user docs to %s" % docsdir
 
+def api():
+    from pydoctor.driver import main
+    argv = [
+        '--html-output=%s/apidocs' % builddir, '--project-name=fixture', 
+        '--docformat=restructuredtext',
+        '--project-url=http://code.google.com/p/fixture/', '--make-html', 
+        '--add-package=fixture', '--verbose']
+    
+    sys.argv[0] = ['pydoctor'] # for sanity
+    main(argv)
+
+def main(argv=sys.argv[1:]):
+    def usage():
+        print ("usage: %(prog)s\n"
+               "       %(prog)s user\n"
+               "       %(prog)s api" % dict(prog=path.basename(sys.argv[0])))
+        sys.exit(1)
+        
+    if '-h' in argv or '--help' in argv:
+        usage()
+    try:
+        cmd = argv[0]
+        if cmd not in ('api', 'user'):
+            usage()
+    except IndexError:
+        cmd = None
+        
+    if not path.exists(builddir):
+        os.mkdir(builddir)
+    if cmd:
+        run_cmd = globals()[cmd]
+        run_cmd()
+    else:
+        api()
+        user()
+        
 if __name__ == '__main__':
     main()

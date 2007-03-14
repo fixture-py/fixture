@@ -163,17 +163,16 @@ def start_debug(channel, stream=sys.stdout, handler=None):
     
       - logs a tree view of datasets loaded by datasets (recursion)
     
-    .. _api::
         
-        Keyword Arguments
-        -----------------
-        - stream
-        
-          - stream to create a loggin.StreamHandler with.  defaults to stdout
-        
-        - handler
-        
-          - a preconfigured handler to add to the log
+    Keyword Arguments
+    -----------------
+    - stream
+    
+      - stream to create a loggin.StreamHandler with.  defaults to stdout
+    
+    - handler
+    
+      - a preconfigured handler to add to the log
     
     """
     log = logging.getLogger(channel)

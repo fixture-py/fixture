@@ -33,17 +33,15 @@ class Fixture(object):
     It may be more useful to use a concrete LoadableFixture, such as
     SQLAlchemyFixture
     
-    _api::
-    
-        Keywords
-        --------
-        - dataclass
-      
-          - class to instantiate with datasets (defaults to SuperSet)
-    
-        - loader
-      
-          - class to instantiate and load data sets with.
+    Keywords
+    --------
+    - dataclass
+  
+      - class to instantiate with datasets (defaults to SuperSet)
+
+    - loader
+  
+      - class to instantiate and load data sets with.
       
     """
     dataclass = SuperSet

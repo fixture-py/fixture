@@ -3,26 +3,30 @@
 
 .. contents::
 
-TempIO: a self-destructing, temporary file system
--------------------------------------------------
+TempIO: a temporary file system object
+--------------------------------------
 
 This object is useful for tests that need to set up a directory structure 
-and work with its files and paths.  You can create a directory simply by setting 
-an attribute to the new directory's path::
+and work files and paths.  Once you instantiate it, you have a temporary 
+directory that will self-destruct when it falls out of scope::
 
     >>> from fixture import TempIO
     >>> tmp = TempIO()
+    >>> tmp #doctest: +ELLIPSIS
+    '/.../tmp_fixture...'
+
+Add sub-directories by simply assigning an attribute the basename of the new 
+subdirectory, like so::
+
     >>> tmp.incoming = "incoming"
     >>> tmp.incoming.exists()
     True
 
-The value "incoming" created a subdirectory named incoming of the tmp root 
-and stored a new DirPath object in the object.
-
 The new attribute is now an absolute path to a subdirectory, "incoming", of 
-the tmp root.  Note that tmp and tmp.incoming are string objects but with 
-several os.path methods mixed in for convenience.  However, you can pass it 
-to other objects and it will represent itself as its absolute path.
+the tmp root, as well as an object itself.  Note that tmp and tmp.incoming are 
+just string objects, but with several os.path methods mixed in for convenience.  
+See the DirPath_ API for details.  However, you can pass it to other objects and 
+it will represent itself as its absolute path.
 
 You can also insert files to the directory with putfile()::
 
@@ -37,6 +41,8 @@ You can explicitly delete the object at your test's teardown if you like::
     >>> del tmp
     >>> os.path.exists(tmpdir)
     False
+
+.. _DirPath: ../apidocs/fixture.io.DirPath.html
 
 """
 __all__ = ['TempIO']
@@ -60,6 +66,8 @@ def TempIO(deferred=False, **kw):
           it will be destructed when it falls out of scope
               
     """
+    # note that this can't be a subclass because str is silly and doesn't let 
+    # you override its constructor (at least in 2.4)
     if not 'prefix' in kw:
         # a breadcrumb ...
         kw['prefix'] = 'tmp_fixture_'
@@ -234,4 +242,8 @@ class DeletableDirPath(DirPath):
             # due to the unpredictable state of python's destructors; there is
             # nothing really to do
             pass
-        
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
+    

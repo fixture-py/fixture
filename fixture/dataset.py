@@ -285,39 +285,37 @@ class DataSet(DataContainer):
         >>> r.tomato_bisque.is_soup
         True
     
-    _api::
-    
-        Keyword Arguments
-        -----------------
-        - default_refclass
-      
-          - a SuperSet to use if None has already been specified in Meta
-    
-        Special inner Meta class
-        ------------------------
-    
-        The inner class Meta is used to configure a DataSet.  The following are 
-        acknowledged attributes:
-    
-        - storable
-    
-          - an object that should be used to store this DataSet.  If omitted the 
-            loader's style object will look for a storable object in its env, 
-            using storable_name
-    
-        - storable_name
-    
-          - the name of the storable object that the loader should fetch from 
-            its env to load this DataSet with.  If omitted, the loader's style 
-            object will try to guess the storable_name based on its env and the 
-            name of the DataSet class
-    
-        - primary_key
-    
-          - this is a list of names that should be acknowledged as primary keys 
-            in a DataSet.  The default is simply ['id'] but only comes into 
-            affect for inherited values.  In this default configuration, a row 
-            cannot inherit another rows primary key attributes.
+    Keyword Arguments
+    -----------------
+    - default_refclass
+  
+      - a SuperSet to use if None has already been specified in Meta
+
+    Special inner Meta class
+    ------------------------
+
+    The inner class Meta is used to configure a DataSet.  The following are 
+    acknowledged attributes:
+
+    - storable
+
+      - an object that should be used to store this DataSet.  If omitted the 
+        loader's style object will look for a storable object in its env, 
+        using storable_name
+
+    - storable_name
+
+      - the name of the storable object that the loader should fetch from 
+        its env to load this DataSet with.  If omitted, the loader's style 
+        object will try to guess the storable_name based on its env and the 
+        name of the DataSet class
+
+    - primary_key
+
+      - this is a list of names that should be acknowledged as primary keys 
+        in a DataSet.  The default is simply ['id'] but only comes into 
+        affect for inherited values.  In this default configuration, a row 
+        cannot inherit another rows primary key attributes.
     
     """
     __metaclass__ = DataType
