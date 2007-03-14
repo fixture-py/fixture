@@ -57,6 +57,7 @@ class SQLAlchemyFixture(DBLoadableFixture):
         DBLoadableFixture.__init__(self, **kw)
         self.session = session
         self.session_context = session_context
+        self.connection = None
     
     def begin(self, unloading=False):
         
@@ -99,9 +100,9 @@ class SQLAlchemyFixture(DBLoadableFixture):
         dataset_registry.clear()
         if self.connection:
             self.connection.close()
-        if self.session.bind_to:
-            self.session.bind_to.dispose()
         if self.session:
+            if self.session.bind_to:
+                self.session.bind_to.dispose()
             self.session.close()
         if self.transaction:
             self.transaction.close()
