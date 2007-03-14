@@ -2,7 +2,7 @@
 
 import os, sys
 from os import path
-import inspect
+import inspect, pydoc
 from docutils.parsers.rst import directives
 from docutils.core import publish_file, publish_string, publish_doctree
 from docutils.parsers import rst
@@ -56,7 +56,8 @@ def include_docstring(
     source = inspect.getdoc(obj)
     if source is None:
         raise ValueError("cannot find docstring for %s" % obj)
-    return [publish_doctree(source)]
+    summary, body = pydoc.splitdoc(source)
+    return [publish_doctree(body)]
 
 include_docstring.arguments = (1, 0, 0)
 include_docstring.options = {}

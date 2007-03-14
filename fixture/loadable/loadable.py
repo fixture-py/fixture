@@ -9,6 +9,9 @@ Loading data into SQLAlchemy objects
 Loading data into SQLObject classes
 -----------------------------------
 
+Defining a custom data loader
+-----------------------------
+
 """
 
 import sys
