@@ -8,45 +8,57 @@ The fixture module
 Loading and referencing test data
 ---------------------------------
 
-There are a couple ways to test an application that talks to a database.  You can create `mock objects`_ and concentrate entirely on `unit testing`_ the individual components, without testing the database layer itself, or you can simply load up sample data and run your application.  Thanks to `sqlite memory`_ databases, the latter may be more efficient than you think.  What's more important is that when you go to write a `functional test`_ (one that proves the interface to a feature works as expected) you achieve better `code coverage`_ and write less setup code if you take the sample data approach.
+There are a couple ways to test a database-backed application.  You can create `mock objects`_ and concentrate entirely on `unit testing`_ individual components without testing the database layer itself, or you can simply load up sample data before you run a test.  Thanks to ``sqlite`` in-memory connections (a special DSN, ``sqlite:///:memory:``), the latter may be more efficient than you think.  What's more important is that when you create a `functional test`_ (one that proves the interface to a feature works as expected), testing with real data can help you achieve better `code coverage`_.
 
-But it's easy enough to just instantiate model objects and insert data line by line in a setup function, right?  Or simply load a SQL file?  Yes, but this has two major downsides: you often have to worry about and manage complex chains of foreign keys; and when referencing data values later on, you either have to copy/paste the values or pass around lots of variables.
+But it's easy enough to insert data line by line in a setup function, right?  Or simply load a SQL file?  Yes, but this has two major downsides: you often have to worry about and manage complex chains of foreign keys manually; and when referencing data values later on, you either have to copy/paste the values or pass around lots of variables.
 
-The fixture module simplifies this process by breaking it down into 2 components:
+The fixture module simplifies this by focusing on two independent components:
 
 DataSet
     defines sets of sample data
 Fixture
     knows how to load data
 
-.. _mock objects: ...
-.. _unit testing: ...
-.. _sqlite memory: ...
-.. _functional test: ...
-.. _code coverage: ...
+The details of loading the actual data is left up to your application's database layer itself (more info on this later).
 
-DataSet: defines sets of sample data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _sqlite: http://sqlite.org
+.. _mock objects: http://en.wikipedia.org/wiki/Mock_object
+.. _unit testing: http://en.wikipedia.org/wiki/Unit_testing
+.. _functional test: http://en.wikipedia.org/wiki/Functional_test
+.. _code coverage: http://en.wikipedia.org/wiki/Code_coverage
+
+Using DataSet
+~~~~~~~~~~~~~
 
 .. include_docstring:: fixture.dataset
 
-Fixture: knows how to load data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. include_docstring:: fixture.base
-
-LoadableFixture: knows how to load data into something useful
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using LoadableFixture
+~~~~~~~~~~~~~~~~~~~~~
 
 .. include_docstring:: fixture.loadable
 
-The fixture command: generate DataSet classes from real data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using the fixture command
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. include_docstring:: fixture.command.generate
 
-TempIO: working with temporary file systems
--------------------------------------------
+Testing with a temporary file system
+------------------------------------
 
 .. include_docstring:: fixture.io
+
+API Documentation
+-----------------
+
+`API documentation`_ for the ``fixture`` module
+
+.. _API documentation: ../apidocs/
+
+Where to submit issues, patches, bugs
+-------------------------------------
+
+Please submit any issues, patches, or bugs using the `Issue Tracker`_ on the `fixture project site`_.  Patches or even vague ideas for improvement are gladly accepted.  If your code is included, your contribution will be documented.
+
+.. _Issue Tracker: http://code.google.com/p/fixture/issues/list
+.. _fixture project site: http://code.google.com/p/fixture/
 

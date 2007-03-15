@@ -2,15 +2,76 @@
 """Loadable fixtures
 
 .. contents::
+
+After defining data with the DataSet class you need some way to load the data for your test.  Each DataSet you want to load needs some storage medium, say, a `Data Mapper`_ or `Active Record`_ object.  A Fixture is simply an environment that knows how to load data using the right objects.  It puts the pieces together, if you will.  You can instantiate it in the module since all it does is configure an environment.
+
+.. _Data Mapper: http://www.martinfowler.com/eaaCatalog/dataMapper.html
+.. _Active Record: http://www.martinfowler.com/eaaCatalog/activeRecord.html
+
+Supported storage media
+-----------------------
+
+To create a specific data-loading environment, the following subclasses are available:
+
+SQLAlchemyFixture
+    loads data using `Table`_ objects or `mapped classes`_ via the `sqlalchemy`_ 
+    module
+SQLObjectFixture
+    loads data using `SQLObject classes`_ via the `sqlobject`_ module
+
+The idea is that you application already defines its own way of accessing its data; the LoadableFixture just "hooks in" to that interface.  Before considering the Fixture, here is an example data model defined using `sqlalchemy`_::
+
+    >>> from sqlalchemy import *
+    >>> meta = BoundMetaData('sqlite:///:memory:')
+    >>> authors = Table('authors', meta,
+    ...     Column('id', Integer, primary_key=True),
+    ...     Column('first_name', String),
+    ...     Column('last_name', String))
+    ... 
+    >>> class Author(object):
+    ...     pass
+    ... 
+    >>> mapper(Author, authors) #doctest: +ELLIPSIS
+    <sqlalchemy.orm.mapper.Mapper object at ...>
+    >>> books = Table('books', meta, 
+    ...     Column('id', Integer, primary_key=True),
+    ...     Column('title', String),
+    ...     Column('author_id', Integer, ForeignKey('authors.id')))
+    ... 
+    >>> class Book(object):
+    ...     pass
+    ... 
+    >>> mapper(Book, books) #doctest: +ELLIPSIS
+    <sqlalchemy.orm.mapper.Mapper object at ...>
+    >>> meta.create_all()
+
+.. _sqlalchemy: http://www.sqlalchemy.org/
+.. _Table: http://www.sqlalchemy.org/docs/tutorial.myt#tutorial_schemasql_table_creating
+.. _mapped classes: http://www.sqlalchemy.org/docs/datamapping.myt
+.. _sqlobject: http://sqlobject.org/
+.. _SQLObject classes: http://sqlobject.org/SQLObject.html#declaring-the-class
     
-Loading data into SQLAlchemy objects
-------------------------------------
+Storable objects, how to find them
+----------------------------------
 
-Loading data into SQLObject classes
------------------------------------
+Style objects, when to use them
+-------------------------------
 
-Defining a custom data loader
------------------------------
+Load objects using DataTestCase
+-------------------------------
+
+Load objects using @db.with_data
+--------------------------------
+
+Load objects using the with statement
+-------------------------------------
+
+Defining a custom LoadableFixture
+---------------------------------
+
+You'll need to subclass `fixture.loadable.loadable:LoadableFixture`_ (more to come!)
+
+.. _fixture.loadable.loadable:LoadableFixture: ../apidocs/fixture.loadable.loadable.LoadableFixture.html
 
 """
 
@@ -30,7 +91,8 @@ class LoadableFixture(Fixture):
     
     This is an abstract class and cannot be used directly.  You can use a 
     LoadableFixture that already knows how to load into a specific medium, 
-    such as SQLAlchemyFixture
+    such as SQLAlchemyFixture, or create your own to build your own to load 
+    DataSet objects into custom storage media.
 
     Keyword Arguments
     -----------------
@@ -59,6 +121,8 @@ class LoadableFixture(Fixture):
             self.Medium = medium
     
     class StorageMediumAdapter(object):
+        """common interface for working with storable objects.
+        """
         def __init__(self, medium, dataset):
             self.medium = medium
             self.dataset = dataset
@@ -72,9 +136,13 @@ class LoadableFixture(Fixture):
                     self.__class__.__name__, hex(id(self)), self.medium)
             
         def clear(self, obj):
+            """clear the stored object.
+            """
             raise NotImplementedError
         
         def clearall(self):
+            """clear all stored objects.
+            """
             log.info("CLEARING stored objects for %s", self.dataset)
             for obj in self.dataset.meta._stored_objects:
                 try:
@@ -85,14 +153,17 @@ class LoadableFixture(Fixture):
                                          stored_object=obj), None, tb
             
         def save(self, row):
+            """given a DataRow, save it somehow."""
             raise NotImplementedError
             
         def visit_loader(self, loader):
+            """a chance to visit the LoadableFixture object."""
             pass
             
     Medium = StorageMediumAdapter
             
-    class StorageMediaNotFound(LookupError): 
+    class StorageMediaNotFound(LookupError):
+        """Looking up a storable object failed."""
         pass
     
     class LoadQueue(ObjRegistry):
@@ -279,7 +350,6 @@ class EnvLoadableFixture(LoadableFixture):
         self.env = env
     
     def attach_storage_medium(self, ds):
-        
         if ds.meta.storage_medium is not None:
             # already attached...
             return
@@ -335,4 +405,8 @@ class DBLoadableFixture(EnvLoadableFixture):
     
     def rollback(self):
         self.transaction.rollback()
-        
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
+    

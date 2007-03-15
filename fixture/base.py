@@ -1,13 +1,7 @@
 
-"""Fixture
+"""base Fixture components.
 
-.. contents::
-    
-Storable objects, how to find them
-----------------------------------
-
-Style objects, when to use them
--------------------------------
+The more useful bits are in LoadableFixture
 
 """
 
@@ -48,7 +42,7 @@ class Fixture(object):
     loader = None
     
     class Data(object):
-        """loads one or more data sets and provides an interface to that data.    
+        """loads one or more DataSet objects and provides an interface into that data.    
         """
         def __init__(self, datasets, dataclass, loader):
             self.datasets = datasets
@@ -57,10 +51,18 @@ class Fixture(object):
             self.data = None # instance of dataclass
     
         def __enter__(self):
+            """enter a with statement block.
+            
+            calls self.setup()
+            """
             self.setup()
             return self
     
         def __exit__(self, type, value, traceback):
+            """exit a with statement block.
+            
+            calls self.teardown()
+            """
             self.teardown()
     
         def __getattr__(self, name):
@@ -72,12 +74,14 @@ class Fixture(object):
             return self.data[name]
     
         def setup(self):
+            """load all datasets, populating self.data."""
             self.data = self.dataclass(*[
                         ds.shared_instance( default_refclass=self.dataclass ) \
                             for ds in iter(self.datasets)])
             self.loader.load(self.data)
     
         def teardown(self):
+            """unload all datasets."""
             self.loader.unload()
                 
     def __init__(self, dataclass=None, loader=None):
@@ -92,8 +96,11 @@ class Fixture(object):
     
     def with_data(self, *datasets, **cfg):
         """returns a decorator to wrap data around a method.
-    
-        the method will receive a new first argument, the Fixture.Data instance.
+        
+        All positional arguments are DataSet class objects.
+        
+        the decorated method will receive a new first argument, 
+        the Fixture.Data instance.
     
         Keywords
         --------

@@ -3,11 +3,74 @@
 
 .. contents::
 
-A simple DataSet
-----------------
+Before talking about loading data, you need to define it. A single subclass of
+DataSet represents a database relation in Python code. Think of the class as a
+table, each inner class as a row, and each attribute per row as a column value.
+For example::
 
-Referencing other DataSet objects
----------------------------------
+    >>> from fixture import DataSet
+    >>> class Authors(DataSet):
+    ...     class frank_herbert:
+    ...         first_name="Frank"
+    ...         last_name="Herbert"
+
+The inner class ``frank_herbert`` defines a row with the columns ``first_name``
+and ``last_name``. The name ``frank_herbert`` is an identifier that you can use
+later on, when you want to refer to this specific row. It helps to choose a
+meaningful name.
+
+The main goal will be to load this data into something useful, like a database.
+But notice that the ``id`` values aren't defined in the DataSet. This is because
+the database will most likely create an ``id`` for you when you insert the row.
+If you need to specify a specific ``id`` number, you are free to do so.
+
+Inheriting DataSet rows
+-----------------------
+
+Since a row is just a Python class, you can inherit from a row to morph its values, i.e.::
+
+    >>> class Authors(DataSet):
+    ...     class frank_herbert:
+    ...         first_name = "Frank"
+    ...         last_name = "Herbert"
+    ...     class brian_herbert(frank_herbert):
+    ...         first_name = "Brian"
+
+This is useful for adhering to the DRY principle (Don't Repeat Yourself) as well
+as for `testing edge cases`_.
+
+.. note::
+    The primary key value will not be inherited from a row.  See 
+    `Customizing a DataSet`_ if you need to set the name of a DataSet's primary 
+    key to something other than ``id``.
+
+Referencing foreign DataSet classes
+-----------------------------------
+
+Each inner class of a DataSet gets decorated with a special method, ``ref()``,
+that can be used to reference a column value::
+
+    >>> class Books(DataSet):
+    ...     class dune:
+    ...         title = "Dune"
+    ...         author_id = Authors.frank_herbert.ref('id')
+    ...     class sudanna:
+    ...         title = "Sudanna Sudanna"
+    ...         author_id = Authors.brian_herbert.ref('id')
+
+This sets the ``author_id`` to the ``id`` of another row in ``Author``, as if it
+were a foreign key. But notice that the ``id`` attribute wasn't explicitly
+defined by the ``Authors`` data set. When the ``id`` attribute is accessed later
+on, its value is fetched from the actual row inserted.
+
+Customizing a Dataset
+---------------------
+
+A DataSet can be customized by defining a special inner class named ``Meta``.
+See the `DataSet.Meta`_ API for more info.
+
+.. _DataSet.Meta: ../apidocs/fixture.dataset.DataSet.Meta.html
+.. _testing edge cases: http://brian.pontarelli.com/2006/12/04/the-importance-of-edge-case-testing/
 
 """
 
@@ -293,35 +356,34 @@ class DataSet(DataContainer):
 
     Special inner Meta class
     ------------------------
-
-    The inner class Meta is used to configure a DataSet.  The following are 
-    acknowledged attributes:
-
-    - storable
-
-      - an object that should be used to store this DataSet.  If omitted the 
-        loader's style object will look for a storable object in its env, 
-        using storable_name
-
-    - storable_name
-
-      - the name of the storable object that the loader should fetch from 
-        its env to load this DataSet with.  If omitted, the loader's style 
-        object will try to guess the storable_name based on its env and the 
-        name of the DataSet class
-
-    - primary_key
-
-      - this is a list of names that should be acknowledged as primary keys 
-        in a DataSet.  The default is simply ['id'] but only comes into 
-        affect for inherited values.  In this default configuration, a row 
-        cannot inherit another rows primary key attributes.
+    
+    See DataSet.Meta for details
     
     """
     __metaclass__ = DataType
     _reserved_attr = DataContainer._reserved_attr + ('data', 'shared_instance')
     ref = None
     class Meta(DataContainer.Meta):
+        """configures a DataSet class.
+        
+        The inner class Meta is used to configure a DataSet .  The following are 
+        acknowledged attributes:
+
+        storable
+            an object that should be used to store this DataSet.  If omitted the 
+            loader's style object will look for a storable object in its env, 
+            using storable_name
+
+        storable_name
+            the name of the storable object that the loader should fetch from 
+            its env to load this DataSet with.  If omitted, the loader's style 
+            object will try to guess the storable_name based on its env and the 
+            name of the DataSet class
+
+        primary_key
+            this is a list of names that should be acknowledged as primary keys 
+            in a DataSet.  The default is simply ['id'].
+        """
         row = DataRow
         storable = None
         storable_name = None
@@ -562,4 +624,8 @@ class MergedSuperSet(SuperSet):
 def lazy_meta(obj):
     if not hasattr(obj, 'meta'):
         setattr(obj, 'meta', obj.Meta())
-        
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
+    

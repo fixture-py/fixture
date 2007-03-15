@@ -2,7 +2,7 @@
 
 import os, sys
 from os import path
-import inspect, pydoc
+import inspect, pydoc, doctest
 from docutils.parsers.rst import directives
 from docutils.core import publish_file, publish_string, publish_doctree
 from docutils.parsers import rst
@@ -54,6 +54,9 @@ def include_docstring(
         obj = mod
     
     source = inspect.getdoc(obj)
+    doctest.run_docstring_examples(source, mod.__dict__)
+    # if not success:
+    #     assert False, "doctest for %s in %s failed" % (obj, mod)
     if source is None:
         raise ValueError("cannot find docstring for %s" % obj)
     summary, body = pydoc.splitdoc(source)
@@ -84,7 +87,7 @@ def api():
         '--html-output=%s/apidocs' % builddir, '--project-name=fixture', 
         '--docformat=restructuredtext',
         '--project-url=http://code.google.com/p/fixture/', '--make-html', 
-        '--add-package=fixture', '--verbose']
+        '--add-package=fixture', '--verbose', '--verbose']
     
     sys.argv[0] = ['pydoctor'] # for sanity
     main(argv)
