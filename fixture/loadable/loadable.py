@@ -110,7 +110,7 @@ Loading objects using @dbfixture.with_data
 ------------------------------------------
 
 Loading objects using the with statement
--------------------------------------
+----------------------------------------
 
 Defining a custom LoadableFixture
 ---------------------------------
