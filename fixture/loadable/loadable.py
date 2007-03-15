@@ -66,7 +66,7 @@ Define a fixture object like so::
 
 For the available keyword arguments of respective LoadableFixture objects, see `SQLAlchemyFixture API`_ and `SQLObjectFixture API`_.
 
-.. _SQLAlchemyFixture API: ../apidocs/fixture.loadable.sqlalcheny_loadable.SQLAlchemyFixture.html
+.. _SQLAlchemyFixture API: ../apidocs/fixture.loadable.sqlalchemy_loadable.SQLAlchemyFixture.html
 .. _SQLObjectFixture API: ../apidocs/fixture.loadable.sqlobject_loadable.SQLObjectFixture.html
 
 .. note::
