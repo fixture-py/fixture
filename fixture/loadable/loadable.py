@@ -3,7 +3,7 @@
 
 .. contents::
 
-After defining data with the DataSet class you need some way to load the data for your test.  Each DataSet you want to load needs some storage medium, say, a `Data Mapper`_ or `Active Record`_ object.  A Fixture is simply an environment that knows how to load data using the right objects.  It puts the pieces together, if you will.  You can instantiate it in the module since all it does is configure an environment.
+After defining data with the DataSet class you need some way to load the data for your test.  Each DataSet you want to load needs some storage medium, say, a `Data Mapper`_ or `Active Record`_ object.  A Fixture is simply an environment that knows how to load data using the right objects.  It puts the pieces together, if you will.
 
 .. _Data Mapper: http://www.martinfowler.com/eaaCatalog/dataMapper.html
 .. _Active Record: http://www.martinfowler.com/eaaCatalog/activeRecord.html
@@ -22,7 +22,9 @@ SQLObjectFixture
 The idea is that you application already defines its own way of accessing its data; the LoadableFixture just "hooks in" to that interface.  Before considering the Fixture, here is an example data model defined using `sqlalchemy`_::
 
     >>> from sqlalchemy import *
-    >>> meta = BoundMetaData('sqlite:///:memory:')
+    >>> engine = create_engine('sqlite:///:memory:')
+    >>> meta = BoundMetaData(engine)
+    >>> session = create_session(engine)
     >>> authors = Table('authors', meta,
     ...     Column('id', Integer, primary_key=True),
     ...     Column('first_name', String),
@@ -50,20 +52,64 @@ The idea is that you application already defines its own way of accessing its da
 .. _mapped classes: http://www.sqlalchemy.org/docs/datamapping.myt
 .. _sqlobject: http://sqlobject.org/
 .. _SQLObject classes: http://sqlobject.org/SQLObject.html#declaring-the-class
+
+Defining a Fixture
+------------------
+
+Define a fixture object like so::
+
+    >>> from fixture import SQLAlchemyFixture
+    >>> dbfixture = SQLAlchemyFixture(
+    ...     env={'BookData': Book, 'AuthorData': Author},
+    ...     session=session )
+    ... 
+
+For the available keyword arguments of respective LoadableFixture objects, see `SQLAlchemyFixture API`_ and `SQLObjectFixture API`_.
+
+.. _SQLAlchemyFixture API: ../apidocs/fixture.loadable.sqlalcheny_loadable.SQLAlchemyFixture.html
+.. _SQLObjectFixture API: ../apidocs/fixture.loadable.sqlobject_loadable.SQLObjectFixture.html
+
+.. note::
+    - Any keyword attribute of a LoadableFixture can be set later on as an 
+      attribute of the instance.
+    - LoadableFixture instances can safely be module-level objects
+    - An ``env`` can be a dict or a module
     
-Storable objects, how to find them
+Loading DataSet objects
+-----------------------
+
+As mentioned earlier, a DataSet shouldn't have to know how to store itself; the job of the Fixture object is to load and unload DataSet objects.  Let's consider the following DataSet objects (reusing the examples from earlier)::
+
+    >>> from fixture import DataSet
+    >>> class AuthorData(DataSet):
+    ...     class frank_herbert:
+    ...         first_name="Frank"
+    ...         last_name="Herbert"
+    >>> class BookData(DataSet):
+    ...     class dune:
+    ...         title = "Dune"
+    ...         author_id = AuthorData.frank_herbert.ref('id')
+
+As you recall, we passed a dictionary into the Fixture that associates the name ``BookData`` with the mapped class ``Book``.  Using this dict, a Fixture.Data instance now knows how to find the sqlalchemy mapped class when it comes across DataSets names.  Since we also gave it a ``session`` keyword, this will be used to save objects::
+    
+    >>> data = dbfixture.data(AuthorData, BookData)
+    >>> data.setup() 
+    >>> list(session.query(Book).select()) #doctest: +ELLIPSIS
+    [<...Book object at ...>]
+    >>> data.teardown()
+    >>> list(session.query(Book).select())
+    []
+
+Discovering storable objects with Style
+---------------------------------------
+
+Loading objects using DataTestCase
 ----------------------------------
 
-Style objects, when to use them
--------------------------------
+Loading objects using @dbfixture.with_data
+------------------------------------------
 
-Load objects using DataTestCase
--------------------------------
-
-Load objects using @db.with_data
---------------------------------
-
-Load objects using the with statement
+Loading objects using the with statement
 -------------------------------------
 
 Defining a custom LoadableFixture
@@ -78,7 +124,7 @@ You'll need to subclass `fixture.loadable.loadable:LoadableFixture`_ (more to co
 import sys
 from fixture.base import Fixture
 from fixture.util import ObjRegistry, _mklog
-from fixture.style import NamedDataStyle
+from fixture.style import OriginalStyle
 from fixture.dataset import Ref, dataset_registry, DataRow
 from fixture.exc import LoadError, UnloadError
 import logging
@@ -110,7 +156,7 @@ class LoadableFixture(Fixture):
         objects with
     
     """
-    style = NamedDataStyle()
+    style = OriginalStyle()
     dataclass = Fixture.dataclass
     
     def __init__(self, style=None, medium=None, dataclass=None):
