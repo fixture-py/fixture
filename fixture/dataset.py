@@ -21,8 +21,10 @@ meaningful name.
 
 The main goal will be to load this data into something useful, like a database.
 But notice that the ``id`` values aren't defined in the DataSet. This is because
-the database will most likely create an ``id`` for you when you insert the row.
-If you need to specify a specific ``id`` number, you are free to do so.
+the database will most likely create an ``id`` for you when you insert the row 
+(however, if you need to specify a specific ``id`` number, you are free to do 
+so).  Also notice that the DataSet class knows nothing about your underlying 
+data model.  Thus, you can say it's a partial adapter_ to your data model.
 
 Inheriting DataSet rows
 -----------------------
@@ -71,6 +73,7 @@ See the `DataSet.Meta`_ API for more info.
 
 .. _DataSet.Meta: ../apidocs/fixture.dataset.DataSet.Meta.html
 .. _testing edge cases: http://brian.pontarelli.com/2006/12/04/the-importance-of-edge-case-testing/
+.. _adapter: http://en.wikipedia.org/wiki/Wrapper_pattern
 
 """
 
