@@ -426,6 +426,11 @@ class EnvLoadableFixture(LoadableFixture):
                     "dataset %s in self.env (%s)" % (
                         self.Medium, ds.meta.storable_name, ds, repr_env))
                         
+        if storable == ds.__class__:
+            raise ValueError(
+                "cannot use %s %s as a storable object of itself! "
+                "(perhaps your style object was not configured right?)" % (
+                                        ds.__class__.__name__, ds.__class__))
         ds.meta.storage_medium = self.Medium(storable, ds)
 
 class DBLoadableFixture(EnvLoadableFixture):

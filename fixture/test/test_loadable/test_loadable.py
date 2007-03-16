@@ -4,7 +4,7 @@ from nose.tools import raises, eq_
 from nose.exc import SkipTest
 import unittest
 from fixture import DataSet
-from fixture.loadable import LoadableFixture
+from fixture.loadable import LoadableFixture, EnvLoadableFixture
 from fixture.test import env_supports, PrudentTestResult
 from fixture import TempIO
 
@@ -365,3 +365,19 @@ class LoaderPartialRecoveryTest(HavingOfferProductData):
             pass
         test_partial_datasets()        
         self.assert_partial_load_aborted()
+
+class TestEnvLoadableFixture(object):
+    @raises(ValueError)
+    def test_storable_object_cannot_equal_dataset(self):
+        class SomeEnvLoadableFixture(EnvLoadableFixture):    
+            def rollback(self): pass
+            def commit(self): pass
+            
+        class MyDataSet(DataSet):
+            class some_row:
+                some_column = 'foo'
+                
+        efixture = SomeEnvLoadableFixture(env={'MyDataSet': MyDataSet})
+        data = efixture.data(MyDataSet)
+        data.setup()
+        
