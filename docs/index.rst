@@ -57,7 +57,10 @@ API Documentation
 Where to submit issues, patches, bugs
 -------------------------------------
 
-Please submit any issues, patches, or bugs using the `Issue Tracker`_ on the `fixture project site`_.  Patches or even vague ideas for improvement are gladly accepted.  If your code is included, your contribution will be documented.
+Please submit any issues, patches, failing tests, and/or bugs using the `Issue
+Tracker`_ on the `fixture project site`_. Even vague ideas for improvement will
+be gladly accepted. If your code is included, your contribution will be
+documented.
 
 .. _Issue Tracker: http://code.google.com/p/fixture/issues/list
 .. _fixture project site: http://code.google.com/p/fixture/
