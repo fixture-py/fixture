@@ -103,14 +103,42 @@ As you recall, we passed a dictionary into the Fixture that associates the name 
 Discovering storable objects with Style
 ---------------------------------------
 
+If you didn't want to create a strict mapping of DataSet class names to their storable object names you can use Style objects to translate DataSet class names.  For example, consider this Fixture :
+
+    >>> from fixture import SQLAlchemyFixture
+    >>> from fixture.style import TrimmedNameStyle
+    >>> dbfixture = SQLAlchemyFixture(
+    ...     env=globals(),
+    ...     style=TrimmedNameStyle(suffix="Data"),
+    ...     session=session )
+    ... 
+
+This would take the name ``AuthorData`` and trim off "Data" from its name to find ``Author``, its mapped sqlalchemy class for storing data.  Since this is a logical convention to follow for naming DataSet classes, you can use a shortcut:
+
+    >>> from fixture.style import NamedDataStyle
+    >>> dbfixture = SQLAlchemyFixture(
+    ...     env=globals(),
+    ...     style=NamedDataStyle(),
+    ...     session=session )
+    ... 
+
+See the `Style API`_ for all available Style objects.
+
+.. _Style API: ../apidocs/fixture.style.html
+
+Loading DataSet classes in a test
+---------------------------------
+
+Now that you have a Fixture object to load DataSet classes you are ready to write some tests.  You can either write your own code that creates a data instance and calls setup/teardown manually, or you can use one of several utilities.
+
 Loading objects using DataTestCase
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Loading objects using @dbfixture.with_data
-------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Loading objects using the with statement
-----------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Defining a custom LoadableFixture
 ---------------------------------
