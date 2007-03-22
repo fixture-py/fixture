@@ -129,10 +129,44 @@ See the `Style API`_ for all available Style objects.
 Loading DataSet classes in a test
 ---------------------------------
 
-Now that you have a Fixture object to load DataSet classes you are ready to write some tests.  You can either write your own code that creates a data instance and calls setup/teardown manually, or you can use one of several utilities.
+Now that you have a Fixture object to load DataSet classes you are ready to write some tests.  You can either write your own code that creates a data instance and calls setup/teardown manuallyb (like in previous examples), or you can use one of several utilities.  
+
+As a hoky attempt to make these tests somewhat realistic, here is a function we will be testing, that returns True if a book by author or title is in stock:
+
+    >>> def in_stock(book_title=None, author_last_name=None):
+    ...     if book_title:
+    ...         rs = session.query(Book).select(books.c.title==book_title)
+    ...     elif author_last_name:
+    ...         rs = session.query(Book).select(
+    ...                 authors.c.last_name==author_last_name,
+    ...                 from_obj=[books.join(authors)])
+    ...     else:
+    ...         return False
+    ...     if len(list(rs)):
+    ...         return True
 
 Loading objects using DataTestCase
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+DataTestCase is a mixin class to use with Python's built-in ``unittest.TestCase``
+
+    >>> import unittest
+    >>> from fixture import DataTestCase
+    >>> class TestBookShop(DataTestCase, unittest.TestCase):
+    ...     fixture = dbfixture
+    ...     datasets = [BookData]
+    ...
+    ...     def test_books_are_in_stock(self):
+    ...         assert in_stock(book_title=self.data.BookData.dune.title)
+    ... 
+    >>> suite = unittest.TestLoader().loadTestsFromTestCase(TestBookShop)
+    >>> unittest.TextTestRunner().run(suite)
+    <unittest._TextTestResult run=1 errors=0 failures=0>
+
+see the `DataTestCase API`_ for a full explanation of how it can be configured.
+
+.. _DataTestCase API: ../apidocs/fixture.util.DataTestCase.html
+    
 
 Loading objects using @dbfixture.with_data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

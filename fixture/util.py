@@ -11,52 +11,24 @@ __all__ = ['DataTestCase']
 class DataTestCase(object):
     """A mixin to use with unittest.TestCase.
     
-    Say you have a storage medium (in this case, sqlalchemy) defined like so::
-        
-        >>> from sqlalchemy import *
-        >>> meta = BoundMetaData("sqlite:///:memory:")
-        >>> session = create_session(bind_to=meta.engine)
-        >>> events = Table('events', meta, 
-        ...     Column('id', INT, primary_key=True),
-        ...     Column('name', String))
-        >>> meta.create_all()
+    Upon setUp() the TestCase will load the DataSet classes using your Fixture, 
+    specified in class variables.  At tearDown(), all loaded data will be 
+    removed.  During your test, you will have ``self.data``, a SuperSet instance 
+    to reference loaded data
     
-    And a DataSet to load::
+    Class Variables
+    ---------------
+    - fixture
+      
+      - the Fixture instance to load DataSet classes with
     
-        >>> from fixture import DataSet
-        >>> class events_data(DataSet):
-        ...     class click:
-        ...         id=1
-        ...         name="click"
-        ...
+    - datasets
+      
+      - a list of DataSet classes to load
     
-    You can create a concrete test case class like this::
-    
-        >>> from fixture import DataTestCase, SQLAlchemyFixture
-        >>> from fixture.style import TrimmedNameStyle
-        >>> class TestWithEvents(DataTestCase, unittest.TestCase):
-        ...     fixture = SQLAlchemyFixture(
-        ...                     env=globals(), session=session,
-        ...                     style=TrimmedNameStyle(suffix="_data"))
-        ...     datasets = [events_data]
-        ...
-        ...     def testSomething(self):
-        ...         assert self.data.events_data.click.name == "click"
-        ...
-    
-    Behind the scenes, unittest will run it for you as usual...
-    
-        >>> import unittest
-        >>> res = unittest.TestResult()
-        >>> loader = unittest.TestLoader()
-        >>> suite = loader.loadTestsFromTestCase(TestWithEvents)
-        >>> r = suite(res)
-        >>> res.failures
-        []
-        >>> res.errors
-        []
-        >>> res.testsRun
-        1
+    - data
+      
+      - self.data, a Fixture.Data instance populated for you after setUp()
     
     """
     fixture = None
