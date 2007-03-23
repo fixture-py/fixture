@@ -16,8 +16,8 @@ class DataTestCase(object):
     removed.  During your test, you will have ``self.data``, a SuperSet instance 
     to reference loaded data
     
-    Class Variables
-    ---------------
+    Class Attributes
+    ----------------
     - fixture
       
       - the Fixture instance to load DataSet classes with

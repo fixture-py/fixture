@@ -148,7 +148,7 @@ As a hoky attempt to make these tests somewhat realistic, here is a function we 
 Loading objects using DataTestCase
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-DataTestCase is a mixin class to use with Python's built-in ``unittest.TestCase``
+DataTestCase is a mixin class to use with Python's built-in ``unittest.TestCase``::
 
     >>> import unittest
     >>> from fixture import DataTestCase
@@ -163,7 +163,9 @@ DataTestCase is a mixin class to use with Python's built-in ``unittest.TestCase`
     >>> unittest.TextTestRunner().run(suite)
     <unittest._TextTestResult run=1 errors=0 failures=0>
 
-see the `DataTestCase API`_ for a full explanation of how it can be configured.
+Re-using what was created earlier, the ``fixture`` attribute is set the Fixture instance and the ``datasets`` attribute is set to a list of DataSet classes.  When in the test method itself, as you can see, you can reference loaded data through ``self.data`` and instance of SuperSet.  Keep in mind that if you need to override either setUp() or tearDown() then you'll have to call the super methods.
+
+See the `DataTestCase API`_ for a full explanation of how it can be configured.
 
 .. _DataTestCase API: ../apidocs/fixture.util.DataTestCase.html
     
@@ -171,18 +173,125 @@ see the `DataTestCase API`_ for a full explanation of how it can be configured.
 Loading objects using @dbfixture.with_data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+If you use nose_, a test runner for Python, then you may be familiar with its `discovery of test methods`_.  Test methods (as opposed to unittest.TestCase classes) provide a quick way to write procedural tests, which are usually more informative to read for someone who is getting familiar with the code.
+
+The fixture module supports loading data before a test method is executed.  A special decorator method on a Fixture instance, called ``with_data``, can be used, like so::
+
+    >>> @dbfixture.with_data(AuthorData, BookData)
+    ... def test_books_are_in_stock(data):
+    ...     assert in_stock(book_title=data.BookData.dune.title)
+    ... 
+    >>> import nose
+    >>> case = nose.case.FunctionTestCase(test_books_are_in_stock)
+    >>> unittest.TextTestRunner().run(case)
+    <unittest._TextTestResult run=1 errors=0 failures=0>
+
+Like in the previous example, the ``data`` attribute is a SuperSet object you can use to reference loaded data.  This is passed to your decorated test method as its first argument.  Note that nose_ will run the above code automatically; the inline execution of the test here is merely for example.
+
+See the `Fixture.Data.with_data API`_ for more information.
+
+.. _nose: http://somethingaboutorange.com/mrl/projects/nose/
+.. _discovery of test methods: http://code.google.com/p/python-nose/wiki/WritingTests
+.. _Fixture.Data.with_data API: ../apidocs/fixture.base.Fixture.html#with_data
+
 Loading objects using the with statement
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In Python 2.5 or later you can write test code in a more logical manner by using the `with statement`_.  See for yourself::
+
+    from __future__ import with_statement
+    with dbfixture.data(AuthorData, BookData) as data:
+        assert in_stock(book_title=data.BookData.dune.title)    
+
+.. _with statement: http://www.python.org/dev/peps/pep-0343/
 
 Defining a custom LoadableFixture
 ---------------------------------
 
-You'll need to subclass `fixture.loadable.loadable:LoadableFixture`_ (more to come!)
+It's possible to create your own fixture with just a couple classes.  If you create one that may be useful to others, please consider submitting a patch.
+
+You'll need to subclass at least `fixture.loadable.loadable:LoadableFixture`_, possibly even `fixture.loadable.loadable:EnvLoadableFixture`_ or, the more useful `fixture.loadable.loadable:DBLoadableFixture`_.  Here is a simple example for creating a fixture that hooks into some kind of database-centric loading mechanism::
+
+    >>> loaded_items = set()
+    >>> class Author(object):
+    ...     '''This would be your actual storage object, i.e. data mapper.
+    ...        For the sake of brevity, you'll have to imagine that it knows 
+    ...        how to somehow store "author" data.'''
+    ... 
+    ...     name = None # gets set by the data set
+    ... 
+    ...     def save(self):
+    ...         loaded_items.add(self)
+    ...     def __repr__(self):
+    ...         return "<%s name=%s>" % (self.__class__.__name__, self.name)
+    ...
+    >>> from fixture.loadable import DBLoadableFixture
+    >>> class MyFixture(DBLoadableFixture):
+    ...     '''This is the class you will instantiate, the one that knows how to 
+    ...        load datasets'''
+    ... 
+    ...     class Medium(DBLoadableFixture.Medium):
+    ...         '''This is an object that adapts a storage medium the way 
+    ...            fixture wants it to the actual storage medium you 
+    ...            will be using'''
+    ... 
+    ...         def clear(self, obj):
+    ...             '''where you need to expunge the obj'''
+    ...             loaded_items.remove(obj)
+    ... 
+    ...         def visit_loader(self, loader):
+    ...             '''a chance to use any attributes from the loader'''
+    ... 
+    ...         def save(self, row):
+    ...             '''save data into your object using the provided 
+    ...                fixture.dataset.DataRow instance'''
+    ...             # instantiate your own object...
+    ...             obj = self.medium() 
+    ...             for c in row.columns():
+    ...                 # column values become object attributes...
+    ...                 setattr(obj, c, getattr(row, c))
+    ...             obj.save()
+    ...             # be sure to return the object:
+    ...             return obj
+    ... 
+    ...     def create_transaction(self):
+    ...         '''a chance to create a transaction.
+    ...            two separate transactions are used: one during loading
+    ...            and another during unloading.'''
+    ...         class DummyTransaction(object):
+    ...             def begin(self):
+    ...                 pass
+    ...             def commit(self): 
+    ...                 pass
+    ...             def rollback(self): 
+    ...                 pass
+    ...         t = DummyTransaction()
+    ...         t.begin()
+    ...         return t
+
+Now let's load some data into the custom Fixture using a simple ``env`` mapping::
+
+    >>> from fixture import DataSet
+    >>> class AuthorData(DataSet):
+    ...     class frank_herbert:
+    ...         name="Frank Herbert"
+    ...
+    >>> fixture = MyFixture(env={'AuthorData': Author})
+    >>> data = fixture.data(AuthorData)
+    >>> data.setup()
+    >>> loaded_items
+    set([<Author name=Frank Herbert>])
+    >>> data.teardown()
+    >>> loaded_items
+    set([])
+    
 
 .. _fixture.loadable.loadable:LoadableFixture: ../apidocs/fixture.loadable.loadable.LoadableFixture.html
+.. _fixture.loadable.loadable:EnvLoadableFixture: ../apidocs/fixture.loadable.loadable.EnvLoadableFixture.html
+.. _fixture.loadable.loadable:DBLoadableFixture: ../apidocs/fixture.loadable.loadable.DBLoadableFixture.html
 
 """
-
+# from __future__ import with_statement
 import sys
 from fixture.base import Fixture
 from fixture.util import ObjRegistry, _mklog
