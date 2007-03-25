@@ -20,7 +20,7 @@ def setup():
         
     from sqlobject import connectionForURI, sqlhub
     
-    realconn = connectionForURI(conf.POSTGRES_DSN)
+    realconn = connectionForURI(conf.HEAVY_DSN)
     memconn = connectionForURI("sqlite:/:memory:")
 
 def teardown():
@@ -32,7 +32,7 @@ def teardown():
 class SQLObjectGenerateTest(GenerateTest):
     args = [
         "fixture.examples.db.sqlobject_examples.Offer", 
-        "--dsn", str(conf.POSTGRES_DSN) ]
+        "--dsn", str(conf.HEAVY_DSN) ]
     
     def assert_data_loaded(self, fxt):
         rs =  Category.select()

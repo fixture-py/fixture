@@ -22,7 +22,7 @@ def setup():
 class SQLAlchemyGenerateTest(GenerateTest):
     args = [
         "fixture.examples.db.sqlalchemy_examples.Offer", 
-        "--dsn", str(conf.POSTGRES_DSN) ]
+        "--dsn", str(conf.HEAVY_DSN) ]
     
     def assert_data_loaded(self, fxt):
         session = memcontext.current
@@ -78,11 +78,11 @@ class SQLAlchemyGenerateTest(GenerateTest):
         from sqlalchemy.ext.sessioncontext import SessionContext
         
         global realmeta, realcontext, memmeta, memcontext
-        realmeta = BoundMetaData(conf.POSTGRES_DSN)
+        realmeta = BoundMetaData(conf.HEAVY_DSN)
         realcontext = SessionContext(
                 lambda: sqlalchemy.create_session(bind_to=realmeta.engine))
             
-        memmeta = BoundMetaData(conf.MEM_DSN)
+        memmeta = BoundMetaData(conf.LITE_DSN)
         memcontext = SessionContext(
                 lambda: sqlalchemy.create_session(bind_to=memmeta.engine))
             

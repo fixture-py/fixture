@@ -17,11 +17,11 @@ def setup():
 class SQLObjectFixtureTest:
     fixture = SQLObjectFixture(
                         style=( NamedDataStyle() + CamelAndUndersStyle()),
-                        dsn=conf.MEM_DSN, env=globals(), 
+                        dsn=conf.LITE_DSN, env=globals(), 
                         use_transaction=False,
                         dataclass=MergedSuperSet )
         
-    def setUp(self, dsn=conf.MEM_DSN):
+    def setUp(self, dsn=conf.LITE_DSN):
         """should load the dataset"""
         from sqlobject import connectionForURI
         self.conn = connectionForURI(dsn)
@@ -108,10 +108,10 @@ class SQLObjectFixtureCascadeTest(SQLObjectFixtureTest):
 
 class SQLObjectFixtureCascadeTestWithPgsql(SQLObjectFixtureCascadeTest):
     def setUp(self):
-        if not conf.POSTGRES_DSN:
+        if not conf.HEAVY_DSN:
             raise SkipTest
             
-        SQLObjectFixtureCascadeTest.setUp(self, dsn=conf.POSTGRES_DSN)
+        SQLObjectFixtureCascadeTest.setUp(self, dsn=conf.HEAVY_DSN)
 
 class TestSQLObjectFixtureCascade(
         HavingOfferProductData, SQLObjectFixtureCascadeTest, 

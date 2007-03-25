@@ -8,7 +8,7 @@ from fixture.command.generate import FixtureGenerator, dataset_generator
 
 def setup():
     # every tests needs a real db conn :
-    if not conf.POSTGRES_DSN:
+    if not conf.HEAVY_DSN:
         raise SkipTest
 
 def compile_(code):

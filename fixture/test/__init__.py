@@ -6,6 +6,25 @@ $ python setup.py nosetests
 
 You will need nose_ installed
 
+Environment Variables
+---------------------
+
+The test suite is affected by several environment variables:
+
+- FIXTURE_TEST_HEAVY_DSN
+  
+  - a database connection that can support operations like foreign key relations 
+    (sqlite won't through foreign key errors)
+  - defaults to None.
+  - typically this would be a postgres connection where temp tables can be 
+    created and destroyed
+
+- FIXTURE_TEST_LITE_DSN
+  
+  - a database as lite as possible, for speed
+  - defaults to sqlite:///:memory:
+
+
 .. _nose: http://somethingaboutorange.com/mrl/projects/nose/
 
 """

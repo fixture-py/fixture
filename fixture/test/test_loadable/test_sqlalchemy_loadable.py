@@ -42,7 +42,7 @@ class SQLAlchemyFixtureTest(object):
     def new_fixture(self):
         raise NotImplementedError
                         
-    def setUp(self, dsn=conf.MEM_DSN):
+    def setUp(self, dsn=conf.LITE_DSN):
         from sqlalchemy import BoundMetaData
 
         self.meta = BoundMetaData(dsn)
@@ -228,10 +228,10 @@ class SQLAlchemyFixtureForKeysTest(SQLAlchemyFixtureTest):
 
 class SQLAlchemyFixtureForKeysTestWithPsql(SQLAlchemyFixtureForKeysTest):
     def setUp(self):
-        if not conf.POSTGRES_DSN:
+        if not conf.HEAVY_DSN:
             raise SkipTest
             
-        SQLAlchemyFixtureForKeysTest.setUp(self, dsn=conf.POSTGRES_DSN)
+        SQLAlchemyFixtureForKeysTest.setUp(self, dsn=conf.HEAVY_DSN)
         
 class TestSQLAlchemyFixtureForKeys(
         HavingOfferProductData, SessionFixture, 

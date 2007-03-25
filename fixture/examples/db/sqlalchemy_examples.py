@@ -198,6 +198,7 @@ def setup_db(meta, session_context, **kw):
         sendkw.update(kw)
         assign_mapper(session_context, obj, table, **sendkw)
         checkfirst=False
+        import sys
         table.create(meta.engine, checkfirst=checkfirst)
     
     assign_and_create(Category, categories)
