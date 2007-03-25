@@ -1,7 +1,7 @@
 
 """Working with temporary file systems.
 
-.. contents::
+.. contents:: :local:
 
 TempIO: a temporary file system object
 --------------------------------------
@@ -44,6 +44,10 @@ You can explicitly delete the object at your test's teardown if you like::
 
 .. _DirPath: ../apidocs/fixture.io.DirPath.html
 
+.. api_only::
+   The fixture.io module
+   ---------------------
+   
 """
 __all__ = ['TempIO']
 

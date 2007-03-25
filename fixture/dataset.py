@@ -1,7 +1,7 @@
 
 """Representation of Data
 
-.. contents::
+.. contents:: :local:
 
 Before talking about loading data, you need to define it. A single subclass of
 DataSet represents a database relation in Python code. Think of the class as a
@@ -27,7 +27,7 @@ so).  Also notice that the DataSet class knows nothing about your underlying
 data model.  Thus, you can say it's a partial adapter_ to your data model.
 
 Inheriting DataSet rows
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Since a row is just a Python class, you can inherit from a row to morph its values, i.e.::
 
@@ -47,7 +47,7 @@ as for `testing edge cases`_.
     key to something other than ``id``.
 
 Referencing foreign DataSet classes
------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Each inner class of a DataSet gets decorated with a special method, ``ref()``,
 that can be used to reference a column value::
@@ -66,7 +66,7 @@ defined by the ``Authors`` data set. When the ``id`` attribute is accessed later
 on, its value is fetched from the actual row inserted.
 
 Customizing a Dataset
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 A DataSet can be customized by defining a special inner class named ``Meta``.
 See the `DataSet.Meta`_ API for more info.
@@ -74,6 +74,10 @@ See the `DataSet.Meta`_ API for more info.
 .. _DataSet.Meta: ../apidocs/fixture.dataset.DataSet.Meta.html
 .. _testing edge cases: http://brian.pontarelli.com/2006/12/04/the-importance-of-edge-case-testing/
 .. _adapter: http://en.wikipedia.org/wiki/Wrapper_pattern
+
+.. api_only::
+   The fixture.dataset module
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 """
 

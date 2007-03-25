@@ -1,5 +1,5 @@
 
-"""base Fixture components.
+"""Base Fixture components.
 
 The more useful bits are in LoadableFixture
 

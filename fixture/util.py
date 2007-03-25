@@ -1,5 +1,5 @@
 
-"""fixture utilties."""
+"""Fixture utilties."""
 
 import sys
 import unittest

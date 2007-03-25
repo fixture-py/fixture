@@ -1,7 +1,7 @@
 
 """Loadable fixtures
 
-.. contents::
+.. contents:: :local:
 
 After defining data with the DataSet class you need some way to load the data for your test.  Each DataSet you want to load needs some storage medium, say, a `Data Mapper`_ or `Active Record`_ object.  A Fixture is simply an environment that knows how to load data using the right objects.  It puts the pieces together, if you will.
 
@@ -9,7 +9,7 @@ After defining data with the DataSet class you need some way to load the data fo
 .. _Active Record: http://www.martinfowler.com/eaaCatalog/activeRecord.html
 
 Supported storage media
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 To create a specific data-loading environment, the following subclasses are available:
 
@@ -54,7 +54,7 @@ The idea is that you application already defines its own way of accessing its da
 .. _SQLObject classes: http://sqlobject.org/SQLObject.html#declaring-the-class
 
 Defining a Fixture
-------------------
+~~~~~~~~~~~~~~~~~~
 
 Define a fixture object like so::
 
@@ -76,7 +76,7 @@ For the available keyword arguments of respective LoadableFixture objects, see `
     - An ``env`` can be a dict or a module
     
 Loading DataSet objects
------------------------
+~~~~~~~~~~~~~~~~~~~~~~~
 
 As mentioned earlier, a DataSet shouldn't have to know how to store itself; the job of the Fixture object is to load and unload DataSet objects.  Let's consider the following DataSet objects (reusing the examples from earlier)::
 
@@ -101,7 +101,7 @@ As you recall, we passed a dictionary into the Fixture that associates the name 
     []
 
 Discovering storable objects with Style
----------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you didn't want to create a strict mapping of DataSet class names to their storable object names you can use Style objects to translate DataSet class names.  For example, consider this Fixture :
 
@@ -127,7 +127,7 @@ See the `Style API`_ for all available Style objects.
 .. _Style API: ../apidocs/fixture.style.html
 
 Loading DataSet classes in a test
----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now that you have a Fixture object to load DataSet classes you are ready to write some tests.  You can either write your own code that creates a data instance and calls setup/teardown manuallyb (like in previous examples), or you can use one of several utilities.  
 
@@ -146,7 +146,7 @@ As a hoky attempt to make these tests somewhat realistic, here is a function we 
     ...         return True
 
 Loading objects using DataTestCase
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+++++++++++++++++++++++++++++++++++
 
 DataTestCase is a mixin class to use with Python's built-in ``unittest.TestCase``::
 
@@ -171,7 +171,7 @@ See the `DataTestCase API`_ for a full explanation of how it can be configured.
     
 
 Loading objects using @dbfixture.with_data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+++++++++++++++++++++++++++++++++++++++++++
 
 If you use nose_, a test runner for Python, then you may be familiar with its `discovery of test methods`_.  Test methods (as opposed to unittest.TestCase classes) provide a quick way to write procedural tests, which are usually more informative to read for someone who is getting familiar with the code.
 
@@ -195,9 +195,9 @@ See the `Fixture.Data.with_data API`_ for more information.
 .. _Fixture.Data.with_data API: ../apidocs/fixture.base.Fixture.html#with_data
 
 Loading objects using the with statement
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+++++++++++++++++++++++++++++++++++++++++
 
-In Python 2.5 or later you can write test code in a more logical manner by using the `with statement`_.  See for yourself::
+In Python 2.5 or later you can write test code in a more logical manner by using the `with statement`_.  Anywhere in your code, when you enter a with block using a Fixture.Data instance, the data is loaded and you have an instance in which to reference the data.  When you exit, the data is torn down for you, regardless of whether there was an exception or not.  For example::
 
     from __future__ import with_statement
     with dbfixture.data(AuthorData, BookData) as data:
@@ -206,11 +206,11 @@ In Python 2.5 or later you can write test code in a more logical manner by using
 .. _with statement: http://www.python.org/dev/peps/pep-0343/
 
 Defining a custom LoadableFixture
----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-It's possible to create your own fixture with just a couple classes.  If you create one that may be useful to others, please consider submitting a patch.
+It's possible to create your own Fixture by just subclassing a few fixture classes.  If you create one that may be useful to others and would like to submit a patch, it would be gladly accepted.
 
-You'll need to subclass at least `fixture.loadable.loadable:LoadableFixture`_, possibly even `fixture.loadable.loadable:EnvLoadableFixture`_ or, the more useful `fixture.loadable.loadable:DBLoadableFixture`_.  Here is a simple example for creating a fixture that hooks into some kind of database-centric loading mechanism::
+You'll need to subclass at least `fixture.loadable.loadable:LoadableFixture`_, possibly even `fixture.loadable.loadable:EnvLoadableFixture`_ or the more useful `fixture.loadable.loadable:DBLoadableFixture`_.  Here is a simple example for creating a fixture that hooks into some kind of database-centric loading mechanism::
 
     >>> loaded_items = set()
     >>> class Author(object):
@@ -221,6 +221,9 @@ You'll need to subclass at least `fixture.loadable.loadable:LoadableFixture`_, p
     ...     name = None # gets set by the data set
     ... 
     ...     def save(self):
+    ...         '''just one example of how to save your object.
+    ...            there is no signature guideline for how this object 
+    ...            should save itself (see the adapter below).'''
     ...         loaded_items.add(self)
     ...     def __repr__(self):
     ...         return "<%s name=%s>" % (self.__class__.__name__, self.name)
@@ -231,21 +234,22 @@ You'll need to subclass at least `fixture.loadable.loadable:LoadableFixture`_, p
     ...        load datasets'''
     ... 
     ...     class Medium(DBLoadableFixture.Medium):
-    ...         '''This is an object that adapts a storage medium the way 
-    ...            fixture wants it to the actual storage medium you 
-    ...            will be using'''
+    ...         '''This is an object that adapts a Fixture storage medium 
+    ...            to the actual storage medium.'''
     ... 
     ...         def clear(self, obj):
     ...             '''where you need to expunge the obj'''
     ...             loaded_items.remove(obj)
     ... 
     ...         def visit_loader(self, loader):
-    ...             '''a chance to use any attributes from the loader'''
+    ...             '''a chance to reference any attributes from the loader.
+    ...                this is called before save().'''
     ... 
     ...         def save(self, row):
     ...             '''save data into your object using the provided 
     ...                fixture.dataset.DataRow instance'''
-    ...             # instantiate your own object...
+    ...             # instantiate your real object class (Author), which was set 
+    ...             # in __init__ to self.medium ...
     ...             obj = self.medium() 
     ...             for c in row.columns():
     ...                 # column values become object attributes...
@@ -266,7 +270,7 @@ You'll need to subclass at least `fixture.loadable.loadable:LoadableFixture`_, p
     ...             def rollback(self): 
     ...                 pass
     ...         t = DummyTransaction()
-    ...         t.begin()
+    ...         t.begin() # you must call begin yourself, if necessary
     ...         return t
 
 Now let's load some data into the custom Fixture using a simple ``env`` mapping::
@@ -289,6 +293,10 @@ Now let's load some data into the custom Fixture using a simple ``env`` mapping:
 .. _fixture.loadable.loadable:LoadableFixture: ../apidocs/fixture.loadable.loadable.LoadableFixture.html
 .. _fixture.loadable.loadable:EnvLoadableFixture: ../apidocs/fixture.loadable.loadable.EnvLoadableFixture.html
 .. _fixture.loadable.loadable:DBLoadableFixture: ../apidocs/fixture.loadable.loadable.DBLoadableFixture.html
+
+.. api_only::
+   The fixture.loadable module
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 """
 # from __future__ import with_statement

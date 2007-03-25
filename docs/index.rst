@@ -5,6 +5,7 @@ Using the fixture module
 
 .. contents::
 
+---------------------------------
 Loading and referencing test data
 ---------------------------------
 
@@ -28,32 +29,35 @@ The details of loading the actual data is left up to your application's database
 .. _code coverage: http://en.wikipedia.org/wiki/Code_coverage
 
 Using DataSet
-~~~~~~~~~~~~~
+-------------
 
 .. include_docstring:: fixture.dataset
 
 Using LoadableFixture
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 .. include_docstring:: fixture.loadable
 
 Using the fixture command
-~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
 
 .. include_docstring:: fixture.command.generate
 
+------------------------------------
 Testing with a temporary file system
 ------------------------------------
 
 .. include_docstring:: fixture.io
 
+-----------------
 API Documentation
 -----------------
 
 `API documentation`_ for the ``fixture`` module
 
-.. _API documentation: ../apidocs/
+.. _API documentation: ../apidocs/index.html
 
+-------------------------------------
 Where to submit issues, patches, bugs
 -------------------------------------
 

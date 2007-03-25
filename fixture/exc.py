@@ -1,4 +1,6 @@
 
+"""Fixture exceptions"""
+
 class UninitializedError(Exception):
     pass
 

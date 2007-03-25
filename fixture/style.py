@@ -1,5 +1,5 @@
 
-"""utilities for deriving new names from existing names."""
+"""Utilities for deriving new names from existing names."""
 
 class Style(object):
     """utility for deriving new names from existing names.

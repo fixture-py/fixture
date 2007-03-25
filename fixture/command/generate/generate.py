@@ -2,13 +2,26 @@
 
 """generate DataSet classes from real data.
 
-.. contents::
+.. contents:: :local:
 
 The fixture command
--------------------
+~~~~~~~~~~~~~~~~~~~
+
+There are several problems that you're bound to run into while working with fixtures:  
+
+1. First, the data model of a program is usually an implementation detail.  It's bad practice to "know about" implementation details in tests because it means you have to update your tests if those details change, even though the functionality remained the same.  
+2. Secondly, data accumulates very fast and there is already a very useful tool for slicing and dicing that data: the database!  Hand-coding DataSet classes is not always the way to go.
+
+To make life easier, a shell command called ``fixture`` will be installed along with this module.  Specifically, the ``fixture`` command generates DataSet classes from real data.  Its usage is:
+
+.. shell:: fixture --help
 
 Creating a custom data handler
-------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. api_only::
+   The fixture.command.generate module
+   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 """
 
@@ -322,7 +335,7 @@ class DataHandler(object):
         """yield a FixtureSet for each set in obj."""
         raise NotImplementedError
 
-def dataset_generator(argv=sys.argv[1:]):
+def dataset_generator(argv):
     """%prog [options] object_path
     
     Using the object specified in the path, generate DataSet classes (code) to 
@@ -384,8 +397,8 @@ def dataset_generator(argv=sys.argv[1:]):
     except (MisconfiguredHandler, NoData), e:
         parser.error(e)
 
-def main():
-    print( dataset_generator())
+def main(argv=sys.argv[1:]):
+    print( dataset_generator(argv))
     return 0
 
 if __name__ == '__main__':

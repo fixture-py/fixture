@@ -1,2 +1,2 @@
 
-"""the fixture command"""
+"""The fixture command"""

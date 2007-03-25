@@ -2,7 +2,9 @@
 
 import os, sys
 from os import path
+import subprocess
 import inspect, pydoc, doctest
+from docutils import statemachine
 from docutils.parsers.rst import directives
 from docutils.core import publish_file, publish_string, publish_doctree
 from docutils.parsers import rst
@@ -14,6 +16,7 @@ from docutils import nodes
 heredir = path.dirname(__file__)
 srcdir = heredir
 builddir = path.join(heredir, '..', 'build')
+state_is_api = False
 
 def include_docstring(  
         name, arguments, options, content, lineno,
@@ -55,12 +58,15 @@ def include_docstring(
     
     source = inspect.getdoc(obj)
     doctest.run_docstring_examples(source, mod.__dict__)
-    # if not success:
-    #     assert False, "doctest for %s in %s failed" % (obj, mod)
     if source is None:
         raise ValueError("cannot find docstring for %s" % obj)
     summary, body = pydoc.splitdoc(source)
-    return [publish_doctree(body)]
+    
+    # nabbed from docutils.parsers.rst.directives.misc.include
+    include_lines = statemachine.string2lines(body, convert_whitespace=1)
+    state_machine.insert_input(include_lines, None)
+    return []
+    # return [publish_doctree(body)]
 
 include_docstring.arguments = (1, 0, 0)
 include_docstring.options = {}
@@ -68,7 +74,66 @@ include_docstring.content = 0
 
 directives.register_directive('include_docstring', include_docstring)
 
+def api_only(
+        name, arguments, options, content, lineno,
+        content_offset, block_text, state, state_machine):
+    """only include a block of rst if generating API documentation."""
+    if state_is_api:
+        include_lines = statemachine.string2lines("\n".join(content),
+                                            convert_whitespace=1)
+        state_machine.insert_input(include_lines, None)
+    return []
+
+api_only.arguments = (0, 0, 0)
+api_only.options = {}
+api_only.content = 1
+directives.register_directive('api_only', api_only)
+
+
+def shell(  
+        name, arguments, options, content, lineno,
+        content_offset, block_text, state, state_machine):
+    """insert a shell command's raw output in a pre block, like::
+        
+        | .. shell:: mycmd --arg 1
+    
+    """
+    cmd = arguments
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, 
+            stderr=subprocess.PIPE, close_fds=True)
+    
+    returncode = p.wait()
+    if returncode != 0:
+        raise RuntimeError("%s\n%s (exit: %s)" % (
+                            p.stderr.read(), cmd, returncode))
+    
+    # kinda silly, just create a pre block and fill it with command output...
+    pad = "    "
+    output = []
+    ## apparently colons aren't necessary ...
+    # output = ["\n::\n"]
+    while 1:
+        line = p.stdout.readline()
+        if not line:
+            break
+        output.append(pad + line)
+    output.append("\n")
+    
+    output = "".join(output)
+        
+    include_lines = statemachine.string2lines(output)
+    state_machine.insert_input(include_lines, None)
+    return []
+
+shell.arguments = (1, 1, 0)
+shell.options = {}
+shell.content = 0
+
+directives.register_directive('shell', shell)
+
 def user():
+    global state_is_api
+    state_is_api = False
     docsdir = path.join(builddir, 'docs')
     if not path.exists(docsdir):
         os.mkdir(docsdir)
@@ -77,11 +142,14 @@ def user():
     body = publish_file(open(path.join(srcdir, basename + '.rst'), 'r'),
                 destination=open(path.join(docsdir, basename + '.html'), 'w'),
                 writer_name='html',
-                settings_overrides={'halt_level':2,
-                                    'report_level':5})
+                # settings_overrides={'halt_level':2,
+                #                     'report_level':5}
+                )
     print "built user docs to %s" % docsdir
 
 def api():
+    global state_is_api
+    state_is_api = True
     from pydoctor.driver import main
     argv = [
         '--html-output=%s/apidocs' % builddir, '--project-name=fixture', 

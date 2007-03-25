@@ -1,4 +1,6 @@
 
+"""Loadable fixture components"""
+
 __all__ = ['SQLAlchemyFixture', 'SQLObjectFixture']
 import loadable
 __doc__ = loadable.__doc__
