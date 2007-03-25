@@ -108,10 +108,8 @@ def shell(
                             p.stderr.read(), cmd, returncode))
     
     # kinda silly, just create a pre block and fill it with command output...
-    pad = "    "
-    output = []
-    ## apparently colons aren't necessary ...
-    # output = ["\n::\n"]
+    pad = "  "
+    output = ["\n::\n\n"]
     while 1:
         line = p.stdout.readline()
         if not line:
