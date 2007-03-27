@@ -122,7 +122,9 @@ class SQLAlchemyHandler(DataHandler):
     
     @staticmethod
     def recognizes(object_path, obj=None):
-        """returns True if obj is a mapped sqlalchemy object
+        """returns True if obj is not None.
+        
+        this method is just a starting point for sqlalchemy handlers.
         """
         if not sqlalchemy:
             raise UnsupportedHandler("sqlalchemy module not found")
@@ -137,7 +139,7 @@ class SQLAlchemyHandler(DataHandler):
             yield SQLAlchemyFixtureSet(row, self.obj, self.connection, self.env,
                                             adapter=self.ObjectAdapter)
 
-class SQLAlchemyMappedHandler(SQLAlchemyHandler):
+class SQLAlchemyAssignedMapperHandler(SQLAlchemyHandler):
     
     class ObjectAdapter(SQLAlchemyHandler.ObjectAdapter):
         def __init__(self, obj):
@@ -149,7 +151,7 @@ class SQLAlchemyMappedHandler(SQLAlchemyHandler):
                 self.table = self.mapped_class.mapper.select_table
             else:
                 raise LookupError(
-                    "not sure how to get a table from mapped calss %s" % 
+                    "not sure how to get a table from mapped class %s" % 
                                                         self.mapped_class)
             self.columns = self.mapped_class.mapper.columns
             self.id_attr = self.mapped_class.id.key
@@ -175,15 +177,47 @@ class SQLAlchemyMappedHandler(SQLAlchemyHandler):
             # i.e. sqlsoup ??
             if isa_mapper(obj._mapper):
                 return True
-            
-        from sqlalchemy.orm.mapper import has_mapper
-        if has_mapper(obj):
-            # i.e. has been used in a session (is this likely?)
-            return True
         
         return False
         
-register_handler(SQLAlchemyMappedHandler)
+register_handler(SQLAlchemyAssignedMapperHandler)
+
+class SQLAlchemyMappedClassHandler(SQLAlchemyHandler):
+    
+    class ObjectAdapter(SQLAlchemyHandler.ObjectAdapter):
+        def __init__(self, obj):
+            self.columns = obj.c
+            self.id_attr = obj.id.key
+            
+            from sqlalchemy.orm.mapper import object_mapper
+            # is this safe?
+            self.mapper = object_mapper(obj())
+            
+            if self.mapper.local_table:
+                self.table = self.mapper.local_table
+            elif self.mapper.select_table:
+                self.table = self.mapper.select_table
+            else:
+                raise LookupError(
+                    "not sure how to get a table from mapper %s" % 
+                                                        self.mapper)
+            
+        def primary_key_from_instance(self, data):
+            return self.mapper.primary_key_from_instance(data)
+            
+    @staticmethod
+    def recognizes(object_path, obj=None):
+        if not SQLAlchemyHandler.recognizes(object_path, obj=obj):
+            return False
+        if hasattr(obj, 'c'):
+            if hasattr(obj.c, '__module__') and \
+                    obj.c.__module__.startswith('sqlalchemy'):
+                # eeesh
+                return True
+        
+        return False
+        
+register_handler(SQLAlchemyMappedClassHandler)
 
 class SQLAlchemyTableHandler(SQLAlchemyHandler):
     
@@ -210,10 +244,9 @@ class SQLAlchemyTableHandler(SQLAlchemyHandler):
         from sqlalchemy.schema import Table
         if isinstance(obj, Table):
             raise NotImplementedError(
-                "using a table object, like %s, is not implemented.  perhaps "
-                "it should be.  for now you will have to pass in a mapper "
-                "instead" % obj)
-        
+                "using a table object, like %s, is not implemented.  please "
+                "consider submitting an enhancement ticket, or a patch :)  In "
+                "the meantime, you can pass in a mapped class instead" % obj)
         return False
         
 register_handler(SQLAlchemyTableHandler)

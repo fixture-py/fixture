@@ -188,6 +188,27 @@ if sqlalchemy:
     )
     class Offer(object):
         pass
+        
+    dynamic_meta = DynamicMetaData()
+    session = create_session(engine)
+    authors = Table('authors', dynamic_meta,
+        Column('id', Integer, primary_key=True),
+        Column('first_name', String),
+        Column('last_name', String))
+
+    class Author(object):
+        pass
+
+    mapper(Author, authors)
+    books = Table('books', dynamic_meta, 
+        Column('id', Integer, primary_key=True),
+        Column('title', String),
+        Column('author_id', Integer, ForeignKey('authors.id')))
+
+    class Book(object):
+        pass
+
+    mapper(Book, books)
 
 def setup_db(meta, session_context, **kw):
     assert sqlalchemy

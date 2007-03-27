@@ -18,6 +18,9 @@ The test suite is affected by several environment variables:
   - defaults to None.
   - typically this would be a postgres connection where temp tables can be 
     created and destroyed
+  - a special DSN, "sqlite:///:tmp:", will create a connection to a temporary 
+    file-based sqlite db.  This is necessary because :memory: dbs can't be 
+    shared easily using sqlalchemy (connections are not pooled)
 
 - FIXTURE_TEST_LITE_DSN
   
@@ -29,8 +32,8 @@ The test suite is affected by several environment variables:
 
 """
 
-import unittest
-import nose
+import unittest, nose, os
+from fixture.test import conf
 
 class PrudentTestResult(unittest.TestResult):
     """A test result that raises an exception immediately"""
@@ -42,3 +45,23 @@ class PrudentTestResult(unittest.TestResult):
         self._raise_err(err)
     def addError(self, test, err):
         self._raise_err(err)
+
+def setup():
+    # super hack:
+    if conf.HEAVY_DSN == 'sqlite:///:tmp:':
+        from fixture import TempIO
+        tmp = TempIO(deferred=True)
+        conf.HEAVY_DSN = 'sqlite:///%s' % tmp.join("tmp.db")
+    
+    # this is here because the doc generator also runs doctests.
+    # should fix that to use proper _test() methods for a module
+    teardown_examples()
+
+def teardown():
+    teardown_examples()
+
+def teardown_examples():
+    if os.path.exists('/tmp/fixture_example.db'):
+        os.unlink('/tmp/fixture_example.db')
+
+        

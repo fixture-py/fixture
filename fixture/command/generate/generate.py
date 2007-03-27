@@ -4,17 +4,43 @@
 
 .. contents:: :local:
 
-The fixture command
-~~~~~~~~~~~~~~~~~~~
-
 There are several problems that you're bound to run into while working with fixtures:  
 
-1. First, the data model of a program is usually an implementation detail.  It's bad practice to "know about" implementation details in tests because it means you have to update your tests if those details change, even though the functionality remained the same.  
+1. First, the data model of a program is usually an implementation detail.  It's bad practice to "know about" implementation details in tests because it means you have to update your tests if those details change; you should only have to update your tests when higher level functionality changes.  
 2. Secondly, data accumulates very fast and there is already a very useful tool for slicing and dicing that data: the database!  Hand-coding DataSet classes is not always the way to go.
 
-To make life easier, a shell command called ``fixture`` will be installed along with this module.  Specifically, the ``fixture`` command generates DataSet classes from real data.  Its usage is:
+To make life easier, a shell command, ``fixture``, will be installed along with this module.  Specifically, the ``fixture`` command generates DataSet classes from real data.
+
+Usage
+~~~~~
 
 .. shell:: fixture --help
+
+An example
+~~~~~~~~~~
+
+Borrowing from some earlier examples, let's set up a database and insert some data using sqlalchemy::
+
+    >>> from sqlalchemy import *
+    >>> DSN = 'sqlite:////tmp/fixture_example.db'
+    >>> from fixture.examples.db.sqlalchemy_examples import (
+    ...                                 Author, Book, dynamic_meta)
+    >>> dynamic_meta.connect(DSN)
+    >>> dynamic_meta.create_all()
+    >>> session = create_session()
+    >>> frank = Author()
+    >>> frank.first_name = "Frank"
+    >>> frank.last_name = "Herbert"
+    >>> session.save(frank)
+    >>> session.flush()
+    >>> dune = Book()
+    >>> dune.title = "Dune"
+    >>> dune.author_id = frank.id
+    >>> session.save(dune)
+    >>> session.flush()
+
+.. shell:: fixture --dsn=sqlite:////tmp/fixture_example.db --query="title='Dune'" fixture.examples.db.sqlalchemy_examples.Book
+   :run_on_method: fixture.command.generate.main
 
 Creating a custom data handler
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -398,6 +424,16 @@ def dataset_generator(argv):
         parser.error(e)
 
 def main(argv=sys.argv[1:]):
+    if '__testmod__' in argv:
+        # sorry this is all I can think of at the moment :(
+        import doctest
+        from fixture.test import teardown_examples
+        teardown_examples()
+        try:
+            doctest.testmod()
+        finally:
+            teardown_examples()
+        return
     print( dataset_generator(argv))
     return 0
 
