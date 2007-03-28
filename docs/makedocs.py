@@ -126,7 +126,7 @@ def shell(
             part = unquot(part)
             e = part.find('=')
             if e != -1:
-                # i.e. --query="title='Dune'"
+                # i.e. --where="title='Dune'"
                 part = "%s=%s" % (part[:e], unquot(part[e+1:]))
             cmdlist.append(part)
         
@@ -134,6 +134,8 @@ def shell(
         stderr = StringIO()
         sys.stdout = stdout
         sys.stderr = stderr
+        _program = sys.argv[0]
+        sys.argv[0] = cmdlist[0]
         try:
             try:
                 main(cmdlist[1:])
@@ -146,6 +148,7 @@ def shell(
             sys.stderr = sys.__stderr__
             stdout.seek(0)
             stderr.seek(0)
+            sys.argv[0] = _program
     else:
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, 
                 stderr=subprocess.PIPE, close_fds=True, shell=True)

@@ -6,20 +6,21 @@
 
 There are several problems that you're bound to run into while working with fixtures:  
 
-1. First, the data model of a program is usually an implementation detail.  It's bad practice to "know about" implementation details in tests because it means you have to update your tests if those details change; you should only have to update your tests when higher level functionality changes.  
+1. First, the data model of a program is usually an implementation detail.  It's bad practice to "know about" implementation details in tests because it means you have to update your tests if those details change; you should only have to update your tests when interfaces change.  
 2. Secondly, data accumulates very fast and there is already a very useful tool for slicing and dicing that data: the database!  Hand-coding DataSet classes is not always the way to go.
 
-To make life easier, a shell command, ``fixture``, will be installed along with this module.  Specifically, the ``fixture`` command generates DataSet classes from real data.
+``fixture`` is a shell command to address these and other issues.  Specifically, the ``fixture`` command accepts a path to a single object and queries that object.  The result is code for DataSet classes that represent the data.  It is installed into your path along with this module.  
 
 Usage
 ~~~~~
 
 .. shell:: fixture --help
+   :run_on_method: fixture.command.generate.main
 
 An example
 ~~~~~~~~~~
 
-Borrowing from some earlier examples, let's set up a database and insert some data using sqlalchemy::
+Let's set up a database and insert some data (using `sqlalchemy`_) so we can run the fixture command::
 
     >>> from sqlalchemy import *
     >>> DSN = 'sqlite:////tmp/fixture_example.db'
@@ -39,8 +40,12 @@ Borrowing from some earlier examples, let's set up a database and insert some da
     >>> session.save(dune)
     >>> session.flush()
 
-.. shell:: fixture --dsn=sqlite:////tmp/fixture_example.db --query="title='Dune'" fixture.examples.db.sqlalchemy_examples.Book
+It's now possible to run a command that points at our ``Book`` object, sends it a SQL query with a custom where clause, and turns the record sets into ``DataSet`` classes that you can save to a python module and begin using in your test:
+
+.. shell:: fixture --dsn=sqlite:////tmp/fixture_example.db --where="title='Dune'" fixture.examples.db.sqlalchemy_examples.Book
    :run_on_method: fixture.command.generate.main
+
+Notice that we only queried the ``Book`` object but we got back all the necessary foreign keys that were needed to reproduce the data (in this case, the ``Author`` data).
 
 Creating a custom data handler
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -189,7 +194,7 @@ class FixtureGenerator(object):
         """
         
         self.handler = self.get_handler(object_path)
-        self.handler.findall(query=self.options.query)
+        self.handler.findall(self.options.where)
         
         # need to loop through all sets,
         # then through all set items and add all sets of all 
@@ -372,8 +377,8 @@ def dataset_generator(argv):
         usage=(inspect.getdoc(dataset_generator)))
     parser.add_option('--dsn',
                 help="sets db connection for a handler that uses a db")
-    parser.add_option('-q','--query',
-                help="like, \"id = 1705\" ")
+    parser.add_option('-w','--where',
+                help="SQL where clause, i.e. \"id = 1705\" ")
         
     d = "Data"
     parser.add_option('--suffix',

@@ -60,7 +60,7 @@ class GenerateTest(object):
             raise
     
     def test_query(self):
-        self.dataset_generator(['-q', "name = 'super cash back!'"])
+        self.dataset_generator(['-w', "name = 'super cash back!'"])
     
     def test_query_no_data(self):
         _stderr = sys.stderr
@@ -70,7 +70,7 @@ class GenerateTest(object):
                     exc and ("(raised: %s: %s)" % (exc.__class__, exc)) or ""))
         try:
             try:
-                self.dataset_generator(['-q', "name = 'fooobzarius'"])
+                self.dataset_generator(['-w', "name = 'fooobzarius'"])
             except SystemExit, e:
                 eq_(e.code, 2)
             except Exception, e:
