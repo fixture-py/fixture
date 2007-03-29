@@ -22,7 +22,6 @@ Fixture
 
 The details of loading the actual data is left up to your application's database layer itself (more info on this later).
 
-.. _sqlite: http://sqlite.org
 .. _mock objects: http://en.wikipedia.org/wiki/Mock_object
 .. _unit testing: http://en.wikipedia.org/wiki/Unit_testing
 .. _functional test: http://en.wikipedia.org/wiki/Functional_test
@@ -53,9 +52,9 @@ Testing with a temporary file system
 API Documentation
 -----------------
 
-`API documentation`_ for the ``fixture`` module
+`See API documentation`_ for detailed documentation of individual ``fixture`` components
 
-.. _API documentation: ../apidocs/index.html
+.. _See API documentation: ../apidocs/index.html
 
 -------------------------------------
 Where to submit issues, patches, bugs
@@ -68,4 +67,3 @@ documented.
 
 .. _Issue Tracker: http://code.google.com/p/fixture/issues/list
 .. _fixture project site: http://code.google.com/p/fixture/
-

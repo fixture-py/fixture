@@ -21,7 +21,7 @@ Usage
 An example
 ~~~~~~~~~~
 
-Let's set up a database and insert some data (using `sqlalchemy`_) so we can run the fixture command::
+Let's set up a database and insert some data (using `sqlalchemy code`_) so we can run the fixture command::
 
     >>> from sqlalchemy import *
     >>> DSN = 'sqlite:////tmp/fixture_example.db'
@@ -62,6 +62,8 @@ No documentation yet
 .. api_only::
    The fixture.command.generate module
    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. _sqlalchemy code: http://sqlalchemy.org
 
 """
 
@@ -203,7 +205,7 @@ class FixtureGenerator(object):
         """
         
         self.handler = self.get_handler(object_path)
-        self.handler.findall(self.options.where)
+        self.handler.findall(str(self.options.where))
         
         # need to loop through all sets,
         # then through all set items and add all sets of all 
