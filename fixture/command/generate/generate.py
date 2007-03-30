@@ -205,7 +205,7 @@ class FixtureGenerator(object):
         """
         
         self.handler = self.get_handler(object_path)
-        self.handler.findall(str(self.options.where))
+        self.handler.findall(self.options.where)
         
         # need to loop through all sets,
         # then through all set items and add all sets of all 

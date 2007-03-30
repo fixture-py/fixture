@@ -119,12 +119,17 @@ def shell(
     if options.get('run_on_method'):
         main = get_object_from_path(options['run_on_method'])
         
+        def decode(s):
+            if isinstance(s, unicode):
+                s = str(s.decode())
+            return s
         def unquot(s):
             if s[0] in ('"', "'"):
                 s = s[1:-1]
             return s
         cmdlist = []
-        for part in cmd.split(' '): 
+        for part in cmd.split(' '):
+            part = decode(part)
             part = unquot(part)
             e = part.find('=')
             if e != -1:
