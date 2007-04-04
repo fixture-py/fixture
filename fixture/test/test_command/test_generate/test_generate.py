@@ -22,8 +22,12 @@ class MyHandler(DataHandler):
 def register_myhandler():
     register_handler(MyHandler)
 
+_saved_registry = [h for h in handler_registry]
+def reset_handlers():
+    handler_registry[:] = [h for h in _saved_registry]
+
 @attr(unit=True)
-@with_setup(setup=register_myhandler, teardown=clear_handlers)
+@with_setup(setup=register_myhandler, teardown=reset_handlers)
 def test_dataset_handler():    
     g = DataSetGenerator({})
     hnd = g.get_handler("myhandler.object_path")
@@ -32,7 +36,7 @@ def test_dataset_handler():
     
 @attr(unit=True)
 @raises(UnrecognizedObject)
-@with_setup(setup=register_myhandler, teardown=clear_handlers)
+@with_setup(setup=register_myhandler, teardown=reset_handlers)
 def test_unrecognized_dataset_handler():
     g = DataSetGenerator({})
     hnd = g.get_handler("NOTHONG")
