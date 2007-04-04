@@ -35,17 +35,6 @@ The test suite is affected by several environment variables:
 import unittest, nose, os
 from fixture.test import conf
 
-class PrudentTestResult(unittest.TestResult):
-    """A test result that raises an exception immediately"""
-    def _raise_err(self, err):
-        exctype, value, tb = err
-        raise Exception("%s: %s" % (exctype, value)), None, tb
-        
-    def addFailure(self, test, err):
-        self._raise_err(err)
-    def addError(self, test, err):
-        self._raise_err(err)
-
 def setup():
     # super hack:
     if conf.HEAVY_DSN == 'sqlite:///:tmp:':
@@ -63,5 +52,25 @@ def teardown():
 def teardown_examples():
     if os.path.exists('/tmp/fixture_example.db'):
         os.unlink('/tmp/fixture_example.db')
+        
+
+class PrudentTestResult(unittest.TestResult):
+    """A test result that raises an exception immediately"""
+    def _raise_err(self, err):
+        exctype, value, tb = err
+        raise Exception("%s: %s" % (exctype, value)), None, tb
+        
+    def addFailure(self, test, err):
+        self._raise_err(err)
+    def addError(self, test, err):
+        self._raise_err(err)
+            
+def attr(**kwargs):
+    """Add attributes to a test function/method/class"""
+    def wrap(func):
+        func.__dict__.update(kwargs)
+        return func
+    return wrap
+    
 
         

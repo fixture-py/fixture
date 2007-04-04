@@ -4,7 +4,7 @@ import os
 from nose.tools import eq_
 from nose.exc import SkipTest
 from fixture.test import conf
-from fixture.command.generate import FixtureGenerator, dataset_generator
+from fixture.command.generate import DataSetGenerator, dataset_generator
 
 def setup():
     # every tests needs a real db conn :

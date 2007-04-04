@@ -8,9 +8,11 @@ from copy import copy
 from nose.tools import eq_, raises
 from fixture import TempIO
 from fixture.io import mkdirall, putfile
+from fixture.test import attr
 
 french = "tu pense qu'on peut m'utiliser comme ça?"
 
+@attr(unit=True)
 def test_mkdirall():
     tmp = TempIO()
     cwd = os.getcwd()
@@ -29,6 +31,7 @@ def test_mkdirall():
         del tmp
         os.chdir(cwd)
 
+@attr(unit=True)
 def test_putfile():
     tmp = TempIO()
     cwd = os.getcwd()
@@ -58,6 +61,7 @@ def test_putfile():
         del tmp
         os.chdir(cwd)
 
+@attr(unit=True)
 def test_del_self_destructs():
     """asserts that a module level reference self destructs 
     without exception."""
@@ -72,6 +76,7 @@ class TestTempIO(object):
         if hasattr(self, 'tmp'):
             del self.tmp
     
+    @attr(unit=True)
     def test_deferred(self):
         tmp = TempIO(deferred=True)
         root = str(tmp)
@@ -85,11 +90,13 @@ class TestTempIO(object):
         del tmp2
         assert not exists(root)
 
+    @attr(unit=True)
     def test_del(self):
         root = copy(self.tmp)
         del self.tmp
         assert not exists(root)
 
+    @attr(unit=True)
     def test_keywords(self):
         self.tmp_custom = TempIO(prefix='foobar_', dir=self.tmp)
         try:
@@ -98,12 +105,14 @@ class TestTempIO(object):
         finally:
             del self.tmp_custom
 
+    @attr(unit=True)
     def test_mkdir(self):
         base1 = self.tmp.mkdir('base1')
         assert exists(join(self.tmp, base1))
         base2 = self.tmp.mkdir('base2')
         assert exists(join(self.tmp, base2))
 
+    @attr(unit=True)
     def test_newdir(self):
         self.tmp.rick_james = "rick_james"
         assert exists(self.tmp.rick_james)
@@ -120,6 +129,7 @@ class TestTempIO(object):
         assert self.tmp.rick_james.startswith(self.tmp)
         assert self.tmp.rick_james.endswith("rick_james/i/love/you")
     
+    @attr(unit=True)
     def test_path_interface(self):
         self.tmp.dupes = "processed/dupes"
         def endswith(p, end):
@@ -146,6 +156,7 @@ class TestTempIO(object):
         eq_(self.tmp.dupes.splitext(), (path.realpath(path.join(self.tmp, 
                                                     "processed/dupes")), ""))
 
+    @attr(unit=True)
     def test_putfile(self):
         self.tmp.putfile('frenchy.txt', french)
 
@@ -162,11 +173,13 @@ class TestTempIO(object):
         assert exists(join(self.tmp, 
                             'petite/grenouille/ribbit/frenchy.txt'))
         
+    @attr(unit=True)
     def test_putfile_mode(self):
         self.tmp.putfile('frenchy.txt', "", 'wb')
         f = open(join(self.tmp, 'frenchy.txt'), 'rb')
         f.read()
 
+    @attr(unit=True)
     def test_root(self):
         assert isdir(self.tmp)
     

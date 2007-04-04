@@ -86,6 +86,12 @@ class UnsupportedHandler(HandlerException):
     pass
 class MisconfiguredHandler(HandlerException):
     pass
+    
+def register_handler(handler):
+    handler_registry.append(handler)
+
+def clear_handlers():
+    handler_registry[:] = []
 
 class FixtureCache(object):
     """cache of Fixture objects and their data sets to be generatred.
@@ -124,8 +130,8 @@ class FixtureCache(object):
             pass
         o.append(fxtid)
 
-class FixtureGenerator(object):
-    """produces a callable object that can generate fixture code.
+class DataSetGenerator(object):
+    """produces a callable object that can generate DataSet code.
     """
         
     template = None
@@ -230,9 +236,6 @@ class FixtureGenerator(object):
         
         return self.code()
 
-def register_handler(handler):
-    handler_registry.append(handler)
-
 class FixtureSet(object):
     """a key, data_dict pair for a set in a fixture.
     
@@ -291,7 +294,7 @@ class FixtureSet(object):
         """
         raise NotImplementedError
 
-class Handler(type):
+class HandlerType(type):
     def __str__(self):
         # split camel class name into something readable?
         return self.__name__
@@ -299,7 +302,7 @@ class Handler(type):
 class DataHandler(object):
     """handles an object that can provide fixture data.
     """
-    __metaclass__ = Handler
+    __metaclass__ = HandlerType
     loadable_fxt_class = None
         
     def __init__(self, object_path, options, obj=None, template=None):
@@ -429,7 +432,7 @@ def dataset_generator(argv):
         parser.error('incorrect arguments')
     
     try:
-        generate = FixtureGenerator(options)
+        generate = DataSetGenerator(options)
     
         if is_template(options.template):
             generate.template = options.template

@@ -2,6 +2,7 @@
 from nose.tools import with_setup, eq_, raises
 from fixture import DataSet
 from fixture.dataset import DataRow, SuperSet, MergedSuperSet
+from fixture.test import attr
 
 class Books(DataSet):
     def data(self):
@@ -155,28 +156,6 @@ class TestInheritedRows(DataSetTest):
         # can't test this because keys aren't ordered
         pass
 
-## this test probably isn't really possible anymore without a loader...
-# class TestDataTypeDrivenRefs(TestDataSet):
-#             
-#     def setUp(self):
-#         self.dataset = BooksAndAuthors()
-#         
-#     def assert_access(self, dataset):
-#         TestDataSet.assert_access(self, dataset)
-#         eq_(dataset.lolita.author, "Vladimir Nabokov")
-#         eq_(dataset.lolita['author'], "Vladimir Nabokov")
-#         eq_(dataset.pi.author, "Yann Martel")
-#         eq_(dataset.pi['author'], "Yann Martel")
-#         assert Authors in dataset.meta.references
-#     
-#     def assert_row_dict_for_iter(self, items, count):        
-#         if count == 1:
-#             eq_(items, {'title': 'lolita', 'author': 'Vladimir Nabokov'})
-#         elif count == 2:
-#             eq_(items, {'title': 'life of pi', 'author': 'Yann Martel'})
-#         else:
-#             raise ValueError("unexpected row %s, count %s" % (items, count))
-
 class TestDataSetCustomMeta(DataSetTest):
     def setUp(self):
         # a dataset with a config that doesn't inherit from
@@ -217,9 +196,11 @@ class SuperSetTest:
     def setUp(self):
         self.superset = self.SuperSet(Books(), Movies())
     
+    @attr(unit=True)
     def test_access(self):
         raise NotImplementedError
     
+    @attr(unit=True)
     def test_iter_yields_datasets(self):
         count=0
         for ds in self.superset:
@@ -235,6 +216,7 @@ class SuperSetTest:
 class TestSuperSet(SuperSetTest):
     SuperSet = SuperSet
     
+    @attr(unit=True)
     def test_access(self):
         eq_(self.superset.Books.lolita.title, 'lolita')
         eq_(self.superset.Books.pi.title, 'life of pi')
@@ -246,6 +228,7 @@ class TestSuperSet(SuperSetTest):
 class TestMergedSuperSet(SuperSetTest):
     SuperSet = MergedSuperSet
     
+    @attr(unit=True)
     def test_access(self):
         eq_(self.superset.lolita.title, 'lolita')
         eq_(self.superset.pi.title, 'life of pi')
@@ -259,6 +242,7 @@ class TestComplexRefs:
         self.offer_data = OfferData()
         self.product_data = ProductData()
     
+    @attr(unit=True)
     def test_construction(self):
         eq_(self.offer_data.meta.references, [CategoryData, ProductData])
         eq_(self.product_data.meta.references, [CategoryData])
