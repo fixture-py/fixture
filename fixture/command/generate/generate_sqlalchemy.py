@@ -182,6 +182,38 @@ class SQLAlchemyAssignedMapperHandler(SQLAlchemyHandler):
         
 register_handler(SQLAlchemyAssignedMapperHandler)
 
+class SQLAlchemyTableHandler(SQLAlchemyHandler):
+    
+    class ObjectAdapter(SQLAlchemyHandler.ObjectAdapter):
+        def __init__(self, obj):
+            self.table = obj
+            self.columns = self.table.columns
+            keys = [k for k in self.table.primary_key]
+            if len(keys) != 1:
+                raise ValueError("unsupported primary key type %s" % keys)
+            self.id_attr = keys[0].key
+        
+        def primary_key_from_instance(self, data):
+            key_str = []
+            for k in self.table.primary_key:
+                key_str.append(str(getattr(data, k.key)))
+            return "_".join(key_str)
+            
+    @staticmethod
+    def recognizes(object_path, obj=None):
+        if not SQLAlchemyHandler.recognizes(object_path, obj=obj):
+            return False
+        
+        from sqlalchemy.schema import Table
+        if isinstance(obj, Table):
+            raise NotImplementedError(
+                "using a table object, like %s, is not implemented.  please "
+                "consider submitting an enhancement ticket, or a patch :)  In "
+                "the meantime, you can pass in a mapped class instead" % obj)
+        return False
+        
+register_handler(SQLAlchemyTableHandler)
+
 class SQLAlchemyMappedClassHandler(SQLAlchemyHandler):
     
     class ObjectAdapter(SQLAlchemyHandler.ObjectAdapter):
@@ -218,38 +250,6 @@ class SQLAlchemyMappedClassHandler(SQLAlchemyHandler):
         return False
         
 register_handler(SQLAlchemyMappedClassHandler)
-
-class SQLAlchemyTableHandler(SQLAlchemyHandler):
-    
-    class ObjectAdapter(SQLAlchemyHandler.ObjectAdapter):
-        def __init__(self, obj):
-            self.table = obj
-            self.columns = self.table.columns
-            keys = [k for k in self.table.primary_key]
-            if len(keys) != 1:
-                raise ValueError("unsupported primary key type %s" % keys)
-            self.id_attr = keys[0].key
-        
-        def primary_key_from_instance(self, data):
-            key_str = []
-            for k in self.table.primary_key:
-                key_str.append(str(getattr(data, k.key)))
-            return "_".join(key_str)
-            
-    @staticmethod
-    def recognizes(object_path, obj=None):
-        if not SQLAlchemyHandler.recognizes(object_path, obj=obj):
-            return False
-        
-        from sqlalchemy.schema import Table
-        if isinstance(obj, Table):
-            raise NotImplementedError(
-                "using a table object, like %s, is not implemented.  please "
-                "consider submitting an enhancement ticket, or a patch :)  In "
-                "the meantime, you can pass in a mapped class instead" % obj)
-        return False
-        
-register_handler(SQLAlchemyTableHandler)
 
 
 class SQLAlchemyFixtureSet(FixtureSet):

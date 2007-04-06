@@ -2,10 +2,15 @@
 import sys
 from nose.tools import eq_, raises
 from nose.exc import SkipTest
-from fixture.test import conf
+
+from fixture.command.generate import DataSetGenerator
+from fixture.command.generate.generate_sqlalchemy import *
+
+from fixture.test import conf, attr
 from fixture.test import env_supports
 from fixture.test.test_command.test_generate import (
             GenerateTest, UsingTesttoolsTemplate, UsingFixtureTemplate)
+from fixture.examples.db import sqlalchemy_examples
 from fixture.examples.db.sqlalchemy_examples import (
             Category, Product, Offer, setup_db, teardown_db,
             categories, products, offers )
@@ -18,6 +23,55 @@ memcontext = None
 def setup():
     if not env_supports.sqlalchemy:
         raise SkipTest
+
+class MappableObject(object):
+    pass
+
+class TestSQLAlchemyHandler(object):
+    def setUp(self):
+        import sqlalchemy
+        from sqlalchemy import BoundMetaData
+        from sqlalchemy.ext.sessioncontext import SessionContext
+        
+        class options:
+            dsn = conf.LITE_DSN
+            env = ['fixture.examples.db.sqlalchemy_examples']
+        self.generator = DataSetGenerator(options)
+        
+        self.meta = BoundMetaData(conf.LITE_DSN)
+        self.ctx = SessionContext(
+                lambda: sqlalchemy.create_session(bind_to=self.meta.engine))
+            
+        setup_db(self.meta, self.ctx)
+    
+    def tearDown(self):
+        teardown_db(self.meta, self.ctx)
+
+    @attr(unit=True)
+    def test_findall(self):
+        pass
+    
+    @attr(unit=True)
+    def test_recognizes_assigned_mapper(self):
+        hnd = self.generator.get_handler("%s.Category" % (Category.__module__))
+        assert isinstance(hnd, SQLAlchemyAssignedMapperHandler)
+    
+    @attr(unit=True)
+    def test_recognizes_mapped_class(self):
+        from sqlalchemy import mapper
+        mapper(MappableObject, categories)
+        hnd = self.generator.get_handler(
+                "%s.MappableObject" % (MappableObject.__module__))
+        assert isinstance(hnd, SQLAlchemyMappedClassHandler)
+        
+    @attr(unit=True)
+    def test_recognizes_table_object(self):
+        raise SkipTest("not implemented yet")
+        hnd = self.generator.get_handler(
+                "%s.categories" % (sqlalchemy_examples.__name__))
+        assert isinstance(hnd, SQLAlchemyTableHandler), (
+                    "unexpected type: %s" % (type(hnd)))
+    
 
 class SQLAlchemyGenerateTest(GenerateTest):
     args = [
