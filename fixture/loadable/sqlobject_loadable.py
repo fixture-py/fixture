@@ -31,9 +31,11 @@ class SQLObjectFixture(DBLoadableFixture):
     
     - use_transaction
     
-      - If this is true, no data will be loaded or torn down inside a 
-        transaction, so it is possible that an IntegrityError will leave 
-        partially loaded data behind.
+      - If this is true (default), data will be loaded or torn down inside a 
+        transaction.  You may have to set this to false to avoid deadlocks (this 
+        is an open issue at the time of this writing).  However, setting it to 
+        false may leave partially loaded data behind if you create an error with 
+        your DataSet(s).
     
     - close_conn
     
