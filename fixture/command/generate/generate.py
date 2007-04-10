@@ -136,13 +136,18 @@ class DataSetGenerator(object):
         
     template = None
         
-    def __init__(self, options):
+    def __init__(self, options, template=None):
         self.handler = None
         self.options = options
         self.cache = FixtureCache()
+        if template:
+            self.template = template
     
-    def get_handler(self, object_path):
+    def get_handler(self, object_path, **kw):
+        """find and return a handler for object_path.
         
+        any additional keywords will be passed into the handler's constructor
+        """
         importable = 'YES'
         
         path, object_name = os.path.splitext(object_path)
@@ -167,7 +172,7 @@ class DataSetGenerator(object):
                 continue
             if recognizes_obj:
                 handler = h(object_path, self.options, 
-                            obj=obj, template=self.template)
+                            obj=obj, template=self.template, **kw)
                 break
         if handler is None:
             raise UnrecognizedObject, (
@@ -209,9 +214,7 @@ class DataSetGenerator(object):
     
         returns code string.
         """
-        
         self.handler = self.get_handler(object_path)
-        self.handler.findall(self.options.where)
         
         # need to loop through all sets,
         # then through all set items and add all sets of all 
@@ -220,6 +223,7 @@ class DataSetGenerator(object):
         
         self.handler.begin()
         try:
+            self.handler.findall(self.options.where)
             def cache_set(s):        
                 self.cache.add(s)
                 for (k,v) in s.data_dict.items():

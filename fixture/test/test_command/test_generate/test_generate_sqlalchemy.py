@@ -3,7 +3,9 @@ import sys
 from nose.tools import eq_, raises
 from nose.exc import SkipTest
 
+from fixture import DataSet
 from fixture.command.generate import DataSetGenerator
+from fixture.command.generate.template import Template
 from fixture.command.generate.generate_sqlalchemy import *
 
 from fixture.test import conf, attr
@@ -27,30 +29,39 @@ def setup():
 class MappableObject(object):
     pass
 
-class TestSQLAlchemyHandler(object):
+class StubTemplate(Template):
+    def add_import(self, _import):
+        pass
+    def begin(self):
+        pass
+    def header(self, handler):
+        pass
+    def render(self, tpl):
+        pass
+
+class SQLAlchemyHandlerTest(object):
     def setUp(self):
         import sqlalchemy
         from sqlalchemy import BoundMetaData
         from sqlalchemy.ext.sessioncontext import SessionContext
         
+        self.meta = BoundMetaData(conf.LITE_DSN)
+        self.connection = self.meta.engine.connect()
+        self.ctx = SessionContext(
+                lambda: sqlalchemy.create_session(bind_to=self.connection))
+                
         class options:
             dsn = conf.LITE_DSN
             env = ['fixture.examples.db.sqlalchemy_examples']
-        self.generator = DataSetGenerator(options)
-        
-        self.meta = BoundMetaData(conf.LITE_DSN)
-        self.ctx = SessionContext(
-                lambda: sqlalchemy.create_session(bind_to=self.meta.engine))
+        self.options = options
+        self.generator = DataSetGenerator(self.options, template=StubTemplate())
             
         setup_db(self.meta, self.ctx)
     
     def tearDown(self):
         teardown_db(self.meta, self.ctx)
 
-    @attr(unit=True)
-    def test_findall(self):
-        pass
-    
+class TestSQLAlchemyHandler(SQLAlchemyHandlerTest):
     @attr(unit=True)
     def test_recognizes_assigned_mapper(self):
         hnd = self.generator.get_handler("%s.Category" % (Category.__module__))
@@ -71,7 +82,78 @@ class TestSQLAlchemyHandler(object):
                 "%s.categories" % (sqlalchemy_examples.__name__))
         assert isinstance(hnd, SQLAlchemyTableHandler), (
                     "unexpected type: %s" % (type(hnd)))
+
+class TestSQLAlchemyAssignedMapperHandler(SQLAlchemyHandlerTest):
+    class CategoryData(DataSet):
+        class bumpy:
+            name='bumpy'
+        class curvy:
+            name='curvy'
+        class jagged:
+            name='jagged'
+            
+    def setUp(self):
+        super(TestSQLAlchemyAssignedMapperHandler, self).setUp()
+        
+        from fixture import SQLAlchemyFixture
+        from fixture.style import NamedDataStyle
+        self.fixture = SQLAlchemyFixture(
+                            env=sqlalchemy_examples, 
+                            style=NamedDataStyle(),
+                            session_context=self.ctx)
+        self.data = self.fixture.data(self.CategoryData)
+        self.data.setup()
+        
+        self.hnd = self.generator.get_handler(
+                            "%s.Category" % (Category.__module__),
+                            connection=self.connection)
+        self.hnd.begin()
     
+    def tearDown(self):
+        self.data.teardown()
+        super(TestSQLAlchemyAssignedMapperHandler, self).tearDown()
+    
+    @attr(unit=True)
+    def test_find(self):
+        try:
+            rs = self.hnd.find(self.data.CategoryData.bumpy.id)
+        except:
+            self.hnd.rollback()
+            raise
+        else:
+            self.hnd.commit()
+        assert rs, "unexpected record set: %s" % rs
+        obj = [o for o in rs]
+        eq_(obj[0].name, self.data.CategoryData.bumpy.name)
+    
+    @attr(unit=True)
+    def test_findall(self):
+        try:
+            rs = self.hnd.findall()
+        except:
+            self.hnd.rollback()
+            raise
+        else:
+            self.hnd.commit()
+        assert rs, "unexpected record set: %s" % rs
+        names = set([o.name for o in rs])
+        print names
+        assert self.data.CategoryData.bumpy.name in names
+        assert self.data.CategoryData.curvy.name in names
+        assert self.data.CategoryData.jagged.name in names
+    
+    @attr(unit=True)
+    def test_findall_accepts_query(self):
+        try:
+            rs = self.hnd.findall("name='curvy'")
+        except:
+            self.hnd.rollback()
+            raise
+        else:
+            self.hnd.commit()
+        assert rs, "unexpected record set: %s" % rs
+        obj = [o for o in rs]
+        eq_(len(obj), 1)
 
 class SQLAlchemyGenerateTest(GenerateTest):
     args = [

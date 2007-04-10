@@ -79,17 +79,24 @@ class SQLAlchemyHandler(DataHandler):
             raise NotImplementedError
     
     def __init__(self, *a,**kw):
-        DataHandler.__init__(self, *a,**kw)
-        if self.options.dsn:
-            from sqlalchemy import BoundMetaData, create_engine
-            from sqlalchemy.ext.sessioncontext import SessionContext
-            self.meta = BoundMetaData(self.options.dsn)
-            self.connection = self.meta.engine.connect()
-            self.session_context = SessionContext(
-                lambda: sqlalchemy.create_session(bind_to=self.meta.engine))
+        from sqlalchemy import BoundMetaData, create_engine
+        from sqlalchemy.ext.sessioncontext import SessionContext
+        
+        if 'connection' in kw:
+            self.connection = kw.pop('connection')
         else:
-            raise MisconfiguredHandler(
-                    "--dsn option is required by %s" % self.__class__)
+            self.connection = None
+        DataHandler.__init__(self, *a,**kw)
+        if not self.connection:
+            if self.options.dsn:
+                self.meta = BoundMetaData(self.options.dsn)
+            else:
+                raise MisconfiguredHandler(
+                        "--dsn option is required by %s" % self.__class__)
+            self.connection = self.meta.engine.connect()
+    
+        self.session_context = SessionContext(
+            lambda: sqlalchemy.create_session(bind_to=self.connection))
         
         self.env = TableEnv(*[self.obj.__module__] + self.options.env)
     
@@ -110,15 +117,19 @@ class SQLAlchemyHandler(DataHandler):
         self.transaction.rollback()
     
     def find(self, idval):
-        raise NotImplementedError
-        # self.rs = [self.obj.get(idval)]
+        self.rs = [self.obj.get(idval)]
+        return self.rs
         
-    def findall(self, query):
+    def findall(self, query=None):
         """gets record set for query."""
         session = self.session_context.current
-        self.rs = session.query(self.obj).select_whereclause(query)
+        if query:
+            self.rs = session.query(self.obj).select_whereclause(query)
+        else:
+            self.rs = session.query(self.obj).select()
         if not len(self.rs):
             raise NoData("no data for query \"%s\" on %s" % (query, self.obj))
+        return self.rs
     
     @staticmethod
     def recognizes(object_path, obj=None):
