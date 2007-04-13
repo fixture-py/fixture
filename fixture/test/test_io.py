@@ -180,6 +180,12 @@ class TestTempIO(object):
         f.read()
 
     @attr(unit=True)
+    def test_rmtree(self):
+        root = str(self.tmp)
+        self.tmp.rmtree()
+        assert not exists(root)
+
+    @attr(unit=True)
     def test_root(self):
         assert isdir(self.tmp)
     

@@ -246,6 +246,14 @@ class DeletableDirPath(DirPath):
             # due to the unpredictable state of python's destructors; there is
             # nothing really to do
             pass
+    
+    def rmtree(self):
+        """forcefully removes the root directory and everything under it.
+        
+        This can be trusted more than del self because it is guaranteed to 
+        remove the directory tree.
+        """
+        _expunge(self)
 
 if __name__ == '__main__':
     import doctest
