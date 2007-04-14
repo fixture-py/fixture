@@ -69,8 +69,9 @@ class SQLAlchemyHandler(DataHandler):
     
     loadable_fxt_class = SQLAlchemyFixture
     
-    class ObjectAdapter(object):
-        """adapts a sqlalchemy data object for use in a SQLAlchemyFixtureSet."""
+    class RecordSetAdapter(object):
+        """adapts a sqlalchemy record set object for use in a 
+        SQLAlchemyFixtureSet."""
         columns = None
         def __init__(self, obj):
             raise NotImplementedError("not a concrete implementation")
@@ -78,15 +79,12 @@ class SQLAlchemyHandler(DataHandler):
         def primary_key_from_instance(self, data):
             raise NotImplementedError
     
-    def __init__(self, *a,**kw):
+    def __init__(self, object_path, options, connection=None, **kw):
         from sqlalchemy import BoundMetaData, create_engine
         from sqlalchemy.ext.sessioncontext import SessionContext
         
-        if 'connection' in kw:
-            self.connection = kw.pop('connection')
-        else:
-            self.connection = None
-        DataHandler.__init__(self, *a,**kw)
+        self.connection = connection
+        super(SQLAlchemyHandler, self).__init__(object_path, options, **kw)
         if not self.connection:
             if self.options.dsn:
                 self.meta = BoundMetaData(self.options.dsn)
@@ -118,6 +116,8 @@ class SQLAlchemyHandler(DataHandler):
     
     def find(self, idval):
         self.rs = [self.obj.get(idval)]
+        # session = self.session_context.current
+        # self.rs = [session.query(self.obj).get(idval)]
         return self.rs
         
     def findall(self, query=None):
@@ -148,11 +148,13 @@ class SQLAlchemyHandler(DataHandler):
         
         for row in self.rs:
             yield SQLAlchemyFixtureSet(row, self.obj, self.connection, self.env,
-                                            adapter=self.ObjectAdapter)
+                                            adapter=self.RecordSetAdapter)
 
-class SQLAlchemyAssignedMapperHandler(SQLAlchemyHandler):
-    
-    class ObjectAdapter(SQLAlchemyHandler.ObjectAdapter):
+## NOTE: the order that handlers are registered in is important for discovering 
+## sqlalchemy types...
+
+class SQLAlchemyAssignedMapperHandler(SQLAlchemyHandler):    
+    class RecordSetAdapter(SQLAlchemyHandler.RecordSetAdapter):
         def __init__(self, obj):
             self.mapped_class = obj
             
@@ -193,9 +195,8 @@ class SQLAlchemyAssignedMapperHandler(SQLAlchemyHandler):
         
 register_handler(SQLAlchemyAssignedMapperHandler)
 
-class SQLAlchemyTableHandler(SQLAlchemyHandler):
-    
-    class ObjectAdapter(SQLAlchemyHandler.ObjectAdapter):
+class SQLAlchemyTableHandler(SQLAlchemyHandler):        
+    class RecordSetAdapter(SQLAlchemyHandler.RecordSetAdapter):
         def __init__(self, obj):
             self.table = obj
             self.columns = self.table.columns
@@ -218,16 +219,17 @@ class SQLAlchemyTableHandler(SQLAlchemyHandler):
         from sqlalchemy.schema import Table
         if isinstance(obj, Table):
             raise NotImplementedError(
-                "using a table object, like %s, is not implemented.  please "
-                "consider submitting an enhancement ticket, or a patch :)  In "
-                "the meantime, you can pass in a mapped class instead" % obj)
+                    "Generating data with a table object is not implemented.  "
+                    "Please use a mapped class or mapper object instead.  Or, "
+                    "consider submitting a patch to support this.")
+            return True
+            
         return False
         
 register_handler(SQLAlchemyTableHandler)
 
 class SQLAlchemyMappedClassHandler(SQLAlchemyHandler):
-    
-    class ObjectAdapter(SQLAlchemyHandler.ObjectAdapter):
+    class RecordSetAdapter(SQLAlchemyHandler.RecordSetAdapter):
         def __init__(self, obj):
             self.columns = obj.c
             self.id_attr = obj.id.key
@@ -311,7 +313,7 @@ class SQLAlchemyFixtureSet(FixtureSet):
             # how we obtain foreign keys...
             subset = SQLAlchemyFixtureSet(
                         rs.fetchone(), table, self.connection, self.env,
-                        adapter=SQLAlchemyTableHandler.ObjectAdapter)
+                        adapter=SQLAlchemyTableHandler.RecordSetAdapter)
             return subset
             
         return value

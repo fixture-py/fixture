@@ -76,14 +76,14 @@ class TestSQLAlchemyHandler(SQLAlchemyHandlerTest):
         assert isinstance(hnd, SQLAlchemyMappedClassHandler)
         
     @attr(unit=True)
+    @raises(NotImplementedError)
     def test_recognizes_table_object(self):
-        raise SkipTest("not implemented yet")
         hnd = self.generator.get_handler(
                 "%s.categories" % (sqlalchemy_examples.__name__))
         assert isinstance(hnd, SQLAlchemyTableHandler), (
                     "unexpected type: %s" % (type(hnd)))
 
-class TestSQLAlchemyAssignedMapperHandler(SQLAlchemyHandlerTest):
+class SQLAlchemyHandlerQueryTest(SQLAlchemyHandlerTest):
     class CategoryData(DataSet):
         class bumpy:
             name='bumpy'
@@ -91,9 +91,11 @@ class TestSQLAlchemyAssignedMapperHandler(SQLAlchemyHandlerTest):
             name='curvy'
         class jagged:
             name='jagged'
+    
+    handler_path = None
             
     def setUp(self):
-        super(TestSQLAlchemyAssignedMapperHandler, self).setUp()
+        super(SQLAlchemyHandlerQueryTest, self).setUp()
         
         from fixture import SQLAlchemyFixture
         from fixture.style import NamedDataStyle
@@ -105,13 +107,13 @@ class TestSQLAlchemyAssignedMapperHandler(SQLAlchemyHandlerTest):
         self.data.setup()
         
         self.hnd = self.generator.get_handler(
-                            "%s.Category" % (Category.__module__),
+                            self.handler_path,
                             connection=self.connection)
         self.hnd.begin()
     
     def tearDown(self):
         self.data.teardown()
-        super(TestSQLAlchemyAssignedMapperHandler, self).tearDown()
+        super(SQLAlchemyHandlerQueryTest, self).tearDown()
     
     @attr(unit=True)
     def test_find(self):
@@ -154,6 +156,12 @@ class TestSQLAlchemyAssignedMapperHandler(SQLAlchemyHandlerTest):
         assert rs, "unexpected record set: %s" % rs
         obj = [o for o in rs]
         eq_(len(obj), 1)
+
+class TestSQLAlchemyAssignedMapperHandler(SQLAlchemyHandlerQueryTest):
+    handler_path = "%s.Category" % (Category.__module__)
+    
+# class TestSQLAlchemyTableHandler(SQLAlchemyHandlerQueryTest):
+#     handler_path = "%s.categories" % (sqlalchemy_examples.__name__) 
 
 class SQLAlchemyGenerateTest(GenerateTest):
     args = [

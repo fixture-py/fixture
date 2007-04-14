@@ -159,7 +159,7 @@ class DataSetGenerator(object):
                     object_name = object_name[1:]
                 obj = __import__(path, globals(), locals(), [object_name]) 
                 obj = getattr(obj, object_name)
-        except ImportError:
+        except (ImportError, AttributeError):
             importable = 'NO'            
             obj = None
             
@@ -216,11 +216,6 @@ class DataSetGenerator(object):
         """
         self.handler = self.get_handler(object_path)
         
-        # need to loop through all sets,
-        # then through all set items and add all sets of all 
-        # foreign keys and their foreign keys.
-        # got it???
-        
         self.handler.begin()
         try:
             self.handler.findall(self.options.where)
@@ -230,6 +225,12 @@ class DataSetGenerator(object):
                     if isinstance(v, FixtureSet):
                         f_set = v
                         cache_set(f_set)
+                        
+            # need to loop through all sets,
+            # then through all set items and add all sets of all 
+            # foreign keys and their foreign keys.
+            # got it???
+            
             for s in self.handler.sets():
                 cache_set(s)
         except:
