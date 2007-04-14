@@ -38,9 +38,8 @@ from fixture.test import conf
 def setup():
     # super hack:
     if conf.HEAVY_DSN == 'sqlite:///:tmp:':
-        from fixture import TempIO
-        tmp = TempIO(deferred=True)
-        conf.HEAVY_DSN = 'sqlite:///%s' % tmp.join("tmp.db")
+        conf.HEAVY_DSN_IS_TEMPIO = True
+        conf.reset_heavy_dsn()
     
     # this is here because the doc generator also runs doctests.
     # should fix that to use proper _test() methods for a module

@@ -37,6 +37,7 @@ class SQLObjectFixtureTest:
         conn = self.conn
         teardown_db(conn)
         conn.close()
+        conf.reset_heavy_dsn()
 
 class SQLObjectCategoryTest(SQLObjectFixtureTest):
     def assert_data_loaded(self, dataset):
@@ -106,7 +107,7 @@ class SQLObjectFixtureCascadeTest(SQLObjectFixtureTest):
         eq_(Offer.select().count(), 0)
         eq_(Product.select().count(), 0)
 
-class SQLObjectFixtureCascadeTestWithPgsql(SQLObjectFixtureCascadeTest):
+class SQLObjectFixtureCascadeTestWithHeavyDB(SQLObjectFixtureCascadeTest):
     def setUp(self):
         if not conf.HEAVY_DSN:
             raise SkipTest
@@ -117,8 +118,8 @@ class TestSQLObjectFixtureCascade(
         HavingOfferProductData, SQLObjectFixtureCascadeTest, 
         LoadableTest):
     pass
-class TestSQLObjectFixtureCascadeWithPgsql(
-        HavingOfferProductData, SQLObjectFixtureCascadeTestWithPgsql, 
+class TestSQLObjectFixtureCascadeWithHeavyDB(
+        HavingOfferProductData, SQLObjectFixtureCascadeTestWithHeavyDB, 
         LoadableTest):
     pass
 class TestSQLObjectFixtureCascadeAsType(
@@ -133,8 +134,8 @@ class TestSQLObjectFixtureCascadeAsRefInherit(
         HavingRefInheritedOfferProduct, SQLObjectFixtureCascadeTest, 
         LoadableTest):
     pass
-class TestSQLObjectFixtureCascadeAsRefInheritWithPgsql(
-        HavingRefInheritedOfferProduct, SQLObjectFixtureCascadeTestWithPgsql, 
+class TestSQLObjectFixtureCascadeAsRefInheritWithHeavyDB(
+        HavingRefInheritedOfferProduct, SQLObjectFixtureCascadeTestWithHeavyDB, 
         LoadableTest):
     pass
             

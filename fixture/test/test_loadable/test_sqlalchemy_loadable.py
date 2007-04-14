@@ -237,7 +237,7 @@ class TestSQLAlchemyFixtureForKeys(
         HavingOfferProductData, SessionFixture, 
         SQLAlchemyFixtureForKeysTest, LoadableTest):
     pass
-class TestSQLAlchemyFixtureForKeysWithPgsql(
+class TestSQLAlchemyFixtureForKeysWithHeavyDB(
         HavingOfferProductData, SessionFixture, 
         SQLAlchemyFixtureForKeysTestWithPsql, LoadableTest):
     pass
@@ -254,7 +254,7 @@ class TestSQLAlchemyFixtureForKeysAsTypeInContext(
         HavingOfferProductAsDataType, SessionContextFixture, 
         SQLAlchemyFixtureForKeysTest, LoadableTest):
     pass
-class TestSQLAlchemyFixtureForKeysAsTypeInContextWithPgsql(
+class TestSQLAlchemyFixtureForKeysAsTypeInContextWithHeavyDB(
         HavingOfferProductAsDataType, SessionContextFixture, 
         SQLAlchemyFixtureForKeysTestWithPsql, LoadableTest):
     pass
@@ -268,7 +268,7 @@ class TestSQLAlchemyFixtureRefInheritForKeys(
         HavingRefInheritedOfferProduct, SessionFixture, 
         SQLAlchemyFixtureForKeysTest, LoadableTest):
     pass
-class TestSQLAlchemyFixtureRefInheritForKeysWithPgsql(
+class TestSQLAlchemyFixtureRefInheritForKeysWithHeavyDB(
         HavingRefInheritedOfferProduct, SessionFixture, 
         SQLAlchemyFixtureForKeysTestWithPsql, LoadableTest):
     pass
