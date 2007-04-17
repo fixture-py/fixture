@@ -3,9 +3,9 @@
 python module for loading and referencing test data
 
 fixture provides several utilities for achieving a _fixed state_ when testing 
-python programs.  Specifically, these are designed to setup/teardown database 
-data and/or work with a temporary file system.  This is useful for testing and 
-came about to solve problems like these:
+python programs.  Specifically, these setup/teardown databases and/or work with 
+a temporary file system.  This is useful for testing and came about to solve 
+problems like these:
 
   * Your test needs to load data into a database and you want to easily reference that data when making assertions.
   * You want data linked by foreign key to load automatically and delete without integrity error.
@@ -42,7 +42,7 @@ To load data into a database (or anything suitable) you create subclasses of
 
 ===Documentation===
 
- * End User Documentation -- It's in the works!
+ * [http://farmdev.com/projects/fixture/docs/ End User Documentation]
  * [http://farmdev.com/projects/fixture/apidocs/ API Documentation]
 
 ===Install===
