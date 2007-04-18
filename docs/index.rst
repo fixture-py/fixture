@@ -5,6 +5,28 @@ Using the fixture module
 
 .. contents::
 
+------------------
+Download / Install
+------------------
+
+Using the easy_install_ command::
+
+    easy_install fixture
+
+Or, if you want to create a link to the source without installing anything, cd into the root directory and type::
+
+    python setup.py develop
+
+Or ... if you're old school, this works with or without setuptools_::
+
+    python setup.py install
+
+.. note::
+    The above commands may require root access
+
+.. _easy_install: http://peak.telecommunity.com/DevCenter/EasyInstall
+.. _setuptools: http://peak.telecommunity.com/DevCenter/setuptools
+
 ---------------------------------
 Loading and referencing test data
 ---------------------------------
