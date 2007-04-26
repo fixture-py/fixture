@@ -173,9 +173,11 @@ See the `DataTestCase API`_ for a full explanation of how it can be configured.
 Loading objects using @dbfixture.with_data
 ++++++++++++++++++++++++++++++++++++++++++
 
-If you use nose_, a test runner for Python, then you may be familiar with its `discovery of test methods`_.  Test methods (as opposed to unittest.TestCase classes) provide a quick way to write procedural tests, which are usually more informative to read for someone who is getting familiar with the code.
+If you use nose_, a test runner for Python, then you may be familiar with its `discovery of test methods`_.  Test methods (as opposed to unittest.TestCase classes) provide a quick way to write procedural tests and can be quicker to code, can provide a better read for someone who is getting familiar with the code, etc.  Nose supports test methods that are decorated with setup and teardown methods and fixture provides a way to setup/teardown DataSet objects for a test method.  If you don't have nose_ installed, simply install fixture like so and nose will be installed for you::
+    
+    easy_install fixture[decorators]
 
-The fixture module supports loading data before a test method is executed.  A special decorator method on a Fixture instance, called ``with_data``, can be used, like so::
+The special decorator method is an instance method of a Fixture class, ``with_data``; it can be used like so::
 
     >>> @dbfixture.with_data(AuthorData, BookData)
     ... def test_books_are_in_stock(data):
