@@ -1,4 +1,5 @@
 
+import sys
 from nose.tools import eq_, raises, with_setup
 from fixture.test import attr
 from fixture.command.generate import *
@@ -41,5 +42,22 @@ def test_unrecognized_dataset_handler():
     g = DataSetGenerator({})
     hnd = g.get_handler("NOTHONG")
     
-    
-    
+@attr(unit=True)
+def test_requires_option():
+    required_idents = []
+    def mock_require(ident):
+        required_idents.append(ident)
+    import pkg_resources
+    orig_require = pkg_resources.require
+    pkg_resources.require = mock_require
+    sys.stderr = sys.stdout
+    try:
+        try:
+            dataset_generator([ 'bad.object.path', 
+                '--require-egg=foo==1.0', '--require-egg=baz>=2.0b'])
+        except SystemExit, e:
+            pass
+    finally:
+        pkg_resources.require = orig_require    
+        sys.stderr = sys.__stderr__
+    eq_(required_idents, ['foo==1.0', 'baz>=2.0b'])

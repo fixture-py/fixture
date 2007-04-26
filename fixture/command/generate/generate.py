@@ -67,10 +67,7 @@ No documentation yet
 
 """
 
-import sys
-import os
-import optparse
-import inspect
+import sys, os, optparse, inspect, pkg_resources
 from warnings import warn
 from fixture.command.generate.template import templates, is_template
 handler_registry = []
@@ -414,6 +411,14 @@ def dataset_generator(argv):
             "module path to use as an environment for finding objects.  "
             "declaring multiple --env values will be recognized"),
         action='append', default=[])
+        
+    parser.add_option('--require-egg',
+        dest='required_eggs',
+        help = (
+            "a requirement string to enable importing from a module that was "
+            "installed in multi-version mode by setuptools.  I.E. foo==1.0.  "
+            "You can repeat this option as many times as necessary."),
+        action='append', default=[])
     
     default_tpl = templates.default()
     parser.add_option('--template',
@@ -436,6 +441,8 @@ def dataset_generator(argv):
     except IndexError:
         parser.error('incorrect arguments')
     
+    for egg in options.required_eggs:
+        pkg_resources.require(egg)
     try:
         generate = DataSetGenerator(options)
     
@@ -444,8 +451,9 @@ def dataset_generator(argv):
         else:
             generate.template = templates.find(options.template)
         return generate(object_path)
-    except (MisconfiguredHandler, NoData), e:
-        parser.error(e)
+    except (MisconfiguredHandler, NoData, UnrecognizedObject):
+        etype, val, tb = sys.exc_info()
+        parser.error("%s: %s" % (etype.__name__, val))
 
 def main(argv=sys.argv[1:]):
     if '__testmod__' in argv:
