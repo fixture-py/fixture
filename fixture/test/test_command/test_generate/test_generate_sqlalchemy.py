@@ -26,6 +26,20 @@ def setup():
     if not env_supports.sqlalchemy:
         raise SkipTest
 
+@attr(unit=True)
+def test_TableEnv():
+    from sqlalchemy import Table, BoundMetaData, INT, Column
+    meta = BoundMetaData(conf.LITE_DSN)
+    class env(object):
+        taxi = Table('taxi', meta, Column('id', INT, primary_key=True))
+    e = TableEnv('fixture.examples.db.sqlalchemy_examples', env)
+    tbl = e[products]
+    eq_(tbl['name'], 'products')
+    eq_(tbl['module'], sqlalchemy_examples)
+    tbl = e[env.taxi]
+    eq_(tbl['name'], 'taxi')
+    eq_(tbl['module'], sys.modules[__name__])
+
 class MappableObject(object):
     pass
 

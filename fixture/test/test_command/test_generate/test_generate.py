@@ -61,3 +61,4 @@ def test_requires_option():
         pkg_resources.require = orig_require    
         sys.stderr = sys.__stderr__
     eq_(required_idents, ['foo==1.0', 'baz>=2.0b'])
+    

@@ -1,5 +1,5 @@
 
-import sys
+import sys, inspect
 from fixture.command.generate import (
         DataHandler, register_handler, FixtureSet, NoData)
 from fixture import SQLAlchemyFixture
@@ -10,30 +10,38 @@ except ImportError:
 
 class TableEnv(object):
     """a shared environment of sqlalchemy Table instances.
+    
+    can be initialized with python paths to objects or objects themselves
     """
-    def __init__(self, *modpaths):
-        self.modpaths = modpaths
+    def __init__(self, *objects):
+        self.objects = objects
         self.tablemap = {}
-        for p in self.modpaths:
-            if p not in sys.modules:
-                # i.e. modpath from command-line option...
-                try:
-                    if "." in p:
-                        cut = p.rfind(".")
-                        names = [p[cut+1:]]
-                        parent = __import__(
-                                    p[0:cut], globals(), locals(), names)
-                        module = getattr(parent, names[0])
-                    else:
-                        module = __import__(p)
-                except:
-                    etype, val, tb = sys.exc_info()
-                    raise (
-                        ImportError("%s: %s (while importing %s)" % (
-                            etype, val, p)), None, tb)
-            else:
-                module = sys.modules[p]
-            self._find_objects(module)
+        for obj in self.objects:
+            module = None
+            if isinstance(obj, basestring):
+                modpath = obj
+                if modpath not in sys.modules:
+                    # i.e. modpath from command-line option...
+                    try:
+                        if "." in modpath:
+                            cut = modpath.rfind(".")
+                            names = [modpath[cut+1:]]
+                            parent = __import__(
+                                    modpath[0:cut], globals(), locals(), names)
+                            module = getattr(parent, names[0])
+                        else:
+                            module = __import__(modpath)
+                    except:
+                        etype, val, tb = sys.exc_info()
+                        raise (
+                            ImportError("%s: %s (while importing %s)" % (
+                                etype, val, modpath)), None, tb)
+                else:
+                    module = sys.modules[modpath]
+                    obj = module
+            if module is None:
+                module = inspect.getmodule(obj)
+            self._find_objects(obj, module)
             
     def __contains__(self, key):
         return key in self.tablemap
@@ -47,15 +55,15 @@ class TableEnv(object):
                 "Could not locate original declaration of Table %s "
                 "(looked in: %s)  You might need to add "
                 "--env='path.to.module'?" % (
-                        table, ", ".join([p for p in self.modpaths]))), tb
+                        table, ", ".join([repr(p) for p in self.objects]))), tb
     
-    def _find_objects(self, module):
+    def _find_objects(self, obj, module):
         from sqlalchemy.schema import Table
         from sqlalchemy.orm.mapper import (
                         has_mapper, class_mapper, object_mapper, 
                         mapper_registry)
-        for name in dir(module):
-            o = getattr(module, name)
+        for name in dir(obj):
+            o = getattr(obj, name)
             if isinstance(o, Table):
                 self.tablemap.setdefault(o, {})
                 self.tablemap[o]['name'] = name
