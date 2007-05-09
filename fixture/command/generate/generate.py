@@ -440,20 +440,25 @@ def dataset_generator(argv):
         object_path = args[0]
     except IndexError:
         parser.error('incorrect arguments')
-    
-    for egg in options.required_eggs:
-        pkg_resources.require(egg)
     try:
-        generate = DataSetGenerator(options)
-    
-        if is_template(options.template):
-            generate.template = options.template
-        else:
-            generate.template = templates.find(options.template)
-        return generate(object_path)
+        return get_object_data(object_path, options)   
     except (MisconfiguredHandler, NoData, UnrecognizedObject):
         etype, val, tb = sys.exc_info()
         parser.error("%s: %s" % (etype.__name__, val))
+
+def get_object_data(object_path, options):
+    """query object at object_path and return generated code 
+    representing its data
+    """
+    for egg in options.required_eggs:
+        pkg_resources.require(egg)
+    generate = DataSetGenerator(options)
+
+    if is_template(options.template):
+        generate.template = options.template
+    else:
+        generate.template = templates.find(options.template)
+    return generate(object_path)
 
 def main(argv=sys.argv[1:]):
     if '__testmod__' in argv:
