@@ -32,13 +32,24 @@ def test_TableEnv():
     meta = BoundMetaData(conf.LITE_DSN)
     class env(object):
         taxi = Table('taxi', meta, Column('id', INT, primary_key=True))
-    e = TableEnv('fixture.examples.db.sqlalchemy_examples', env)
+    somedict = {
+        'barbara': Table('barbara', meta, Column('id', INT, primary_key=True))
+    }
+    
+    e = TableEnv('fixture.examples.db.sqlalchemy_examples', env, somedict)
+    
     tbl = e[products]
     eq_(tbl['name'], 'products')
     eq_(tbl['module'], sqlalchemy_examples)
+    
     tbl = e[env.taxi]
     eq_(tbl['name'], 'taxi')
     eq_(tbl['module'], sys.modules[__name__])
+    
+    tbl = e[somedict['barbara']]
+    eq_(tbl['name'], 'barbara')
+    # can't get module from dict...
+    eq_(tbl['module'], None)
 
 class MappableObject(object):
     pass

@@ -62,8 +62,15 @@ class TableEnv(object):
         from sqlalchemy.orm.mapper import (
                         has_mapper, class_mapper, object_mapper, 
                         mapper_registry)
-        for name in dir(obj):
-            o = getattr(obj, name)
+        
+        # get dict key/vals or dir() through object ...
+        if not hasattr(obj, 'items'):
+            def getitems():
+                for name in dir(obj):
+                    yield name, getattr(obj, name)
+        else:
+            getitems = obj.items
+        for name, o in getitems():
             if isinstance(o, Table):
                 self.tablemap.setdefault(o, {})
                 self.tablemap[o]['name'] = name
