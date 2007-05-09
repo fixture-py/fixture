@@ -182,7 +182,7 @@ class SQLAlchemyAssignedMapperHandler(SQLAlchemyHandler):
                     "not sure how to get a table from mapped class %s" % 
                                                         self.mapped_class)
             self.columns = self.mapped_class.mapper.columns
-            self.id_attr = self.mapped_class.id.key
+            self.id_attr = self.table.primary_key
             
         def primary_key_from_instance(self, data):
             return self.mapped_class.mapper.primary_key_from_instance(data)

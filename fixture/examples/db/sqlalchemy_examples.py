@@ -184,7 +184,8 @@ if sqlalchemy:
         Column("name", String ),
         Column("category_id", INT, 
                 ForeignKey("fixture_sqlalchemy_category.id")),
-        Column("product_id", INT, ForeignKey("fixture_sqlalchemy_product.id")),
+        Column("product_id", INT, 
+                ForeignKey("fixture_sqlalchemy_product.id")),
     )
     class Offer(object):
         pass
