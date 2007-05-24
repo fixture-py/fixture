@@ -40,6 +40,8 @@ To load data into a database (or anything suitable) you create subclasses of
 
 }}}
 
+"Database testing is easier than I had thought. Kumar's fixture helps provide a stable database to drive testing." -- [http://homepage.mac.com/s_lott/iblog/architecture/C1597055042/E20070226153515/index.html Steven F. Lott]
+
 ===Documentation===
 
  * [http://farmdev.com/projects/fixture/docs/ End User Documentation]
