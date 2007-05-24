@@ -1,7 +1,7 @@
 
 import sys, inspect
 from fixture.command.generate import (
-        DataHandler, register_handler, FixtureSet, NoData)
+        DataHandler, register_handler, FixtureSet, NoData, UnsupportedHandler)
 from fixture import SQLAlchemyFixture
 try:
     import sqlalchemy
