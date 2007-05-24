@@ -69,7 +69,7 @@ version, I will try my best to accommodate it.
 
 The module does not depend on external libraries for its core functionality but 
 to so something interesting you will need one of several libraries, detailed in 
-the documentation.  You can also run the test suite if to see what was skipped 
+the documentation.  You can also run the test suite to see what was skipped 
 due to dependency error.
 
 ===Source===
