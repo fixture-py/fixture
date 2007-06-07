@@ -1,18 +1,18 @@
 
 """
-python module for loading and referencing test data
+fixture is a python module for loading and referencing test data
 
-fixture provides several utilities for achieving a _fixed state_ when testing 
-python programs.  Specifically, these setup/teardown databases and/or work with 
-a temporary file system.  This is useful for testing and came about to solve 
-problems like these:
+It provides several utilities for achieving a _fixed state_ when testing 
+python programs.  Specifically, these utilities setup/teardown databases and 
+work with temporary file systems.  This is useful for testing and came about to 
+fulfill stories like these:
 
   * Your test needs to load data into a database and you want to easily reference that data when making assertions.
   * You want data linked by foreign key to load automatically and delete without integrity error.
-  * You want to reference linked rows by variable name, not hard-coded ID number.
-  * In fact, you don't even want to worry about auto-incrementing sequences and you don't want to repeat column values that don't change.
-  * You want to recreate an environment (say, for a bug) by using real data generated from a database query (see `fixture.command.generate`).
-  * You want to work with files in a temporary file system.
+  * You want to reference linked rows by meaningful names, not hard-coded ID numbers.
+  * You don't want to worry about auto-incrementing sequences.
+  * You want to recreate an environment (say, for a bug) by querying a database for real data (see the `fixture` command).
+  * You want to work easily with files in a temporary, transparent file system.
 
 For more info, this concept is explained in the wikipedia article, [http://en.wikipedia.org/wiki/Test_fixture Test Fixture].
 
@@ -40,7 +40,8 @@ To load data into a database (or anything suitable) you create subclasses of
 
 }}}
 
-"Database testing is easier than I had thought. Kumar's fixture helps provide a stable database to drive testing." -- [http://homepage.mac.com/s_lott/iblog/architecture/C1597055042/E20070226153515/index.html Steven F. Lott]
+
+_Database testing is easier than I had thought. Kumar's fixture helps provide a stable database to drive testing._ -- [http://homepage.mac.com/s_lott/iblog/architecture/C1597055042/E20070226153515/index.html Steven F. Lott]
 
 ===Documentation===
 
