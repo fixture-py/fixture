@@ -3,6 +3,13 @@
 Using the fixture module
 ========================
 
+`< fixture project`_
+
+`< farmdev.com`_
+
+.. _< farmdev.com: http://farmdev.com/
+.. _< fixture project: http://code.google.com/p/fixture/
+
 .. contents::
 
 ------------------

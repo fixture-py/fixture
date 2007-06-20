@@ -83,6 +83,13 @@ img {
 	padding: 0;
 	}
 
-/*div#using-the-fixture-module > div:first-child {
-    padding-top: 110px;
-}*/
+div#using-the-fixture-module:first-child {
+    padding-top: 0px;
+}
+
+h1 a.toc-backref:after {
+    content: url(images/up.gif);
+}
+h1 image {
+    margin-left: 0.5em;
+}

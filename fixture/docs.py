@@ -24,6 +24,11 @@ except ImportError:
     
 state_is_api = False
 
+
+heredir = path.dirname(__file__)
+srcdir = path.join(heredir, '..', 'docs')
+builddir = path.abspath(path.join(srcdir, '..', 'build'))
+
 def get_object_from_path(rawpath):
     parts = rawpath.split(u':')
     if len(parts) > 1:
