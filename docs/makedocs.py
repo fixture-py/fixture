@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys
+import os, sys, shutil
 from os import path
 import optparse
 from fixture import docs
@@ -20,16 +20,25 @@ def build_user():
         os.mkdir(docsdir)
     
     teardown_examples() # clear tmp files
-    
+    stylesheet = path.join(srcdir, 'fixture-docutils.css')
     body = publish_file(open(path.join(srcdir, 'index.rst'), 'r'),
                 destination=open(path.join(docsdir, 'index.html'), 'w'),
                 writer_name='html',
+                settings_overrides={'stylesheet_path': stylesheet},
                 # settings_overrides={'halt_level':2,
                 #                     'report_level':5}
                 )
     f = open(path.join(docsdir, 'index.html'), 'w')
     f.write(body)
     f.close()
+    shutil.copy(path.join(srcdir, 'html4css1.css'), 
+                path.join(docsdir, 'html4css1.css'))
+    shutil.copy(stylesheet, 
+                path.join(docsdir, 'fixture-docutils.css'))
+    images_target = path.join(docsdir, 'images')
+    if path.exists(images_target):
+        shutil.rmtree(images_target)
+    shutil.copytree(path.join(srcdir, 'images'), images_target)
     print "built user docs to %s" % docsdir
 
 def build_api():
