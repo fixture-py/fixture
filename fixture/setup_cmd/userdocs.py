@@ -35,7 +35,7 @@ class userdocs(Command):
             os.mkdir(docsdir)
     
         teardown_examples() # clear tmp files
-        stylesheet = path.join(docs.srcdir, 'fixture-docutils.css')
+        stylesheet = path.join(docs.srcdir, 'farmdev-docutils.css')
         body = publish_file(open(path.join(docs.srcdir, 'index.rst'), 'r'),
                     destination=open(path.join(docsdir, 'index.html'), 'w'),
                     writer_name='html',
@@ -49,7 +49,7 @@ class userdocs(Command):
         shutil.copy(path.join(docs.srcdir, 'html4css1.css'), 
                     path.join(docsdir, 'html4css1.css'))
         shutil.copy(stylesheet, 
-                    path.join(docsdir, 'fixture-docutils.css'))
+                    path.join(docsdir, 'farmdev-docutils.css'))
         images_target = path.join(docsdir, 'images')
         if path.exists(images_target):
             shutil.rmtree(images_target)

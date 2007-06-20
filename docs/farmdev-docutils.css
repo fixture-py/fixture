@@ -21,7 +21,7 @@ body {
 	font-family: 'Lucida Grande', Verdana, Geneva, Lucida, Arial, Helvetica, sans-serif;
 /*  color: #54542f;*/
 	color: #78291f;
-	background: #f3c450 url(images/background.gif) repeat-x top left;
+	background: #f3c450 url(images/docs-background.gif) repeat-x top left;
 	}
 
 h1, h2, h3, h4, h5, h6  {
@@ -90,4 +90,6 @@ div#using-the-fixture-module:first-child {
 h1 a.toc-backref:after, h2 a.toc-backref:after, 
 h3 a.toc-backref:after, h4 a.toc-backref:after {
     content: url(images/up.gif);
+    padding-left: 0.3em;
+/*    vertical-align: middle;*/
 }
