@@ -90,8 +90,7 @@ Where to submit issues, patches, bugs
 -------------------------------------
 
 Please submit any issues, patches, failing tests, and/or bugs using the `Issue
-Tracker`_ on the `fixture project site`_. Even vague ideas for improvement will
-be gladly accepted. If your code is included, your contribution will be
+Tracker`_ on the `fixture project site`_. Even vague ideas for improvement are welcome. If your code is used, your contribution will be
 documented.
 
 .. _Issue Tracker: http://code.google.com/p/fixture/issues/list
