@@ -51,10 +51,10 @@ p {
 	word-spacing: normal;
 	letter-spacing: normal;
 	}
-pre.literal-block, span.pre, div.note {
+pre.literal-block, pre.doctest-block, span.pre, div.note {
     background: #F7C65A;
 }
-pre.literal-block, span.pre {
+pre.literal-block, pre.doctest-block, span.pre {
     font-size: 120%;
 }
 
