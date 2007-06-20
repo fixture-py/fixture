@@ -7,7 +7,7 @@ TempIO: a temporary file system object
 --------------------------------------
 
 This object is useful for tests that need to set up a directory structure 
-and work files and paths.  Once you instantiate it, you have a temporary 
+and work with files and paths.  Once you instantiate it, you have a temporary 
 directory that will self-destruct when it falls out of scope::
 
     >>> from fixture import TempIO
