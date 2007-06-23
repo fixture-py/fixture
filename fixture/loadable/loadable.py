@@ -129,7 +129,7 @@ See the `Style API`_ for all available Style objects.
 Loading DataSet classes in a test
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now that you have a Fixture object to load DataSet classes you are ready to write some tests.  You can either write your own code that creates a data instance and calls setup/teardown manuallyb (like in previous examples), or you can use one of several utilities.  
+Now that you have a Fixture object to load DataSet classes you are ready to write some tests.  You can either write your own code that creates a data instance and calls setup/teardown manually (like in previous examples), or you can use one of several utilities.  
 
 As a hoky attempt to make these tests somewhat realistic, here is a function we will be testing, that returns True if a book by author or title is in stock:
 
@@ -163,7 +163,7 @@ DataTestCase is a mixin class to use with Python's built-in ``unittest.TestCase`
     >>> unittest.TextTestRunner().run(suite)
     <unittest._TextTestResult run=1 errors=0 failures=0>
 
-Re-using what was created earlier, the ``fixture`` attribute is set the Fixture instance and the ``datasets`` attribute is set to a list of DataSet classes.  When in the test method itself, as you can see, you can reference loaded data through ``self.data`` and instance of SuperSet.  Keep in mind that if you need to override either setUp() or tearDown() then you'll have to call the super methods.
+Re-using what was created earlier, the ``fixture`` attribute is set to the Fixture instance and the ``datasets`` attribute is set to a list of DataSet classes.  When in the test method itself, as you can see, you can reference loaded data through ``self.data``, an instance of SuperSet.  Keep in mind that if you need to override either setUp() or tearDown() then you'll have to call the super methods.
 
 See the `DataTestCase API`_ for a full explanation of how it can be configured.
 
@@ -173,7 +173,7 @@ See the `DataTestCase API`_ for a full explanation of how it can be configured.
 Loading objects using @dbfixture.with_data
 ++++++++++++++++++++++++++++++++++++++++++
 
-If you use nose_, a test runner for Python, then you may be familiar with its `discovery of test methods`_.  Test methods (as opposed to unittest.TestCase classes) provide a quick way to write procedural tests and can be quicker to code, can provide a better read for someone who is getting familiar with the code, etc.  Nose supports test methods that are decorated with setup and teardown methods and fixture provides a way to setup/teardown DataSet objects for a test method.  If you don't have nose_ installed, simply install fixture like so and nose will be installed for you::
+If you use nose_, a test runner for Python, then you may be familiar with its `discovery of test methods`_.  Test methods (as opposed to unittest.TestCase classes) provide a quick way to write procedural tests and often illustrate concisely what features are being tested.  Nose supports test methods that are decorated with setup and teardown methods and fixture provides a way to setup/teardown DataSet objects for a test method.  If you don't have nose_ installed, simply install fixture like so and nose will be installed for you::
     
     easy_install fixture[decorators]
 
