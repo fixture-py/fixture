@@ -19,7 +19,7 @@ SQLAlchemyFixture
 SQLObjectFixture
     loads data using `SQLObject classes`_ via the `sqlobject`_ module
 
-The idea is that you application already defines its own way of accessing its data; the LoadableFixture just "hooks in" to that interface.  Before considering the Fixture, here is an example data model defined using `sqlalchemy`_::
+The idea is that your application already defines its own way of accessing its data; the LoadableFixture just "hooks in" to that interface.  Before considering the Fixture, here is an example data model defined using `sqlalchemy`_::
 
     >>> from sqlalchemy import *
     >>> engine = create_engine('sqlite:///:memory:')
