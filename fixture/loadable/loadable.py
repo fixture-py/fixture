@@ -188,7 +188,7 @@ The special decorator method is an instance method of a Fixture class, ``with_da
     >>> unittest.TextTestRunner().run(case)
     <unittest._TextTestResult run=1 errors=0 failures=0>
 
-Like in the previous example, the ``data`` attribute is a SuperSet object you can use to reference loaded data.  This is passed to your decorated test method as its first argument.  Note that nose_ will run the above code automatically; the inline execution of the test here is merely for example.
+Like in the previous example, the ``data`` attribute is a SuperSet object you can use to reference loaded data.  This is passed to your decorated test method as its first argument.  (nose_ will run the above code automatically; the inline execution of the test here is merely for example.)
 
 See the `Fixture.Data.with_data API`_ for more information.
 
@@ -210,7 +210,7 @@ In Python 2.5 or later you can write test code in a more logical manner by using
 Defining a custom LoadableFixture
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-It's possible to create your own Fixture by just subclassing a few fixture classes.  If you create one that may be useful to others and would like to submit a patch, it would be gladly accepted.
+It's possible to create your own LoadableFixture if you need to load data with something other than SQLAlchemy or SQLObject.
 
 You'll need to subclass at least `fixture.loadable.loadable:LoadableFixture`_, possibly even `fixture.loadable.loadable:EnvLoadableFixture`_ or the more useful `fixture.loadable.loadable:DBLoadableFixture`_.  Here is a simple example for creating a fixture that hooks into some kind of database-centric loading mechanism::
 
