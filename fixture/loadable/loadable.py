@@ -90,7 +90,7 @@ As mentioned earlier, a DataSet shouldn't have to know how to store itself; the 
     ...         title = "Dune"
     ...         author_id = AuthorData.frank_herbert.ref('id')
 
-As you recall, we passed a dictionary into the Fixture that associates the name ``BookData`` with the mapped class ``Book``.  Using this dict, a Fixture.Data instance now knows how to find the sqlalchemy mapped class when it comes across DataSets names.  Since we also gave it a ``session`` keyword, this will be used to save objects::
+As you recall, we passed a dictionary into the Fixture that associates DataSet names with storage objects.  Using this dict, a Fixture.Data instance now knows to use the sqlalchemy mapped class ``Book`` when saving a DataSet named ``BookData``.  Since we also gave it a ``session`` keyword, this will be used to save objects::
     
     >>> data = dbfixture.data(AuthorData, BookData)
     >>> data.setup() 
