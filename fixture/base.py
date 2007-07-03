@@ -42,7 +42,8 @@ class Fixture(object):
     loader = None
     
     class Data(object):
-        """loads one or more DataSet objects and provides an interface into that data.    
+        """loads one or more DataSet objects and provides an interface into that 
+        data.    
         """
         def __init__(self, datasets, dataclass, loader):
             self.datasets = datasets
