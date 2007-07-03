@@ -148,7 +148,13 @@ class Fixture(object):
                 data = setup_data()
                 try:
                     routine(data, *a, **kw)
-                finally:
+                except KeyboardInterrupt:
+                    # user wants to abort everything :
+                    raise
+                except:
+                    teardown_data(data)
+                    raise
+                else:
                     teardown_data(data)
     
             @wraps(routine)

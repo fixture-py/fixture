@@ -63,6 +63,25 @@ class PrudentTestResult(unittest.TestResult):
         self._raise_err(err)
     def addError(self, test, err):
         self._raise_err(err)
+
+class _SilentTestResult(PrudentTestResult):
+    def printErrors(self):
+        pass
+    def printErrorList(self, flavour, errors):
+        pass
+        
+class SilentTestRunner(unittest.TextTestRunner):
+    """a test runner that doesn't print output but raises 
+    exceptions immediately
+    """
+    def _makeResult(self): 
+        return _SilentTestResult()
+        
+    def run(self, test):
+        "Run the given test case or test suite."
+        result = self._makeResult()
+        test(result)
+        return result
             
 def attr(**kwargs):
     """Add attributes to a test function/method/class"""
