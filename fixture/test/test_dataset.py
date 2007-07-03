@@ -76,15 +76,17 @@ class DataSetTest:
     def assert_itered_n_times(count):
         raise NotImplementedError
     
+    @attr(unit=1)
     def test_access(self):
         self.assert_access(self.dataset)
 
+    @attr(unit=1)
     def test_iter_yields_keys_rows(self):
         count=0
         for k, row in self.dataset:
             count += 1
             items = dict([(k, getattr(row, k)) for k in row.columns()])
-            self.assert_row_dict_for_iter(items, count)
+            self.assert_row_dict_for_iter(k, items, count)
         
         self.assert_itered_n_times(count)
 
@@ -101,7 +103,7 @@ class TestDataSet(DataSetTest):
     def assert_itered_n_times(self, count):
         eq_(count, 2)
     
-    def assert_row_dict_for_iter(self, items, count):        
+    def assert_row_dict_for_iter(self, key, items, count):        
         if count == 1:
             eq_(items, {'title': 'lolita'})
         elif count == 2:
@@ -152,9 +154,26 @@ class TestInheritedRows(DataSetTest):
     def assert_itered_n_times(self, count):
         eq_(count, 4)
     
-    def assert_row_dict_for_iter(self, items, count):
-        # can't test this because keys aren't ordered
-        pass
+    def assert_row_dict_for_iter(self, key, items, count):
+        if count == 1:
+            eq_(items, 
+                {'offer': 1, 'time': 'now', 'session': 'aaaaaaa', 
+                'type': 'activation'})
+        elif count == 2:
+            eq_(items, 
+                {'offer': 1, 'time': 'now', 'session': 'aaaaaaa', 
+                'type': 'click'})
+        elif count == 3:
+            eq_(items, 
+                {'offer': 1, 'time': 'now', 'session': 'aaaaaaa', 
+                'type': 'order'})
+        elif count == 4:
+            eq_(items, 
+                {'offer': 1, 'time': 'now', 'session': 'aaaaaaa', 
+                'type': 'submit'})
+        else:
+            raise ValueError("unexpected row %s at key %s, count %s" % (
+                                                        items, key, count))
 
 class TestDataSetCustomMeta(DataSetTest):
     def setUp(self):
@@ -181,7 +200,7 @@ class TestDataSetCustomMeta(DataSetTest):
     def assert_itered_n_times(self, count):
         eq_(count, 2)
     
-    def assert_row_dict_for_iter(self, items, count):        
+    def assert_row_dict_for_iter(self, key, items, count):        
         if count == 1:
             eq_(items, {'type': 'recliner'})
         elif count == 2:

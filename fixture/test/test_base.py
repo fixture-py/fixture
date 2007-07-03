@@ -23,10 +23,8 @@ class StubDataset:
     @classmethod
     def shared_instance(self, *a, **kw):
         return self()
-class StubDataset1(StubDataset):
-    pass
-class StubDataset2(StubDataset):
-    pass
+class StubDataset1(StubDataset): pass
+class StubDataset2(StubDataset): pass
     
 class TestFixture:
     def setUp(self):
@@ -45,7 +43,7 @@ class TestFixture:
         eq_(mock_call_log[-1], (MockLoader, 'unload'))
         
     @attr(unit=1)
-    def test_data_implements_with_interface(self):
+    def test_data_implements_with_statement(self):
         data = self.fxt.data(StubDataset1, StubDataset2)
         data = data.__enter__()
         eq_(mock_call_log[-1], (MockLoader, 'load', StubSuperSet))
