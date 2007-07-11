@@ -4,7 +4,7 @@
 The more useful bits are in LoadableFixture
 
 """
-
+import sys, traceback
 try:
     from functools import wraps
 except ImportError:
@@ -151,9 +151,18 @@ class Fixture(object):
                 except KeyboardInterrupt:
                     # user wants to abort everything :
                     raise
-                except:
-                    teardown_data(data)
-                    raise
+                except Exception, exc:
+                    # caught exception, so try to teardown but do it safely :
+                    etype, val, tb = sys.exc_info()
+                    try:
+                        teardown_data(data)
+                    except:
+                        t_ident = ("-----[exception in teardown %s]-----" % 
+                                    hex(id(teardown_data)))
+                        sys.stderr.write("\n\n%s\n" % t_ident)
+                        traceback.print_exc()
+                        sys.stderr.write("%s\n\n" % t_ident)
+                    raise exc, None, tb
                 else:
                     teardown_data(data)
     
@@ -175,7 +184,19 @@ class Fixture(object):
                         genargs = (data,) + genargs
                         try:
                             fn(*genargs, **kw)
-                        finally:
+                        except Exception, exc:
+                            etype, val, tb = sys.exc_info()
+                            try:
+                                teardown_data(data)
+                            except:
+                                t_ident = (
+                                    "-----[exception in teardown %s]-----" % 
+                                    hex(id(teardown_data)))
+                                sys.stderr.write("\n\n%s\n" % t_ident)
+                                traceback.print_exc()
+                                sys.stderr.write("%s\n\n" % t_ident)
+                            raise exc, None, tb
+                        else:
                             teardown_data(data)
                     
                     restack = (atomic_routine, setup_data) + args
