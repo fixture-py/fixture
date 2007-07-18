@@ -19,6 +19,13 @@ except ImportError:
         return wrap_with_f
         
 from fixture.dataset import SuperSet
+from compiler.consts import CO_GENERATOR
+
+def is_generator(func):
+    try:
+        return func.func_code.co_flags & CO_GENERATOR != 0
+    except AttributeError:
+        return False
 
 class Fixture(object):
     """An environment for loading data.
@@ -114,7 +121,6 @@ class Fixture(object):
           - optional callable to be executed (finally) after test
 
         """
-        from nose.util import is_generator
         from nose.tools import with_setup
 
         setup = cfg.get('setup', None)

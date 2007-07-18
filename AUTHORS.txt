@@ -1,2 +1,5 @@
 Kumar McMillan
+
+CONTRIBUTORS
 Allen Bierbaum
+Jeff Cousens
