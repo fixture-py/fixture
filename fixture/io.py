@@ -207,12 +207,19 @@ class DirPath(str, object):
         """puts new filename relative to your `TempIO` root.
         Makes all directories along the path to the final file.
         
+        The fname argument can be a complete path, but must not start with a 
+        slash.  Any missing directories will be created relative to the `TempIO` 
+        root
+        
         returns absolute filename.
         """
         relpath, fname = split(fname)
+        if relpath.startswith(os.path.sep):
+            raise TypeError(
+                "argument 1 must be a relative path, not '%s' "
+                "(the path will be created relative to the tmp root, "
+                "currently '%s')" % (relpath, self))
         if relpath and not self.join(relpath).exists():
-            if relpath.startswith(os.path.sep):
-                relpath = relpath[1:]
             self.mkdir(relpath)
             
         f = self.join(relpath, fname)

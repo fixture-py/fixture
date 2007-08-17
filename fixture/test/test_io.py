@@ -180,6 +180,11 @@ class TestTempIO(object):
         self.tmp.putfile('frenchy.txt', "", 'wb')
         f = open(join(self.tmp, 'frenchy.txt'), 'rb')
         f.read()
+    
+    @attr(unit=True)
+    @raises(TypeError)
+    def test_putfile_accepts_only_relative_paths(self):
+        self.tmp.putfile('/petite/grenouille/ribbit/frenchy.txt', "franch")
 
     @attr(unit=True)
     def test_rmtree(self):
