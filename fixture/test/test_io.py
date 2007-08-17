@@ -172,6 +172,8 @@ class TestTempIO(object):
         self.tmp.putfile('petite/grenouille/ribbit/frenchy.txt', french)
         assert exists(join(self.tmp, 
                             'petite/grenouille/ribbit/frenchy.txt'))
+        # make sure that a second call will only create directories necessary:
+        self.tmp.putfile('petite/grenouille/ribbit/foo.txt', "foo")
         
     @attr(unit=True)
     def test_putfile_mode(self):
