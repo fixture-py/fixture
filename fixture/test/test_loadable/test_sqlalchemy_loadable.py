@@ -323,7 +323,28 @@ def test_SQLAlchemyFixture_configured_with_bound_session():
     eq_(f.session_context, None)
     assert (MockTransaction, 'add', stub_connected_engine) in tally, (
         "expected an engine added to the transaction; calls were: %s" % tally)
-
+        
+@attr(unit=1)
+def test_SQLAlchemyFixture_configured_with_bound_session_and_conn():
+    class StubConnection:
+        pass
+    stub_conn = StubConnection()
+    class StubTransaction:
+        def add(self, engine):
+            pass
+    fake_out_bind = 1
+    class StubSession:
+        bind_to = fake_out_bind
+        def create_transaction(self):
+            return StubTransaction()
+    stub_session = StubSession()
+    f = SQLAlchemyFixture(
+        session=stub_session, connection=stub_conn)
+    f.begin()
+    eq_(f.session, stub_session)
+    eq_(f.connection, stub_conn)
+    eq_(f.session_context, None)
+    
 @raises(UninitializedError)
 @attr(unit=1)
 def test_SQLAlchemyFixture_configured_with_connection():
