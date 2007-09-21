@@ -2,6 +2,7 @@
 """sqlalchemy fixture components."""
 
 from fixture.loadable import DBLoadableFixture
+from fixture.exc import UninitializedError
 
 def negotiated_medium(obj, dataset):
     if is_table(obj):
@@ -33,6 +34,12 @@ class SQLAlchemyFixture(DBLoadableFixture):
       - A session from sqlalchemy.create_session().  This will override the 
         session_context.current approach.
     
+    - connection
+    
+      - A specific connectable/engine object (must be connected).  This is only 
+        necessary if you are working with an unbound session *and* you want to 
+        use the TableMedium for data storage.
+    
     - dataclass
     
       - SuperSet to represent loaded data with
@@ -53,35 +60,21 @@ class SQLAlchemyFixture(DBLoadableFixture):
     """
     Medium = staticmethod(negotiated_medium)
     
-    def __init__(self,  session=None, session_context=None, **kw):
+    def __init__(self,  session=None, session_context=None, 
+                        connection=None, **kw):
         DBLoadableFixture.__init__(self, **kw)
         self.session = session
         self.session_context = session_context
-        self.connection = None
+        self.connection = connection
     
     def begin(self, unloading=False):
-        
+        if self.session is None and self.session_context is None:
+            raise UninitializedError(
+                "%s must be assigned either a session or session_context" % (
+                    self.__class__.__name__))
         if self.session is None:
             self.session = self.session_context.current
-        
-        if self.session.bind_to is None:            
-            # note to self:
-            # if we don't have a session or session_context, this is the way to 
-            # manage engine transactions:
-            # http://www.sqlalchemy.org/docs/dbengine.myt#dbengine_transactions
-            # (not yet implemented)
-            
-            # ... OR ... can we not just accept a connection keyword, create an 
-            # empty transaction, then add the connection to the transaction?
-            # MappedClassMedium may not work on the same connection, however, 
-            # which might be confusing
-            
-            raise NotImplementedError(
-                    "Use of an unbound session is not implemented.  It needs "
-                    "work in transaction land to make that happen.  "
-                    "Otherwise, you can bind your session with "
-                    "create_session(bind_to=engine)" )
-        else:
+        if not self.connection and self.session.bind_to is not None:
             self.connection = self.session.bind_to.connect()
         
         DBLoadableFixture.begin(self, unloading=unloading)
@@ -92,7 +85,8 @@ class SQLAlchemyFixture(DBLoadableFixture):
     
     def create_transaction(self):
         transaction = self.session.create_transaction()
-        transaction.add(self.connection)
+        if self.connection:
+            transaction.add(self.connection)
         return transaction
     
     def dispose(self):
@@ -177,6 +171,12 @@ class TableMedium(DBLoadableFixture.StorageMediumAdapter):
             i+=1
     
     def visit_loader(self, loader):
+        if loader.connection is None:
+            raise UninitializedError(
+                "The loader using %s() has a None type connection.  "
+                "To fix this, either pass in the connection keyword or use "
+                "a session bound to an engine" % (
+                    self.__class__.__name__))
         self.connection = loader.connection
         
     def save(self, row):
