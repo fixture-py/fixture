@@ -69,7 +69,7 @@ setup(
         'console_scripts': [ 'fixture = fixture.command.generate:main' ] 
         },
     ## ORed not supported?
-    # install_requires = ['sqlalchemy>=0.3 | SQLObject>=0.7'],
+    # install_requires = ['sqlalchemy>=0.3 | SQLObject>=0.8.2'],
     extras_require = {
         'decorators': ['nose>=0.9.2'],
         },
