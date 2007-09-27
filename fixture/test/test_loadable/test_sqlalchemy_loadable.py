@@ -211,9 +211,9 @@ class SQLAlchemyFixtureForKeysTest(SQLAlchemyFixtureTest):
         """assert that the dataset was loaded."""
         eq_(Offer.get(dataset.free_truck.id).name, dataset.free_truck.name)
         
-        product = Product.get(dataset.truck.id)
+        product = Product.query().join('category').get(dataset.truck.id)
         eq_(product.name, dataset.truck.name)
-        eq_(product.category_id, dataset.cars.id)
+        eq_(product.category.id, dataset.cars.id)
         
         category = Category.get(dataset.cars.id)
         eq_(category.name, dataset.cars.name)
@@ -276,7 +276,7 @@ class TestSQLAlchemyFixtureRefInheritForKeysWithHeavyDB(
     pass
 
 @raises(UninitializedError)
-@attr(unit=1)
+@attr(unit=True)
 def test_TableMedium_requires_bound_session():
     stub_medium = {}
     stub_dataset = {}
@@ -285,7 +285,7 @@ def test_TableMedium_requires_bound_session():
         connection = None
     m.visit_loader(StubLoader())
 
-@attr(unit=1)
+@attr(unit=True)
 def test_SQLAlchemyFixture_configured_with_unbound_session():
     class StubSession:
         bind_to = None
@@ -298,7 +298,7 @@ def test_SQLAlchemyFixture_configured_with_unbound_session():
     eq_(f.session_context, None)
     eq_(f.connection, None)
     
-@attr(unit=1)
+@attr(unit=True)
 def test_SQLAlchemyFixture_configured_with_bound_session():
     tally = []
     class StubConnectedEngine:
@@ -324,7 +324,7 @@ def test_SQLAlchemyFixture_configured_with_bound_session():
     assert (MockTransaction, 'add', stub_connected_engine) in tally, (
         "expected an engine added to the transaction; calls were: %s" % tally)
         
-@attr(unit=1)
+@attr(unit=True)
 def test_SQLAlchemyFixture_configured_with_bound_session_and_conn():
     class StubConnection:
         pass
@@ -346,14 +346,14 @@ def test_SQLAlchemyFixture_configured_with_bound_session_and_conn():
     eq_(f.session_context, None)
     
 @raises(UninitializedError)
-@attr(unit=1)
+@attr(unit=True)
 def test_SQLAlchemyFixture_configured_with_connection():
     class StubConnection:
         pass
     f = SQLAlchemyFixture(connection=StubConnection())
     f.begin()
     
-@attr(unit=1)
+@attr(unit=True)
 def test_SQLAlchemyFixture_configured_with_unbound_context():
     class StubTransaction:
         pass
@@ -371,7 +371,7 @@ def test_SQLAlchemyFixture_configured_with_unbound_context():
     eq_(f.session_context, stub_context)
     eq_(f.connection, None)
     
-@attr(unit=1)
+@attr(unit=True)
 def test_SQLAlchemyFixture_configured_with_bound_context():
     tally = []
     class StubConnectedEngine:

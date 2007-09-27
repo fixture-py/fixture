@@ -3,7 +3,7 @@
 
 .. contents:: :local:
 
-After defining data with the DataSet class you need some way to load the data for your test.  Each DataSet you want to load needs some storage medium, say, a `Data Mapper`_ or `Active Record`_ object.  A Fixture is simply an environment that knows how to load data using the right objects.  It puts the pieces together, if you will.
+A DataSet class is loaded via some storage medium, say, an object that implements a `Data Mapper`_ or `Active Record`_ pattern.  A Fixture is an environment that knows how to load data using the right objects.  Behind the scenes, the rows and columns of the DataSet are simply passed off to the storage medium so that it can save the data.
 
 .. _Data Mapper: http://www.martinfowler.com/eaaCatalog/dataMapper.html
 .. _Active Record: http://www.martinfowler.com/eaaCatalog/activeRecord.html
@@ -11,15 +11,51 @@ After defining data with the DataSet class you need some way to load the data fo
 Supported storage media
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-To create a specific data-loading environment, the following subclasses are available:
+The Fixture class is designed to support many different types of storage media and there is a section later about creating your own Fixture.  Here are the various storage media supported by built-in Fixture subclasses:
 
-SQLAlchemyFixture
-    loads data using `Table`_ objects or `mapped classes`_ via the `sqlalchemy`_ 
-    module
-SQLObjectFixture
-    loads data using `SQLObject classes`_ via the `sqlobject`_ module
+SQLAlchemy
+++++++++++
 
-The idea is that your application already defines its own way of accessing its data; the LoadableFixture just "hooks in" to that interface.  Before considering the Fixture, here is an example data model defined using `sqlalchemy`_::
+DataSet classes can be loaded into `Table`_ objects or `mapped classes`_ via the `sqlalchemy`_ module::
+
+    >>> from fixture import SQLAlchemyFixture
+    
+    >>> from sqlalchemy import create_session
+    >>> from sqlalchemy.ext.sessioncontext import SessionContext
+    >>> from fixture.examples.db import sqlalchemy_examples
+    >>> dbfixture = SQLAlchemyFixture(
+    ...                 session_context=SessionContext(create_session), 
+    ...                 env=sqlalchemy_examples)
+    ... 
+
+For the more documentation see `SQLAlchemyFixture API`_
+
+Elixir
+++++++
+
+DataSet class can be loaded into `Elixir entities`_ by using the SQLAlchemyFixture (see previous example).
+
+SQLObject
++++++++++
+
+DataSet classes can be loaded into `SQLObject classes`_ via the `sqlobject`_ module::
+
+    >>> from fixture import SQLObjectFixture
+    
+    >>> from fixture.examples.db import sqlobject_examples
+    >>> dbfixture = SQLObjectFixture(
+    ...     dsn="sqlite:/:memory:", env=sqlobject_examples)
+    ... 
+
+For the more documentation see `SQLObjectFixture API`_.
+
+.. _SQLAlchemyFixture API: ../apidocs/fixture.loadable.sqlalchemy_loadable.SQLAlchemyFixture.html
+.. _SQLObjectFixture API: ../apidocs/fixture.loadable.sqlobject_loadable.SQLObjectFixture.html
+
+An Example Loading Data Using SQLAlchemy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Fixture is designed for applications that already define a way of accessing its data; the LoadableFixture just "hooks in" to that interface.  To start this example, here is some `sqlalchemy`_ code to set up a database of books and authors::
 
     >>> from sqlalchemy import *
     >>> engine = create_engine('sqlite:///:memory:')
@@ -43,20 +79,25 @@ The idea is that your application already defines its own way of accessing its d
     >>> class Book(object):
     ...     pass
     ... 
-    >>> mapper(Book, books) #doctest: +ELLIPSIS
+    >>> mapper(Book, books, properties={
+    ...     'author': relation(Author, backref='books')
+    ... }) #doctest: +ELLIPSIS
     <sqlalchemy.orm.mapper.Mapper object at ...>
     >>> meta.create_all()
+
+Consult the `sqlalchemy`_ documentation for further examples of data mapping.
 
 .. _sqlalchemy: http://www.sqlalchemy.org/
 .. _Table: http://www.sqlalchemy.org/docs/tutorial.myt#tutorial_schemasql_table_creating
 .. _mapped classes: http://www.sqlalchemy.org/docs/datamapping.myt
+.. _Elixir entities: http://elixir.ematia.de/
 .. _sqlobject: http://sqlobject.org/
 .. _SQLObject classes: http://sqlobject.org/SQLObject.html#declaring-the-class
 
 Defining a Fixture
 ~~~~~~~~~~~~~~~~~~
 
-Define a fixture object like so::
+This is a fixture with minimal configuration to support loading data into the Book or Author mapped classes::
 
     >>> from fixture import SQLAlchemyFixture
     >>> dbfixture = SQLAlchemyFixture(
@@ -64,10 +105,7 @@ Define a fixture object like so::
     ...     session=session )
     ... 
 
-For the available keyword arguments of respective LoadableFixture objects, see `SQLAlchemyFixture API`_ and `SQLObjectFixture API`_.
-
-.. _SQLAlchemyFixture API: ../apidocs/fixture.loadable.sqlalchemy_loadable.SQLAlchemyFixture.html
-.. _SQLObjectFixture API: ../apidocs/fixture.loadable.sqlobject_loadable.SQLObjectFixture.html
+There are several shortcuts, like `fixture.style.NamedDataStyle`_ and specifying the `session_context keyword`_.
 
 .. note::
     - Any keyword attribute of a LoadableFixture can be set later on as an 
@@ -75,27 +113,33 @@ For the available keyword arguments of respective LoadableFixture objects, see `
     - LoadableFixture instances can safely be module-level objects
     - An ``env`` can be a dict or a module
     
+.. _session_context keyword: ../apidocs/fixture.loadable.sqlalchemy_loadable.SQLAlchemyFixture.html
+.. _fixture.style.NamedDataStyle: ../apidocs/fixture.style.NamedDataStyle.html
+
 Loading DataSet objects
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-As mentioned earlier, a DataSet shouldn't have to know how to store itself; the job of the Fixture object is to load and unload DataSet objects.  Let's consider the following DataSet objects (reusing the examples from earlier)::
+The job of the Fixture object is to load and unload DataSet objects.  Let's consider the following DataSet objects (reusing the examples from earlier)::
 
     >>> from fixture import DataSet
     >>> class AuthorData(DataSet):
     ...     class frank_herbert:
-    ...         first_name="Frank"
-    ...         last_name="Herbert"
+    ...         first_name = "Frank"
+    ...         last_name = "Herbert"
     >>> class BookData(DataSet):
     ...     class dune:
     ...         title = "Dune"
-    ...         author_id = AuthorData.frank_herbert.ref('id')
+    ...         author = AuthorData.frank_herbert
 
-As you recall, we passed a dictionary into the Fixture that associates DataSet names with storage objects.  Using this dict, a Fixture.Data instance now knows to use the sqlalchemy mapped class ``Book`` when saving a DataSet named ``BookData``.  Since we also gave it a ``session`` keyword, this will be used to save objects::
+As you recall, we passed a dictionary into the Fixture that associates DataSet names with storage objects.  Using this dict, a Fixture.Data instance now knows to use the sqlalchemy mapped class ``Book`` when saving a DataSet named ``BookData``.  Since we also gave it a ``session`` keyword, this will be used to actually save objects::
     
     >>> data = dbfixture.data(AuthorData, BookData)
     >>> data.setup() 
-    >>> list(session.query(Book).select()) #doctest: +ELLIPSIS
+    >>> all_books = list(session.query(Book).select()) 
+    >>> all_books #doctest: +ELLIPSIS
     [<...Book object at ...>]
+    >>> all_books[0].author.first_name
+    'Frank'
     >>> data.teardown()
     >>> list(session.query(Book).select())
     []
@@ -247,15 +291,15 @@ You'll need to subclass at least `fixture.loadable.loadable:LoadableFixture`_, p
     ...             '''a chance to reference any attributes from the loader.
     ...                this is called before save().'''
     ... 
-    ...         def save(self, row):
+    ...         def save(self, row, column_vals):
     ...             '''save data into your object using the provided 
     ...                fixture.dataset.DataRow instance'''
     ...             # instantiate your real object class (Author), which was set 
     ...             # in __init__ to self.medium ...
     ...             obj = self.medium() 
-    ...             for c in row.columns():
+    ...             for c, val in column_vals:
     ...                 # column values become object attributes...
-    ...                 setattr(obj, c, getattr(row, c))
+    ...                 setattr(obj, c, val)
     ...             obj.save()
     ...             # be sure to return the object:
     ...             return obj
@@ -302,11 +346,11 @@ Now let's load some data into the custom Fixture using a simple ``env`` mapping:
 
 """
 # from __future__ import with_statement
-import sys
+import sys, types
 from fixture.base import Fixture
 from fixture.util import ObjRegistry, _mklog
 from fixture.style import OriginalStyle
-from fixture.dataset import Ref, dataset_registry, DataRow
+from fixture.dataset import Ref, dataset_registry, DataRow, is_rowlike
 from fixture.exc import LoadError, UnloadError
 import logging
 
@@ -340,8 +384,8 @@ class LoadableFixture(Fixture):
     style = OriginalStyle()
     dataclass = Fixture.dataclass
     
-    def __init__(self, style=None, medium=None, dataclass=None):
-        Fixture.__init__(self, loader=self, dataclass=dataclass)
+    def __init__(self, style=None, medium=None, **kw):
+        Fixture.__init__(self, loader=self, **kw)
         if style:
             self.style = style
         if medium:
@@ -379,8 +423,11 @@ class LoadableFixture(Fixture):
                     raise UnloadError(etype, val, self.dataset, 
                                          stored_object=obj), None, tb
             
-        def save(self, row):
-            """given a DataRow, save it somehow."""
+        def save(self, row, column_vals):
+            """given a DataRow, save it somehow.
+            
+            column_vals is an iterable of (column_name, column_value)
+            """
             raise NotImplementedError
             
         def visit_loader(self, loader):
@@ -465,8 +512,8 @@ class LoadableFixture(Fixture):
                 
                 treelog.info("%s. %s", level, verbose_obj)
     
-    def attach_storage_medium(self):
-        pass
+    def attach_storage_medium(self, ds):
+        raise NotImplementedError
     
     def begin(self, unloading=False):
         if not unloading:
@@ -512,28 +559,59 @@ class LoadableFixture(Fixture):
         
         log.info("LOADING rows in %s", ds)
         ds.meta.storage_medium.visit_loader(self)
+        registered = False
         for key, row in ds:
             try:
-                # resolve this row's referenced values :
-                for k in row.columns():
-                    v = getattr(row, k)
-                    if isinstance(v, Ref.Value):
-                        ref = v.ref
-                        ref.dataset_obj = self.loaded[ref.dataset_class]
-                        isref=True
-                
+                self.resolve_row_references(ds, row)
                 if not isinstance(row, DataRow):
                     row = row(ds)
-                obj = ds.meta.storage_medium.save(row)
+                def column_vals():
+                    for c in row.columns():
+                        yield (c, self.resolve_stored_object(getattr(row, c)))
+                obj = ds.meta.storage_medium.save(row, column_vals())
                 ds.meta._stored_objects.store(key, obj)
                 # save the instance in place of the class...
                 ds._setdata(key, row)
+                if not registered:
+                    self.loaded.register(ds, level)
+                    registered = True
                 
             except Exception, e:
                 etype, val, tb = sys.exc_info()
                 raise LoadError(etype, val, ds, key=key, row=row), None, tb
-        
-        self.loaded.register(ds, level)
+    
+    def resolve_row_references(self, current_dataset, row):        
+        """resolve this DataRow object's referenced values.
+        """
+        def resolved_rowlike(rowlike):
+            key = rowlike.__name__
+            if rowlike._dataset is type(current_dataset):
+                return DeferredStoredObject(rowlike._dataset, key)
+            loaded_ds = self.loaded[rowlike._dataset]
+            return loaded_ds.meta._stored_objects.get_object(key)
+        def resolve_stored_object(candidate):            
+            if is_rowlike(candidate):
+                return resolved_rowlike(candidate)
+            else:
+                # then it is the stored object itself.  this would happen if 
+                # there is a reciprocal foreign key (i.e. organization has a 
+                # parent organization)
+                return candidate
+                
+        for name in row.columns():
+            val = getattr(row, name)
+            if type(val) in (types.ListType, types.TupleType):
+                # i.e. categories = [python, ruby]
+                setattr(row, name, map(resolve_stored_object, val))
+            elif is_rowlike(val):
+                # i.e. category = python
+                setattr(row, name, resolved_rowlike(val))
+            elif isinstance(val, Ref.Value):
+                # i.e. category_id = python.id.
+                ref = val.ref
+                # now the ref will return the attribute from a stored object 
+                # when __get__ is invoked
+                ref.dataset_obj = self.loaded[ref.dataset_class]
     
     def rollback(self):
         raise NotImplementedError
@@ -613,6 +691,12 @@ class EnvLoadableFixture(LoadableFixture):
                 "(perhaps your style object was not configured right?)" % (
                                         ds.__class__.__name__, ds.__class__))
         ds.meta.storage_medium = self.Medium(storable, ds)
+        
+    def resolve_stored_object(self, column_val):
+        if type(column_val)==DeferredStoredObject:
+            return column_val.get_stored_object_from_loader(self)
+        else:
+            return column_val
 
 class DBLoadableFixture(EnvLoadableFixture):
     """An abstract fixture that will be loadable into a database.
@@ -637,6 +721,38 @@ class DBLoadableFixture(EnvLoadableFixture):
     
     def rollback(self):
         self.transaction.rollback()
+
+class DeferredStoredObject(object):
+    """A stored representation of a row in a DatSet, deferred.
+    
+    The actual stored object can only be resolved by the StoredMediumAdapter 
+    itself
+    
+    Imagine...::
+    
+        >>> from fixture import DataSet
+        >>> class PersonData(DataSet):
+        ...     class adam:
+        ...         father=None
+        ...     class eve:
+        ...         father=None
+        ...     class jenny:
+        ...         pass
+        ...     jenny.father = adam
+        ... 
+    
+    This would be a way to indicate that jenny's father is adam.  This class 
+    will encapsulate that reference so it can be resolved as close to when it 
+    was created as possible.
+    
+    """
+    def __init__(self, dataset, key):
+        self.dataset = dataset
+        self.key = key
+    
+    def get_stored_object_from_loader(self, loader):
+        loaded_ds = loader.loaded[self.dataset]
+        return loaded_ds.meta._stored_objects.get_object(self.key)
 
 if __name__ == '__main__':
     import doctest

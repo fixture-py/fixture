@@ -37,14 +37,16 @@ Let's set up a database and insert some data (using `sqlalchemy code`_) so we ca
     >>> frank.first_name = "Frank"
     >>> frank.last_name = "Herbert"
     >>> session.save(frank)
-    >>> session.flush()
 
 ::
 
     >>> dune = Book()
     >>> dune.title = "Dune"
-    >>> dune.author_id = frank.id
+    >>> dune.author = frank
     >>> session.save(dune)
+
+::
+
     >>> session.flush()
 
 It's now possible to run a command that points at our ``Book`` object, sends it a SQL query with a custom where clause, and turns the record sets into ``DataSet`` classes:

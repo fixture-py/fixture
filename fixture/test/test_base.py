@@ -42,7 +42,7 @@ class TestFixture:
     def tearDown(self):
         reset_mock_call_log()
     
-    @attr(unit=1)
+    @attr(unit=True)
     def test_data_sets_up_and_tears_down_data(self):
         data = self.fxt.data(StubDataset1, StubDataset2)
         data.setup()
@@ -50,7 +50,7 @@ class TestFixture:
         data.teardown()
         eq_(mock_call_log[-1], (MockLoader, 'unload'))
         
-    @attr(unit=1)
+    @attr(unit=True)
     def test_data_implements_with_statement(self):
         data = self.fxt.data(StubDataset1, StubDataset2)
         data = data.__enter__()
@@ -58,7 +58,7 @@ class TestFixture:
         data.__exit__(None, None, None)
         eq_(mock_call_log[-1], (MockLoader, 'unload'))
     
-    @attr(unit=1)
+    @attr(unit=True)
     def test_with_data_decorates_a_callable(self):
         @self.fxt.with_data(StubDataset1, StubDataset2)
         def some_callable(data):
@@ -68,7 +68,7 @@ class TestFixture:
         eq_(mock_call_log[1], ('some_callable', Fixture.Data))
         eq_(mock_call_log[2], (MockLoader, 'unload'))
         
-    @attr(unit=1)
+    @attr(unit=True)
     def test_with_data_calls_teardown_on_error(self):
         @self.fxt.with_data(StubDataset1, StubDataset2)
         def some_callable(data):
@@ -77,7 +77,7 @@ class TestFixture:
         eq_(mock_call_log[0], (MockLoader, 'load', StubSuperSet))
         eq_(mock_call_log[1], (MockLoader, 'unload'))
         
-    @attr(unit=1)
+    @attr(unit=True)
     def test_with_data_aborts_teardown_on_interrupt(self):
         @self.fxt.with_data(StubDataset1, StubDataset2)
         def some_callable(data):
@@ -87,7 +87,7 @@ class TestFixture:
         eq_(len(mock_call_log), 1, 
             "unexpected additional calls were made: %s" % mock_call_log)
             
-    @attr(unit=1)
+    @attr(unit=True)
     def test_with_data_raises_exception_in_teardown(self):
         self.fxt.loader = AbusiveMockLoader()
         @self.fxt.with_data(StubDataset1, StubDataset2)
@@ -96,7 +96,7 @@ class TestFixture:
         raises(ValueError)(some_callable)()
         eq_(mock_call_log[0], (AbusiveMockLoader, 'load', StubSuperSet))
         
-    @attr(unit=1)
+    @attr(unit=True)
     def test_with_data_does_soft_teardown_on_exception(self):
         self.fxt.loader = AbusiveMockLoader()
         @self.fxt.with_data(StubDataset1, StubDataset2)
@@ -114,7 +114,7 @@ class TestFixture:
                 "unexpected stderr capture: \n<<<<<<\n%s>>>>>>\n" % saved_err)
         eq_(mock_call_log[0], (AbusiveMockLoader, 'load', StubSuperSet))
         
-    @attr(unit=1)
+    @attr(unit=True)
     def test_with_data_decorates_a_generator(self):
         @self.fxt.with_data(StubDataset1, StubDataset2)
         def some_generator():
@@ -140,7 +140,7 @@ class TestFixture:
         eq_(mock_call_log[9], (MockLoader, 'load', StubSuperSet))
         eq_(mock_call_log[10], ('some_generator', Fixture.Data, 3))
         
-    @attr(unit=1)
+    @attr(unit=True)
     def test_generated_tests_call_teardown_on_error(self):
         @self.fxt.with_data(StubDataset1, StubDataset2)
         def some_generator():
@@ -163,7 +163,7 @@ class TestFixture:
         eq_(mock_call_log[4], ('some_generator', Fixture.Data, 1))
         eq_(mock_call_log[5], (MockLoader, 'unload'))
         
-    @attr(unit=1)
+    @attr(unit=True)
     def test_generated_raises_exception_in_teardown(self):
         self.fxt.loader = AbusiveMockLoader()
         @self.fxt.with_data(StubDataset1, StubDataset2)
@@ -184,7 +184,7 @@ class TestFixture:
         eq_(mock_call_log[0], (AbusiveMockLoader, 'load', StubSuperSet))
         eq_(mock_call_log[1], ('some_generator', Fixture.Data, 0))
         
-    @attr(unit=1)
+    @attr(unit=True)
     def test_generated_error_raises_soft_exception_in_teardown(self):
         self.fxt.loader = AbusiveMockLoader()
         @self.fxt.with_data(StubDataset1, StubDataset2)
@@ -222,7 +222,7 @@ class TestFixture:
         eq_(mock_call_log[0], (AbusiveMockLoader, 'load', StubSuperSet))
         eq_(mock_call_log[1], ('some_generator', Fixture.Data, 0))
         
-    @attr(unit=1)
+    @attr(unit=True)
     def test_with_data_preserves_a_decorated_callable(self):
         def my_custom_setup():
             mock_call_log.append('my_custom_setup')

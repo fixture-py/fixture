@@ -1,7 +1,8 @@
 
 from nose.tools import with_setup, eq_, raises
 from fixture import DataSet
-from fixture.dataset import DataRow, SuperSet, MergedSuperSet
+from fixture.dataset import (
+    Ref, DataType, DataRow, SuperSet, MergedSuperSet, is_rowlike)
 from fixture.test import attr
 
 class Books(DataSet):
@@ -76,11 +77,11 @@ class DataSetTest:
     def assert_itered_n_times(count):
         raise NotImplementedError
     
-    @attr(unit=1)
+    @attr(unit=True)
     def test_access(self):
         self.assert_access(self.dataset)
 
-    @attr(unit=1)
+    @attr(unit=True)
     def test_iter_yields_keys_rows(self):
         count=0
         for k, row in self.dataset:
@@ -89,6 +90,7 @@ class DataSetTest:
             self.assert_row_dict_for_iter(k, items, count)
         
         self.assert_itered_n_times(count)
+                
 
 class TestDataSet(DataSetTest):
     def setUp(self):
@@ -111,6 +113,14 @@ class TestDataSet(DataSetTest):
         else:
             raise ValueError("unexpected row %s, count %s" % (items, count))
 
+class TestDataRow(object):
+    @attr(unit=True)
+    def test_datarow_is_rowlike(self):
+        class StubDataSet(DataSet):
+            pass
+        row = DataRow(StubDataSet)
+        assert is_rowlike(row), "expected %s to be rowlike" % row
+
 class TestDataTypeDrivenDataSet(TestDataSet):
     def setUp(self):
         class Books(DataSet):
@@ -118,26 +128,48 @@ class TestDataTypeDrivenDataSet(TestDataSet):
                 title = 'lolita'
             class pi:
                 title = 'life of pi'
+        self.dataset_class = Books
         self.dataset = Books()
 
-class EventData(DataSet):
-    class click:
-        type = 'click'
-        session = 'aaaaaaa'
-        offer = 1
-        time = 'now'
+    @attr(unit=True)
+    def test_row_is_decorated_with_ref(self):
+        assert hasattr(self.dataset_class.lolita, 'ref'), (
+            "expected %s to be decorated with a ref method" % 
+            self.dataset_class.lolita)
+        assert self.dataset_class.lolita.ref.__class__==Ref, (
+            "unexpected ref class: %s" % 
+            self.dataset_class.lolita.ref.__class__)
     
-    class submit(click):
-        type = 'submit'
-    class order(click):
-        type = 'order'
-    class activation(click):
-        type = 'activation'
+    @attr(unit=True)
+    def test_row_is_rowlike(self):
+        assert is_rowlike(self.dataset_class.lolita), (
+            "expected %s to be rowlike" % self.dataset_class.lolita)
 
-class TestInheritedRows(DataSetTest):
-    def setUp(self):
-        self.dataset = EventData()
+@attr(unit=True)
+def test_is_rowlike():
+    class StubDataSet(DataSet):
+        class some_row:
+            pass
+    class StubDataSetNewStyle(DataSet):
+        class some_row(object):
+            pass
     
+    eq_(is_rowlike(StubDataSet.some_row), True)
+    eq_(is_rowlike(StubDataSetNewStyle.some_row), True)
+    eq_(is_rowlike(DataRow(StubDataSet)), True)
+    
+    class StubRow:
+        pass
+    class StubRowNewStyle(object):
+        pass
+    eq_(is_rowlike(StubRow), False)
+    eq_(is_rowlike(StubRowNewStyle), False)
+    
+    eq_(is_rowlike(1), False)
+    eq_(is_rowlike({}), False)
+    eq_(is_rowlike([]), False)
+
+class InheritedRowsTest(DataSetTest):    
     def assert_access(self, dataset):
         def assert_all_attr(type):
             fxt = getattr(dataset, type)
@@ -174,6 +206,39 @@ class TestInheritedRows(DataSetTest):
         else:
             raise ValueError("unexpected row %s at key %s, count %s" % (
                                                         items, key, count))
+class EventData(DataSet):
+    class click:
+        type = 'click'
+        session = 'aaaaaaa'
+        offer = 1
+        time = 'now'
+    
+    class submit(click):
+        type = 'submit'
+    class order(click):
+        type = 'order'
+    class activation(click):
+        type = 'activation'
+        
+class TestInheritedRows(InheritedRowsTest):
+    dataset = EventData()
+    
+class EventDataNewStyle(DataSet):
+    class click(object):
+        type = 'click'
+        session = 'aaaaaaa'
+        offer = 1
+        time = 'now'
+    
+    class submit(click):
+        type = 'submit'
+    class order(click):
+        type = 'order'
+    class activation(click):
+        type = 'activation'
+        
+class TestInheritedRowsWithNewStyle(InheritedRowsTest):
+    dataset = EventDataNewStyle()
 
 class TestDataSetCustomMeta(DataSetTest):
     def setUp(self):
@@ -255,12 +320,8 @@ class TestMergedSuperSet(SuperSetTest):
         eq_(self.superset['pi'].title, 'life of pi')
         eq_(self.superset.peewee.director, 'Tim Burton')
         eq_(self.superset.aquatic.director, 'cant remember his name')
-        
-class TestComplexRefs:
-    def setUp(self):
-        self.offer_data = OfferData()
-        self.product_data = ProductData()
-    
+
+class ComplexRefTest:
     @attr(unit=True)
     def test_construction(self):
         eq_(self.offer_data.meta.references, [CategoryData, ProductData])
@@ -268,5 +329,84 @@ class TestComplexRefs:
         
         cat_data = self.product_data.meta.references[0]()
         eq_(cat_data.meta.references, [])
-        
         eq_([c.__class__ for c in self.product_data.ref], [CategoryData])
+        
+class TestComplexRefs(ComplexRefTest):
+    def setUp(self):
+        self.offer_data = OfferData()
+        self.product_data = ProductData()
+        
+class ProductObj(DataSet):
+    class truck:
+        category_id = CategoryData.vehicles
+    class spaceship:
+        category_id = CategoryData.vehicles
+        
+class OfferObj(DataSet):
+    class free_truck:
+        product = ProductData.truck
+        category = CategoryData.free_stuff
+    class discounted_spaceship:
+        product = ProductData.spaceship
+        category = CategoryData.discounted
+
+class TestComplexRefsToObjects(ComplexRefTest):
+    def setUp(self):
+        self.offer_data = OfferObj()
+        self.product_data = ProductObj()
+        
+        
+class ProductObjList(DataSet):
+    class truck:
+        categories = [CategoryData.vehicles]
+    class spaceship:
+        categories = [CategoryData.vehicles]
+
+class OfferObjList(DataSet):
+    class free_truck:
+        products = [ProductData.truck]
+        categories = [CategoryData.free_stuff]
+    class discounted_spaceship:
+        products = [ProductData.spaceship]
+        categories = [CategoryData.discounted]
+        
+class TestComplexRefsToListsOfObjects(ComplexRefTest):
+    def setUp(self):
+        self.offer_data = OfferObjList()
+        self.product_data = ProductObjList()
+        
+        
+class ProductObjTuple(DataSet):
+    class truck:
+        categories = tuple([CategoryData.vehicles])
+    class spaceship:
+        categories = tuple([CategoryData.vehicles])
+
+class OfferObjTuple(DataSet):
+    class free_truck:
+        products = tuple([ProductData.truck])
+        categories = tuple([CategoryData.free_stuff])
+    class discounted_spaceship:
+        products = tuple([ProductData.spaceship])
+        categories = tuple([CategoryData.discounted])
+        
+class TestComplexRefsToTuplesOfObjects(ComplexRefTest):
+    def setUp(self):
+        self.offer_data = OfferObjTuple()
+        self.product_data = ProductObjTuple()
+
+@attr(unit=True)
+def test_DataSet_cant_add_refs_to_self():
+    class Pals(DataSet):
+        class henry:
+            name='Henry'
+            buddy=None
+        class jenny:
+            name="Jenny"
+        jenny.buddy = henry
+    
+    # will also create an infinite loop :
+    ds = Pals()
+    eq_(ds.meta.references, [])
+    
+        

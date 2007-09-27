@@ -4,8 +4,10 @@ from nose.tools import raises, eq_
 from nose.exc import SkipTest
 import unittest
 from fixture import DataSet
-from fixture.loadable import LoadableFixture, EnvLoadableFixture
-from fixture.test import env_supports, PrudentTestResult
+from fixture.loadable import (
+    LoadableFixture, EnvLoadableFixture, DBLoadableFixture)
+from fixture.test import attr, env_supports, PrudentTestResult
+from fixture.style import NamedDataStyle
 from fixture import TempIO
 
 def exec_if_supported(code, globals={}, locals={}):
@@ -45,16 +47,16 @@ class LoadableTest(object):
     def test_DataTestCase(self):
         from fixture import DataTestCase
         import unittest
-        driver = self
+        inspector = self
         class ns:
             tested = False
         
         class SomeDataTestCase(DataTestCase, unittest.TestCase):
-            fixture = driver.fixture
-            datasets = driver.datasets()
+            fixture = inspector.fixture
+            datasets = inspector.datasets()
             def test_data_test(self):
                 ns.tested = True
-                driver.assert_data_loaded(self.data)
+                inspector.assert_data_loaded(self.data)
         
         res = PrudentTestResult()
         loader = unittest.TestLoader()
@@ -66,7 +68,7 @@ class LoadableTest(object):
         eq_(res.testsRun, 1)
         eq_(ns.tested, True)
         
-        self.assert_data_torndown()
+        inspector.assert_data_torndown()
     
     def test_with_data(self):
         """test @fixture.with_data"""
@@ -181,6 +183,8 @@ class HavingOfferProductAsDataType:
                 id = 2
                 name = 'get free stuff'
         
+        ## FIXME: replace all instances of 
+        ## foo_id with foo ... that is, we need refs to data sets
         class ProductData(DataSet):
             class truck:
                 id = 1
@@ -210,13 +214,13 @@ class HavingReferencedOfferProduct:
         class ProductData(DataSet):
             class truck:
                 name = 'truck'
-                category_id = CategoryData.cars.ref('id')
+                category = CategoryData.cars
         
         class OfferData(DataSet):
             class free_truck:
                 name = "it's a free truck"
-                product_id = ProductData.truck.ref('id')
-                category_id = CategoryData.free_stuff.ref('id')
+                product = ProductData.truck
+                category = CategoryData.free_stuff
                 
         return [ProductData, OfferData]
         
@@ -234,13 +238,13 @@ class HavingRefInheritedOfferProduct:
         class ProductData(DataSet):
             class truck:
                 name = 'truck'
-                category_id = CategoryData.cars.ref('id')
+                category = CategoryData.cars
         
         class OfferData(DataSet):
             class free_truck:
                 name = "it's a free truck"
-                product_id = ProductData.truck.ref('id')
-                category_id = CategoryData.free_stuff.ref('id')
+                product = ProductData.truck
+                category = CategoryData.free_stuff
             class free_spaceship(free_truck):
                 id = 99
                 name = "it's a free spaceship"
@@ -293,3 +297,146 @@ class TestEnvLoadableFixture(object):
         data = efixture.data(MyDataSet)
         data.setup()
         
+class StubLoadableFixture(DBLoadableFixture):
+    def create_transaction(self):
+        class NoTrans:
+            def commit(self): pass
+        return NoTrans()
+
+class MockStorageMedium(DBLoadableFixture.StorageMediumAdapter):
+    def save(self, row, column_vals):                
+        obj = self.medium()
+        for k,v in column_vals:
+            setattr(obj, k, v)
+        obj.save()
+        return obj
+
+class TestDBLoadableRowReferences(object):
+    @attr(unit=True)
+    def test_row_column_refs_are_resolved(self):
+        calls = []
+        class MockDataObject(object):
+            def save(self):
+                calls.append((self.__class__, 'save'))
+        class Person(MockDataObject):
+            name = None
+        class Pet(MockDataObject):
+            owner_name = None
+        class PersonData(DataSet):
+            class bob:
+                name = "Bob B. Chillingsworth"
+        class PetData(DataSet):
+            class fido:
+                owner_name = PersonData.bob.ref('name')
+            
+        ldr = StubLoadableFixture(
+            style=NamedDataStyle(), medium=MockStorageMedium, env=locals())
+        ldr.begin()
+        ldr.load_dataset(PetData())
+        
+        eq_(calls[0], (Person, 'save'))
+        eq_(calls[1], (Pet, 'save'))
+        
+        bob_db_obj = \
+            ldr.loaded[PersonData].meta._stored_objects.get_object('bob')
+        eq_(bob_db_obj.name, PersonData.bob.name)
+        fido_db_obj = \
+            ldr.loaded[PetData].meta._stored_objects.get_object('fido')
+        eq_(fido_db_obj.owner_name, PersonData.bob.name)
+        
+    @attr(unit=True)
+    def test_row_refs_are_resolved(self):
+        calls = []
+        class MockDataObject(object):
+            def save(self):
+                calls.append((self.__class__, 'save'))
+        class Person(MockDataObject):
+            name = None
+        class Pet(MockDataObject):
+            owner = None
+        class PersonData(DataSet):
+            class bob:
+                name = "Bob B. Chillingsworth"
+        class PetData(DataSet):
+            class fido:
+                owner = PersonData.bob
+            
+        ldr = StubLoadableFixture(
+            style=NamedDataStyle(), medium=MockStorageMedium, env=locals())
+        ldr.begin()
+        ldr.load_dataset(PetData())
+        
+        eq_(calls[0], (Person, 'save'))
+        eq_(calls[1], (Pet, 'save'))
+        
+        bob_db_obj = \
+            ldr.loaded[PersonData].meta._stored_objects.get_object('bob')
+        eq_(bob_db_obj.name, PersonData.bob.name)
+        fido_db_obj = \
+            ldr.loaded[PetData].meta._stored_objects.get_object('fido')
+        eq_(fido_db_obj.owner, bob_db_obj)
+        
+    @attr(unit=True)
+    def test_lists_of_row_refs_are_resolved(self):
+        calls = []
+        class MockDataObject(object):
+            def save(self):
+                calls.append((self.__class__, 'save'))
+        class Person(MockDataObject):
+            name = None
+        class Pet(MockDataObject):
+            owners = None
+        class PersonData(DataSet):
+            class bob:
+                name = "Bob B. Chillingsworth"
+            class stacy:
+                name = "Stacy Chillingsworth"
+        class PetData(DataSet):
+            class fido:
+                owners = [PersonData.bob, PersonData.stacy]
+            
+        ldr = StubLoadableFixture(
+            style=NamedDataStyle(), medium=MockStorageMedium, env=locals())
+        ldr.begin()
+        ldr.load_dataset(PetData())
+        
+        eq_(calls[0], (Person, 'save'))
+        eq_(calls[1], (Person, 'save'))
+        eq_(calls[2], (Pet, 'save'))
+        
+        bob_db_obj = \
+            ldr.loaded[PersonData].meta._stored_objects.get_object('bob')
+        stacy_db_obj = \
+            ldr.loaded[PersonData].meta._stored_objects.get_object('stacy')
+        fido_db_obj = \
+            ldr.loaded[PetData].meta._stored_objects.get_object('fido')
+        eq_(fido_db_obj.owners, [bob_db_obj, stacy_db_obj])
+        
+    @attr(unit=True)
+    def test_DataSet_cannot_ref_self(self):
+        class MockDataObject(object):
+            def save(self): 
+                pass
+        class Person(MockDataObject):
+            name = None
+            def __repr__(self):
+                return "<Person %s>" % self.name
+        class PersonData(DataSet):
+            class bob:
+                name = "Bob B. Chillingsworth"
+                friend = None
+            class jenny:
+                name = "Jenny Ginetti"
+            jenny.friend = bob
+            
+        ldr = StubLoadableFixture(
+            style=NamedDataStyle(), medium=MockStorageMedium, env=locals())
+        ldr.begin()
+        # was raising load error because the object was getting stored :
+        ldr.load_dataset(PersonData())
+        
+        bob_db_obj = \
+            ldr.loaded[PersonData].meta._stored_objects.get_object('bob')
+        jenny_db_obj = \
+            ldr.loaded[PersonData].meta._stored_objects.get_object('jenny')
+        eq_(jenny_db_obj.friend, bob_db_obj)

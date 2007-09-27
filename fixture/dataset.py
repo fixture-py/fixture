@@ -3,7 +3,7 @@
 
 .. contents:: :local:
 
-Before talking about loading data, you need to define it. A single subclass of
+Before loading data, you need to define it. A single subclass of
 DataSet represents a database relation in Python code. Think of the class as a
 table, each inner class as a row, and each attribute per row as a column value.
 For example::
@@ -11,20 +11,18 @@ For example::
     >>> from fixture import DataSet
     >>> class Authors(DataSet):
     ...     class frank_herbert:
-    ...         first_name="Frank"
-    ...         last_name="Herbert"
+    ...         first_name = "Frank"
+    ...         last_name = "Herbert"
 
 The inner class ``frank_herbert`` defines a row with the columns ``first_name``
 and ``last_name``. The name ``frank_herbert`` is an identifier that you can use
-later on, when you want to refer to this specific row. It helps to choose a
-meaningful name.
+later on, when you want to refer to this specific row.
 
 The main goal will be to load this data into something useful, like a database.
 But notice that the ``id`` values aren't defined in the DataSet. This is because
 the database will most likely create an ``id`` for you when you insert the row 
 (however, if you need to specify a specific ``id`` number, you are free to do 
-so).  Also notice that the DataSet class knows nothing about your underlying 
-data model.  Thus, you can say it's a partial adapter_ to your data model.
+so).  How you create a DataSet will be influenced by how the underlying data object saves data.
 
 Inheriting DataSet rows
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -49,8 +47,25 @@ as for `testing edge cases`_.
 Referencing foreign DataSet classes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Each inner class of a DataSet gets decorated with a special method, ``ref()``,
-that can be used to reference a column value::
+When defining rows in a DataSet that reference foreign keys, you need to mimic how your data object wants to save such a reference.  If your data object wants to save foreign keys as objects (not ID numbers) then you can simply reference another row in a DataSet as if it were an object.::
+
+    >>> class Books(DataSet):
+    ...     class dune:
+    ...         title = "Dune"
+    ...         author = Authors.frank_herbert
+    ...     class sudanna:
+    ...         title = "Sudanna Sudanna"
+    ...         author = Authors.brian_herbert
+
+During data loading, the reference to DataSet ``Authors.brian_herbert`` will be replaced with the actual stored object used to load that row into the database.  This will work as expected for one-to-many relationships, i.e.::
+
+    >>> class Books(DataSet):
+    ...     class two_worlds:
+    ...         title = "Man of Two Worlds"
+    ...         authors = [Authors.frank_herbert, Authors.brian_herbert]
+
+However, in some cases you may need to reference an attribute that does not have a value until it is loaded, like a serial ID column.  (Note that this is not supported by the `sqlalchemy`_ data layer when using sessions.)  To facilitate this, each inner class of a DataSet gets decorated with a special method, ``ref()``,
+that can be used to reference a column value before it exists, i.e.::
 
     >>> class Books(DataSet):
     ...     class dune:
@@ -73,7 +88,6 @@ See the `DataSet.Meta`_ API for more info.
 
 .. _DataSet.Meta: ../apidocs/fixture.dataset.DataSet.Meta.html
 .. _testing edge cases: http://brian.pontarelli.com/2006/12/04/the-importance-of-edge-case-testing/
-.. _adapter: http://en.wikipedia.org/wiki/Wrapper_pattern
 
 .. api_only::
    The fixture.dataset module
@@ -81,9 +95,8 @@ See the `DataSet.Meta`_ API for more info.
 
 """
 
-import sys
+import sys, types
 from fixture.util import ObjRegistry
-import types
 
 __all__ = ['DataSet']
 
@@ -143,7 +156,20 @@ class DataContainer(object):
         
 
 class Ref(object):
-    """A reference to a row in a DataSet class."""
+    """A reference to a row in a DataSet class.
+    
+    This allows a DataSet to reference an id column of a "foreign key" DataSet 
+    before it exists.
+    
+    Ref is a Descriptor containing a deferred value to an attribute of a data 
+    object (like an instance of a SQLAlchemy mapped class).  It provides the 
+    DataSet a way to cloak the fact that "id" is an attribute only populated 
+    after said data object is saved to the database.  In other words, the 
+    DataSet doesn't know or care when it has been loaded or not.  It thinks it 
+    is referencing "id" all the same.  The timing of when id is accessed is 
+    handled by the LoadableFixture.
+    
+    """
     class Value(object):
         """A reference to a value in a row of a DataSet class."""
         def __init__(self, ref, attr_name):
@@ -192,7 +218,7 @@ def is_row_class(attr):
     return ((attr_type==types.ClassType or attr_type==type) and 
                 attr.__name__ != 'Meta' and 
                 not issubclass(attr, DataContainer.Meta))
-    
+
 class DataType(type):
     """meta class for creating DataSet classes."""
     default_primary_key = ['id']
@@ -215,6 +241,9 @@ class DataType(type):
         del cls_attr['_primary_key']
     
     def decorate_row(cls, row, name, bases, cls_attr):
+        # store a backref to the container dataset
+        row._dataset = cls
+        
         # bind a ref method
         row.ref = Ref(cls, row)
         
@@ -249,7 +278,17 @@ class DataType(type):
         if new_bases:
             row.__bases__ = tuple(new_bases)
             
-                    
+
+def is_rowlike(candidate):
+    """returns True if candidate is *like* a DataRow.
+    
+    Not to be confused with issubclass(candidate, DataRow).
+    
+    A regular or new-style class is row-like because DataSet objects allow any 
+    type of class to declare a row of data
+    """
+    return hasattr(candidate, '_dataset') and type(candidate._dataset) in (
+                                                            DataType, DataSet)
 
 class DataRow(object):
     """a DataSet row, values accessible by attibute or key."""
@@ -280,10 +319,6 @@ class DataRow(object):
             if k.startswith('_') or k in self._reserved_attr:
                 continue
             yield k
-    
-    def __setattr__(self, name, val):
-        raise AttributeError("cannot set attributes on a %s instance" % (
-                                                self.__class__.__name__))
 
 class DataSetStore(list):
     """keeps track of actual objects stored in a dataset."""
@@ -424,14 +459,23 @@ class DataSet(DataContainer):
         if not default_refclass:
             default_refclass = SuperSet
         
-        def mkref(references):
+        def mkref():
+            clean_refs = []
+            for ds in iter(self.meta.references):
+                if ds is type(self):
+                    # whoops
+                    continue
+                clean_refs.append(ds)
+            self.meta.references = clean_refs
+            
             return default_refclass(*[
-                        ds.shared_instance(default_refclass=default_refclass) \
-                            for ds in iter(references)])
+                ds.shared_instance(default_refclass=default_refclass) 
+                    for ds in iter(self.meta.references)
+            ])
         
         # data def style classes, so they have refs before data is walked
         if len(self.meta.references) > 0:
-            self.ref = mkref(self.meta.references)
+            self.ref = mkref()
             
         for key, data in self.data():
             if key in self:
@@ -447,7 +491,7 @@ class DataSet(DataContainer):
             
         if not self.ref:
             # type style classes, since refs were discovered above
-            self.ref = mkref(self.meta.references)
+            self.ref = mkref()
     
     def __iter__(self):
         for key in self.meta.keys:
@@ -486,7 +530,11 @@ class DataSet(DataContainer):
                 if name.startswith("_"):
                     continue
                 yield name
-                
+        
+        def add_ref_from_rowlike(rowlike):
+            if rowlike._dataset not in self.meta.references:
+                self.meta.references.append(rowlike._dataset)
+                    
         empty = True
         for name in public_dir(self.__class__):
             val = getattr(self.__class__, name)
@@ -502,16 +550,24 @@ class DataSet(DataContainer):
                 col_val = getattr(row_class, col_name)
                 
                 if isinstance(col_val, Ref):
+                    # the .ref attribute
                     continue
-                if isinstance(col_val, Ref.Value):
+                elif type(col_val) in (types.ListType, types.TupleType):
+                    for c in col_val:
+                        if is_rowlike(c):
+                            add_ref_from_rowlike(c)
+                        else:
+                            raise TypeError(
+                                "multi-value columns can only contain "
+                                "rowlike objects, not %s of type %s" % (
+                                                col_val, type(col_val)))
+                elif is_rowlike(col_val):
+                    add_ref_from_rowlike(col_val)
+                elif isinstance(col_val, Ref.Value):
                     ref = col_val.ref
                     if ref.dataset_class not in self.meta.references:
                         # store the reference:
                         self.meta.references.append(ref.dataset_class)
-                        
-                    ### FIXME: with __get__ this will
-                    ### just be the Ref.Value object ...
-                    # col_val = getattr(ref.row, col_val.attr_name)
                     
                 row[col_name] = col_val
             yield (key, row)

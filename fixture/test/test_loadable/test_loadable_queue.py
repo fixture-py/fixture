@@ -343,7 +343,7 @@ class TestComplexLoadQueue(unittest.TestCase):
             def clearall(self):
                 cleared_datasets.append(self.dataset)
                 super(NoOpMedium, self).clearall()
-            def save(self, row): pass
+            def save(self, row, column_vals): pass
         class NoOpFixture(EnvLoadableFixture):
             """a fixture that pretends to load stuff but doesn't really."""
             def attach_storage_medium(self, ds): 

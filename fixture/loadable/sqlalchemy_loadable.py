@@ -104,35 +104,37 @@ class SQLAlchemyFixture(DBLoadableFixture):
     def rollback(self):
         DBLoadableFixture.rollback(self)
 
+def object_was_deleted(session, obj):
+    # hopefully there is a more future proof way to do this...
+    from sqlalchemy.orm.mapper import object_mapper
+    for c in [obj] + list(object_mapper(obj).cascade_iterator(
+                                                    'delete', obj)):
+        if c in session.deleted:
+            return True
+        elif not session.uow._is_valid(c):
+            # it must have been deleted elsewhere.  is there any other 
+            # reason for this scenario?
+            return True
+    return False
+
 class MappedClassMedium(DBLoadableFixture.StorageMediumAdapter):
     def __init__(self, *a,**kw):
         DBLoadableFixture.StorageMediumAdapter.__init__(self, *a,**kw)
         
     def clear(self, obj):
-        
-        # hopefully there is a more future proof way to do this...
-        
-        from sqlalchemy.orm.mapper import object_mapper as _object_mapper
-        for c in [obj] + list(_object_mapper(obj).cascade_iterator(
-                                                        'delete', obj)):
-            if c not in self.session.uow.deleted:
-                if not self.session.uow._is_valid(c):
-                    # it must have been deleted elsewhere.  is there any other 
-                    # reason for this scenario?
-                    return
-                    
-        self.session.delete(obj)
-        self.session.flush()
+        if not object_was_deleted(self.session, obj):
+            self.session.delete(obj)
+        # self.session.flush()
     
     def visit_loader(self, loader):
         self.session = loader.session
         
-    def save(self, row):
+    def save(self, row, column_vals):
         obj = self.medium()
-        for c in row.columns():
-            setattr(obj, c, getattr(row, c))
+        for c, val in column_vals:
+            setattr(obj, c, val)
         self.session.save(obj)
-        self.session.flush()
+        # self.session.flush()
         return obj
         
 class TableMedium(DBLoadableFixture.StorageMediumAdapter):
@@ -179,15 +181,14 @@ class TableMedium(DBLoadableFixture.StorageMediumAdapter):
                     self.__class__.__name__))
         self.connection = loader.connection
         
-    def save(self, row):
+    def save(self, row, column_vals):
         from sqlalchemy.schema import Table
         if not isinstance(self.medium, Table):
             raise ValueError(
                 "medium %s must be a Table instance" % self.medium)
                 
         stmt = self.medium.insert()
-        c = self.connection.execute(stmt, 
-                            dict([(c, getattr(row, c)) for c in row.columns()]))
+        c = self.connection.execute(stmt, dict(list(column_vals)))
         primary_key = c.last_inserted_ids()
         if primary_key is None:
             raise NotImplementedError(

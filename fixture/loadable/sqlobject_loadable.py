@@ -55,15 +55,15 @@ class SQLObjectFixture(DBLoadableFixture):
         def clear(self, obj):
             obj.destroySelf()
             
-        def save(self, row):
+        def save(self, row, column_vals):
             from sqlobject.styles import getStyle
             so_style = getStyle(self.medium)
     
             if hasattr(row, 'connection'):
                 raise ValueError(
                         "cannot name a key 'connection' in row %s" % row)
-            dbvals = dict([(so_style.dbColumnToPythonAttr(k), getattr(row, k)) 
-                                                        for k in row.columns()])
+            dbvals = dict([(so_style.dbColumnToPythonAttr(k), v) 
+                                                        for k,v in column_vals])
             dbvals['connection'] = self.transaction
             return self.medium(**dbvals)
         

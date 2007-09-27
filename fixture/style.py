@@ -117,9 +117,23 @@ class PaddedNameStyle(Style):
         return self._pad(name)
 
 class NamedDataStyle(TrimmedNameStyle):
-    """derives names from datasets assuming Data as a suffix.
+    """derives names from datasets assuming "Data" as a suffix.
     
-    i.e. EmployeeData translates to Employee
+    for example, consider this data object and this DataSet::
+        
+        >>> class Author(object):
+        ...     name = None
+        ... 
+        >>> from fixture import DataSet
+        >>> class AuthorData(DataSet):
+        ...     class freude:
+        ...         name = "Sigmund Freude"
+        ... 
+    
+    if a LoadableFixture is configured with style=NamedDataStyle() then it will 
+    automatically look in its env for the object "Author" when loading the 
+    DataSet named "AuthorData"
+    
     """
     def __init__(self):
         TrimmedNameStyle.__init__(self, suffix='Data')
@@ -139,3 +153,8 @@ def camel_to_under(s):
             
         chunks[chkid] = chunks[chkid] + ltr
     return '_'.join([c.lower() for c in chunks])
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
+    
