@@ -3,11 +3,10 @@ import nose
 from nose.tools import raises, eq_
 from nose.exc import SkipTest
 import unittest
-from fixture import DataSet
+from fixture import DataSet, NamedDataStyle
 from fixture.loadable import (
     LoadableFixture, EnvLoadableFixture, DBLoadableFixture)
 from fixture.test import attr, env_supports, PrudentTestResult
-from fixture.style import NamedDataStyle
 from fixture import TempIO
 
 def exec_if_supported(code, globals={}, locals={}):

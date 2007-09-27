@@ -138,9 +138,8 @@ class %(fxt_class)s(DataSet):
     
     def begin(self):
         self.add_import('import datetime')
-        self.add_import("from fixture import DataSet")
+        self.add_import("from fixture import DataSet, NamedDataStyle")
         self.add_import("from fixture.dataset import MergedSuperSet")
-        self.add_import("from fixture.style import NamedDataStyle")
     
     class data(object):
         def __init__(self, elements):

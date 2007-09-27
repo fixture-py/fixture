@@ -4,9 +4,10 @@ from nose.tools import eq_
 from nose.exc import SkipTest
 from fixture import SQLObjectFixture
 from fixture.test import env_supports
-from fixture import SQLObjectFixture
-from fixture.dataset import MergedSuperSet, DataSet
-from fixture.style import NamedDataStyle, PaddedNameStyle, CamelAndUndersStyle
+from fixture import (
+    SQLObjectFixture, NamedDataStyle, PaddedNameStyle, CamelAndUndersStyle, 
+    DataSet)
+from fixture.dataset import MergedSuperSet
 from fixture.test.test_loadable import *
 from fixture.examples.db.sqlobject_examples import *
 from fixture.test import conf

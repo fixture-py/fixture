@@ -1,6 +1,10 @@
 
 """Utilities for deriving new names from existing names."""
 
+__all__ = [
+    'CamelAndUndersStyle', 'TrimmedNameStyle', 'NamedDataStyle', 
+    'PaddedNameStyle', 'ChainedStyle']
+
 class Style(object):
     """utility for deriving new names from existing names.
     

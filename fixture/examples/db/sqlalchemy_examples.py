@@ -72,8 +72,7 @@ class name (there are other ways to do this more or less explicitly).
 We are going to pass it a session_context to create connections with, but again 
 there are alternatives to this::
 
-    >>> from fixture.style import TrimmedNameStyle    
-    >>> from fixture import SQLAlchemyFixture
+    >>> from fixture import SQLAlchemyFixture, TrimmedNameStyle
     >>> db = SQLAlchemyFixture( env=globals(), session_context=session_context,
     ...                         style=TrimmedNameStyle(suffix="_data"))
     ...

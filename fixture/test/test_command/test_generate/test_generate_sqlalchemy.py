@@ -122,8 +122,7 @@ class SQLAlchemyHandlerQueryTest(SQLAlchemyHandlerTest):
     def setUp(self):
         super(SQLAlchemyHandlerQueryTest, self).setUp()
         
-        from fixture import SQLAlchemyFixture
-        from fixture.style import NamedDataStyle
+        from fixture import SQLAlchemyFixture, NamedDataStyle
         self.fixture = SQLAlchemyFixture(
                             env=sqlalchemy_examples, 
                             style=NamedDataStyle(),

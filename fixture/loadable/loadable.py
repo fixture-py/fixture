@@ -149,8 +149,7 @@ Discovering storable objects with Style
 
 If you didn't want to create a strict mapping of DataSet class names to their storable object names you can use Style objects to translate DataSet class names.  For example, consider this Fixture :
 
-    >>> from fixture import SQLAlchemyFixture
-    >>> from fixture.style import TrimmedNameStyle
+    >>> from fixture import SQLAlchemyFixture, TrimmedNameStyle
     >>> dbfixture = SQLAlchemyFixture(
     ...     env=globals(),
     ...     style=TrimmedNameStyle(suffix="Data"),
@@ -159,7 +158,7 @@ If you didn't want to create a strict mapping of DataSet class names to their st
 
 This would take the name ``AuthorData`` and trim off "Data" from its name to find ``Author``, its mapped sqlalchemy class for storing data.  Since this is a logical convention to follow for naming DataSet classes, you can use a shortcut:
 
-    >>> from fixture.style import NamedDataStyle
+    >>> from fixture import NamedDataStyle
     >>> dbfixture = SQLAlchemyFixture(
     ...     env=globals(),
     ...     style=NamedDataStyle(),

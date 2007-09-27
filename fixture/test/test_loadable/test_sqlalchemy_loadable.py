@@ -3,8 +3,8 @@ from nose.tools import eq_, raises
 from nose.exc import SkipTest
 from fixture import SQLAlchemyFixture
 from fixture.dataset import MergedSuperSet
-from fixture import SQLAlchemyFixture
-from fixture.style import NamedDataStyle, CamelAndUndersStyle, TrimmedNameStyle
+from fixture import (
+    SQLAlchemyFixture, NamedDataStyle, CamelAndUndersStyle, TrimmedNameStyle)
 from fixture.exc import UninitializedError
 from fixture.test import conf, env_supports, attr
 from fixture.test.test_loadable import *
