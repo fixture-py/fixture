@@ -16,7 +16,7 @@ fulfill stories like these:
 
 For more info, this concept is explained in the wikipedia article, [http://en.wikipedia.org/wiki/Test_fixture Test Fixture].
 
-===DataSet Objects===
+===!DataSet Objects===
 
 To load data into a database (or anything suitable) you create subclasses of 
 `fixture.DataSet` like so:
@@ -80,14 +80,9 @@ due to dependency error.
 ===Status===
 
 fixture is more or less a complete rewrite of 
-[http://testtools.python-hosting.com/ testtools.fixtures].  Since testtools went 
-through several versions, fixture claims to be a 1.0 release.  All 
-that means is that the implementation is now thought to be more mature and at 
-any final release, a major effort will be made to preserve the interface through 
-regression testing.
-
-However, the new interface still has room to evolve and there are probably 
-undiscovered bugs so please don't hesitate to 
+[http://testtools.python-hosting.com/ testtools.fixtures] and a lot of improvements have 
+been made after learning where testtools went wrong.  However, the new interface still has room to 
+evolve and there are probably undiscovered bugs so please don't hesitate to 
 [http://code.google.com/p/fixture/issues/list submit an issue].
 
 """
