@@ -24,15 +24,19 @@ class SQLAlchemyFixture(DBLoadableFixture):
     
       - A Style object to translate names with
     
-    - session_context
+    - scoped_session
     
+      - An instance of sqlalchemy.orm.scoped_session.ScopedSession
+
+    - session_context
+
       - An instance of sqlalchemy.ext.sessioncontext.SessionContext.  A session 
         will be created from session_context.current
     
     - session
       
       - A session from sqlalchemy.create_session().  This will override the 
-        session_context.current approach.
+        ScopedSession and SessionContext approaches.
     
     - connection
     
@@ -60,22 +64,37 @@ class SQLAlchemyFixture(DBLoadableFixture):
     """
     Medium = staticmethod(negotiated_medium)
     
-    def __init__(self,  session=None, session_context=None, 
-                        connection=None, **kw):
+    def __init__(self,  session=None, scoped_session=None, 
+                        session_context=None, connection=None, **kw):
         DBLoadableFixture.__init__(self, **kw)
         self.session = session
+        self.session_bind = None
+        self.scoped_session = scoped_session
         self.session_context = session_context
         self.connection = connection
     
     def begin(self, unloading=False):
-        if self.session is None and self.session_context is None:
+        if self.session is None and self.scoped_session is None and self.session_context is None:
             raise UninitializedError(
-                "%s must be assigned either a session or session_context" % (
+                "%s must be assigned either a session, scoped_session or session_context" % (
                     self.__class__.__name__))
         if self.session is None:
-            self.session = self.session_context.current
-        if not self.connection and self.session.bind_to is not None:
-            self.connection = self.session.bind_to.connect()
+            if self.scoped_session is not None:
+                self.session = self.scoped_session()
+            else:
+                self.session = self.session_context.current
+        
+        if hasattr(self.session, 'bind'):
+            # 0.4
+            self.session_bind = self.session.bind
+        elif hasattr(self.session, 'bind_to'):
+            # 0.3
+            self.session_bind = self.session.bind_to
+        else:
+            self.session_bind = None
+        
+        if not self.connection and self.session_bind is not None:
+            self.connection = self.session_bind.connect()
         
         DBLoadableFixture.begin(self, unloading=unloading)
     
@@ -95,8 +114,8 @@ class SQLAlchemyFixture(DBLoadableFixture):
         if self.connection:
             self.connection.close()
         if self.session:
-            if self.session.bind_to:
-                self.session.bind_to.dispose()
+            if self.session_bind:
+                self.session_bind.dispose()
             self.session.close()
         if self.transaction:
             self.transaction.close()
