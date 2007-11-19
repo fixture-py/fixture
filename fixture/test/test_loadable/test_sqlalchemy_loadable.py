@@ -521,4 +521,16 @@ def test_SQLAlchemyFixture_configured_with_bound_scoped_session():
     eq_(f.scoped_session, StubScopedSession)
     assert (MockTransaction, 'add', stub_connected_engine) in tally, (
         "expected an engine added to the transaction; calls were: %s" % tally)
-        
+
+@attr(unit=True)
+def test_is_assigned_mapper_04():
+    from sqlalchemy import Table, MetaData, Column, Integer
+    from sqlalchemy.ext.assignmapper import assign_mapper
+    from sqlalchemy.ext.sessioncontext import SessionContext
+    from sqlalchemy.orm import Mapper
+    class Stub(object):
+        pass
+    stub_context = SessionContext(lambda: 'noop')
+    stub_table = Table('stub', MetaData(), Column('id', Integer, primary_key=True))
+    m = assign_mapper(stub_context, Stub, stub_table)
+    eq_(is_assigned_mapper(m), True)

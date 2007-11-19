@@ -8,12 +8,13 @@ Create your tables and mappers.  Note that sqlalchemy extensions are used here
 only to make the assertions easier to read.::
 
     >>> from sqlalchemy import *
+    >>> from sqlalchemy.orm import *
     >>> from sqlalchemy.ext.assignmapper import assign_mapper
     >>> from sqlalchemy.ext.sessioncontext import SessionContext
     
-    >>> meta = BoundMetaData("sqlite:///:memory:")
+    >>> meta = MetaData("sqlite:///:memory:")
     >>> session_context = SessionContext(
-    ...     lambda: create_session(bind_to=meta.engine))
+    ...     lambda: create_session(bind=meta.bind))
     ...
     >>> affiliates = Table('affiliates', meta,
     ...     Column('id', INT, primary_key=True),
@@ -158,11 +159,14 @@ Category, Product, Offer = None, None, None
 
 if sqlalchemy:
     from sqlalchemy import *
+    from sqlalchemy.orm import *
     from sqlalchemy.orm.mapper import global_extensions
     from sqlalchemy.ext.sessioncontext import SessionContext
     from sqlalchemy.ext.assignmapper import assign_mapper
+    metadata = MetaData()
     
     categories = Table("fixture_sqlalchemy_category",
+        metadata,
         Column("id", INT, primary_key=True),
         Column("name", String )
     )
@@ -170,6 +174,7 @@ if sqlalchemy:
         pass
     
     products = Table("fixture_sqlalchemy_product",
+        metadata,
         Column("id", INT, primary_key=True),
         Column("name", String ),
         Column("category_id", INT, 
@@ -179,6 +184,7 @@ if sqlalchemy:
         pass
     
     offers = Table("fixture_sqlalchemy_offer",
+        metadata,
         Column("id", INT, primary_key=True),
         Column("name", String ),
         Column("category_id", INT, 
@@ -189,9 +195,7 @@ if sqlalchemy:
     class Offer(object):
         pass
         
-    dynamic_meta = DynamicMetaData()
-    session = create_session(engine)
-    authors = Table('authors', dynamic_meta,
+    authors = Table('authors', metadata,
         Column('id', Integer, primary_key=True),
         Column('first_name', String),
         Column('last_name', String))
@@ -200,7 +204,7 @@ if sqlalchemy:
         pass
 
     mapper(Author, authors)
-    books = Table('books', dynamic_meta, 
+    books = Table('books', metadata, 
         Column('id', Integer, primary_key=True),
         Column('title', String),
         Column('author_id', Integer, ForeignKey('authors.id')))

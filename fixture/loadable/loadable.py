@@ -20,7 +20,7 @@ DataSet classes can be loaded into `Table`_ objects or `mapped classes`_ via the
 
     >>> from fixture import SQLAlchemyFixture
     
-    >>> from sqlalchemy import create_session
+    >>> from sqlalchemy.orm import create_session
     >>> from sqlalchemy.ext.sessioncontext import SessionContext
     >>> from fixture.examples.db import sqlalchemy_examples
     >>> dbfixture = SQLAlchemyFixture(

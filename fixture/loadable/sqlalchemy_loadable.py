@@ -223,7 +223,14 @@ class TableMedium(DBLoadableFixture.StorageMediumAdapter):
 
 def is_assigned_mapper(obj):
     from sqlalchemy.orm.mapper import Mapper
-    return hasattr(obj, 'mapper') and isinstance(obj.mapper, Mapper)
+    if hasattr(obj, 'is_assigned'):
+        # 0.4 :
+        is_assigned = obj.is_assigned
+    else:
+        def is_assigned(obj):
+            # 0.3 :
+           return hasattr(obj, 'mapper') and isinstance(obj.mapper, Mapper)
+    return is_assigned(obj)
 
 def is_mapped_class(obj):
     from sqlalchemy import util

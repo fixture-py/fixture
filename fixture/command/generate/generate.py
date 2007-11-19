@@ -24,12 +24,13 @@ An example
 Let's set up a database and insert some data (using `sqlalchemy code`_) so we can run the fixture command::
 
     >>> from sqlalchemy import *
+    >>> from sqlalchemy.orm import *
     >>> DSN = 'sqlite:////tmp/fixture_example.db'
     >>> from fixture.examples.db.sqlalchemy_examples import (
-    ...                                 Author, Book, dynamic_meta)
-    >>> dynamic_meta.connect(DSN)
-    >>> dynamic_meta.create_all()
-    >>> session = create_session()
+    ...                                 Author, Book, metadata)
+    >>> metadata.connect(DSN)
+    >>> metadata.create_all()
+    >>> session = create_session(bind=metadata.bind)
 
 ::
 
