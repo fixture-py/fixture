@@ -4,6 +4,13 @@
 from fixture.loadable import DBLoadableFixture
 from fixture.exc import UninitializedError
 
+try:
+    from sqlalchemy.orm import sessionmaker
+except ImportError:
+    Session = None
+else:
+    Session = sessionmaker(autoflush=False, transactional=True)
+
 def negotiated_medium(obj, dataset):
     if is_table(obj):
         return TableMedium(obj, dataset)
@@ -74,15 +81,17 @@ class SQLAlchemyFixture(DBLoadableFixture):
         self.connection = connection
     
     def begin(self, unloading=False):
-        if self.session is None and self.scoped_session is None and self.session_context is None:
-            raise UninitializedError(
-                "%s must be assigned either a session, scoped_session or session_context" % (
-                    self.__class__.__name__))
         if self.session is None:
             if self.scoped_session is not None:
                 self.session = self.scoped_session()
-            else:
+            elif self.session_context is not None:
                 self.session = self.session_context.current
+            else:
+                # preferred :
+                self.session = Session('fixture')
+                # raise UninitializedError(
+                #     "%s must be assigned either a session, scoped_session or session_context" % (
+                #         self.__class__.__name__))
         
         if hasattr(self.session, 'bind'):
             # 0.4
