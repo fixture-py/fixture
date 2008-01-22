@@ -5,11 +5,11 @@ from fixture.loadable import DBLoadableFixture
 from fixture.exc import UninitializedError
 
 try:
-    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.orm import sessionmaker, scoped_session
 except ImportError:
     Session = None
 else:
-    Session = sessionmaker(autoflush=False, transactional=True)
+    Session = scoped_session(sessionmaker(autoflush=True, transactional=True))
 
 def negotiated_medium(obj, dataset):
     if is_table(obj):
@@ -88,7 +88,7 @@ class SQLAlchemyFixture(DBLoadableFixture):
                 self.session = self.session_context.current
             else:
                 # preferred :
-                self.session = Session('fixture')
+                self.session = Session(scope=__name__)
                 # raise UninitializedError(
                 #     "%s must be assigned either a session, scoped_session or session_context" % (
                 #         self.__class__.__name__))
@@ -112,7 +112,15 @@ class SQLAlchemyFixture(DBLoadableFixture):
         DBLoadableFixture.commit(self)
     
     def create_transaction(self):
-        transaction = self.session.create_transaction()
+        if hasattr(self.session, 'create_transaction'):
+            # 0.3 
+            transaction = self.session.create_transaction()
+        else:
+            # 0.4
+            self.session.begin()
+            return self.session
+        
+        # I'm assuming this was only needed for 0.3 (until proven otherwise)
         if self.connection:
             transaction.add(self.connection)
         return transaction
@@ -132,27 +140,27 @@ class SQLAlchemyFixture(DBLoadableFixture):
     def rollback(self):
         DBLoadableFixture.rollback(self)
 
-def object_was_deleted(session, obj):
-    # hopefully there is a more future proof way to do this...
-    from sqlalchemy.orm.mapper import object_mapper
-    for c in [obj] + list(object_mapper(obj).cascade_iterator(
-                                                    'delete', obj)):
-        if c in session.deleted:
-            return True
-        elif not session.uow._is_valid(c):
-            # it must have been deleted elsewhere.  is there any other 
-            # reason for this scenario?
-            return True
-    return False
+## this was used in an if branch of clear() ... but I think this is no longer necessary with scoped sessions
+## does it need to exist for 0.3 ?  not sure
+# def object_was_deleted(session, obj):
+#     # hopefully there is a more future proof way to do this...
+#     from sqlalchemy.orm.mapper import object_mapper
+#     for c in [obj] + list(object_mapper(obj).cascade_iterator(
+#                                                     'delete', obj)):
+#         if c in session.deleted:
+#             return True
+#         elif not session.uow._is_valid(c):
+#             # it must have been deleted elsewhere.  is there any other 
+#             # reason for this scenario?
+#             return True
+#     return False
 
 class MappedClassMedium(DBLoadableFixture.StorageMediumAdapter):
     def __init__(self, *a,**kw):
         DBLoadableFixture.StorageMediumAdapter.__init__(self, *a,**kw)
         
     def clear(self, obj):
-        if not object_was_deleted(self.session, obj):
-            self.session.delete(obj)
-        # self.session.flush()
+        self.session.delete(obj)
     
     def visit_loader(self, loader):
         self.session = loader.session
@@ -162,7 +170,6 @@ class MappedClassMedium(DBLoadableFixture.StorageMediumAdapter):
         for c, val in column_vals:
             setattr(obj, c, val)
         self.session.save(obj)
-        # self.session.flush()
         return obj
         
 class TableMedium(DBLoadableFixture.StorageMediumAdapter):
