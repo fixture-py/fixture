@@ -168,7 +168,7 @@ if sqlalchemy:
     categories = Table("fixture_sqlalchemy_category",
         metadata,
         Column("id", INT, primary_key=True),
-        Column("name", String )
+        Column("name", String(100) )
     )
     class Category(object):
         pass
@@ -176,7 +176,7 @@ if sqlalchemy:
     products = Table("fixture_sqlalchemy_product",
         metadata,
         Column("id", INT, primary_key=True),
-        Column("name", String ),
+        Column("name", String(100) ),
         Column("category_id", INT, 
                 ForeignKey("fixture_sqlalchemy_category.id")),
     )
@@ -186,7 +186,7 @@ if sqlalchemy:
     offers = Table("fixture_sqlalchemy_offer",
         metadata,
         Column("id", INT, primary_key=True),
-        Column("name", String ),
+        Column("name", String(100) ),
         Column("category_id", INT, 
                 ForeignKey("fixture_sqlalchemy_category.id")),
         Column("product_id", INT, 
@@ -197,8 +197,8 @@ if sqlalchemy:
         
     authors = Table('authors', metadata,
         Column('id', Integer, primary_key=True),
-        Column('first_name', String),
-        Column('last_name', String))
+        Column('first_name', String(100)),
+        Column('last_name', String(100)))
 
     class Author(object):
         pass
@@ -206,7 +206,7 @@ if sqlalchemy:
     mapper(Author, authors)
     books = Table('books', metadata, 
         Column('id', Integer, primary_key=True),
-        Column('title', String),
+        Column('title', String(100)),
         Column('author_id', Integer, ForeignKey('authors.id')))
 
     class Book(object):
@@ -216,14 +216,19 @@ if sqlalchemy:
         'author': relation(Author, backref='books')
     })
 
-def setup_db(meta, session_context, **kw):
-    assert sqlalchemy
+def setup_db(meta, session_context=None, mapper=None, **kw):
+    assert sqlalchemy, "sqlalchemy module does not exist or had ImportErrors"
     
+    if mapper is None:
+        def mapper(*args, **kw):
+            # the old 0.3 way:
+            return assign_mapper(session_context, *args, **kw)
+            
     def assign_and_create(obj, table, **localkw):
         table.tometadata(meta)
         sendkw = dict([(k,v) for k,v in localkw.items()])
         sendkw.update(kw)
-        assign_mapper(session_context, obj, table, **sendkw)
+        mapper(obj, table, **sendkw)
         checkfirst=False
         import sys
         table.create(meta.engine, checkfirst=checkfirst)

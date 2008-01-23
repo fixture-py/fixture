@@ -22,6 +22,13 @@ class HavingCategoryData(HavingCategoryData):
     # need the mapper itself for some tests
     MappedCategory = Category
 
+class DefaultFixture(object):
+    def new_fixture(self):
+        return SQLAlchemyFixture(  
+                        style=self.style,
+                        env=globals(),
+                        dataclass=MergedSuperSet )
+
 class SessionContextFixture(object):
     def new_fixture(self):
         return SQLAlchemyFixture(  
@@ -45,18 +52,18 @@ class SQLAlchemyFixtureTest(object):
         raise NotImplementedError
                         
     def setUp(self, dsn=conf.LITE_DSN):
-        from sqlalchemy import BoundMetaData
+        from sqlalchemy import MetaData
 
-        self.meta = BoundMetaData(dsn)
-        self.conn = self.meta.engine.connect()
+        self.meta = MetaData(dsn)
+        # self.conn = self.meta.engine.connect()
         
         # to avoid deadlocks resulting from the inserts/selects
         # we are making simply for test assertions (not fixture loading)
         # lets do all that work in autocommit mode...
-        if dsn.startswith('postgres'):
-            import psycopg2.extensions
-            self.conn.connection.connection.set_isolation_level(
-                    psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        # if dsn.startswith('postgres'):
+        #     import psycopg2.extensions
+        #     self.conn.connection.connection.set_isolation_level(
+        #             psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
         
         self.session_context = SessionContext(
             lambda: sqlalchemy.create_session(bind_to=self.conn))
@@ -85,7 +92,69 @@ class TestSQLAlchemyCategory(
         HavingCategoryData, SessionFixture, SQLAlchemyCategoryTest, 
         LoadableTest):
     pass
+class TestSQLAlchemyCategoryInDefault(
+        HavingCategoryData, DefaultFixture):
+    style = (NamedDataStyle() + CamelAndUndersStyle())
     
+    def setUp(self, dsn=conf.HEAVY_DSN):
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import mapper
+        from sqlalchemy.orm import clear_mappers
+        from fixture.loadable.sqlalchemy_loadable import Session
+        from fixture.examples.db.sqlalchemy_examples import (
+            metadata, Category, categories, Product, products, Offer, offers)
+
+        clear_mappers()
+        self.engine = create_engine(dsn)
+        
+        self.fixture = self.new_fixture()
+        Session.configure(bind=self.engine)
+        
+        mapper(Category, categories)
+        mapper(Product, products, properties={
+            'category': relation(Category),
+        })
+        mapper(Offer, offers, properties={
+            'category': relation(Category, backref='products'),
+            'product': relation(Product)
+        })
+        
+        metadata.create_all(bind=self.engine)
+        self.fixture = self.new_fixture()
+    
+    def test_collidaing_sessions(self):
+        from fixture.examples.db.sqlalchemy_examples import (Category, Product, Offer)
+        from sqlalchemy.exceptions import IntegrityError
+        from sqlalchemy.orm import sessionmaker, scoped_session
+        from fixture.loadable.sqlalchemy_loadable import Session as FixtureSession
+        
+        Session = scoped_session(sessionmaker(autoflush=True, transactional=True))
+        Session.configure(bind=self.engine)
+        
+        eq_(len(Session.query(Category).all()), 0)
+        eq_(len(FixtureSession.query(Category).all()), 0)
+        
+        datasets = self.datasets()
+        data = self.fixture.data(*datasets)
+        data.setup()
+        
+        # two rows in datasets
+        eq_(len(Session.query(Category).all()), 2)
+        eq_(len(FixtureSession.query(Category).all()), 2)
+        
+        cat = Category()
+        cat.bogus_field = 'I will kill you'
+        session = Session()
+        session.save(cat)
+        try:
+            session.flush()
+        except IntegrityError:
+            pass
+        session.close()
+        
+        data.teardown()
+        eq_(FixtureSession.query(Category).all(), [])
+        eq_(Session.query(Category).all(), [])
 
 class HavingCategoryDataStorable:
     def datasets(self):

@@ -9,7 +9,7 @@ try:
 except ImportError:
     Session = None
 else:
-    Session = scoped_session(sessionmaker(autoflush=True, transactional=True))
+    Session = scoped_session(sessionmaker(autoflush=True, transactional=True), scopefunc=lambda:__name__)
 
 def negotiated_medium(obj, dataset):
     if is_table(obj):
@@ -88,7 +88,7 @@ class SQLAlchemyFixture(DBLoadableFixture):
                 self.session = self.session_context.current
             else:
                 # preferred :
-                self.session = Session(scope=__name__)
+                self.session = Session()
                 # raise UninitializedError(
                 #     "%s must be assigned either a session, scoped_session or session_context" % (
                 #         self.__class__.__name__))
@@ -113,16 +113,18 @@ class SQLAlchemyFixture(DBLoadableFixture):
     
     def create_transaction(self):
         if hasattr(self.session, 'create_transaction'):
-            # 0.3 
+            # 0.3 ... but sometimes 0.4 ??
             transaction = self.session.create_transaction()
         else:
             # 0.4
             self.session.begin()
             return self.session
+        if hasattr(transaction, 'begin'):
+            transaction.begin()
         
         # I'm assuming this was only needed for 0.3 (until proven otherwise)
-        if self.connection:
-            transaction.add(self.connection)
+        # if self.connection:
+        #     transaction.add(self.connection)
         return transaction
     
     def dispose(self):
