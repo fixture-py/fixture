@@ -71,40 +71,14 @@ class SQLAlchemyFixture(DBLoadableFixture):
     """
     Medium = staticmethod(negotiated_medium)
     
-    def __init__(self,  session=None, scoped_session=None, 
-                        session_context=None, connection=None, **kw):
+    def __init__(self, engine=None, **kw):
         DBLoadableFixture.__init__(self, **kw)
-        self.session = session
-        self.session_bind = None
-        self.scoped_session = scoped_session
-        self.session_context = session_context
-        self.connection = connection
+        self.engine = engine
     
     def begin(self, unloading=False):
-        if self.session is None:
-            if self.scoped_session is not None:
-                self.session = self.scoped_session()
-            elif self.session_context is not None:
-                self.session = self.session_context.current
-            else:
-                # preferred :
-                self.session = Session()
-                # raise UninitializedError(
-                #     "%s must be assigned either a session, scoped_session or session_context" % (
-                #         self.__class__.__name__))
-        
-        if hasattr(self.session, 'bind'):
-            # 0.4
-            self.session_bind = self.session.bind
-        elif hasattr(self.session, 'bind_to'):
-            # 0.3
-            self.session_bind = self.session.bind_to
-        else:
-            self.session_bind = None
-        
-        if not self.connection and self.session_bind is not None:
-            self.connection = self.session_bind.connect()
-        
+        self.connection = self.engine.connect()
+        Session.configure(bind=self.connection)
+        self.session = Session()
         DBLoadableFixture.begin(self, unloading=unloading)
     
     def commit(self):
@@ -112,19 +86,7 @@ class SQLAlchemyFixture(DBLoadableFixture):
         DBLoadableFixture.commit(self)
     
     def create_transaction(self):
-        if hasattr(self.session, 'create_transaction'):
-            # 0.3 ... but sometimes 0.4 ??
-            transaction = self.session.create_transaction()
-        else:
-            # 0.4
-            self.session.begin()
-            return self.session
-        if hasattr(transaction, 'begin'):
-            transaction.begin()
-        
-        # I'm assuming this was only needed for 0.3 (until proven otherwise)
-        # if self.connection:
-        #     transaction.add(self.connection)
+        transaction = self.connection.begin()
         return transaction
     
     def dispose(self):

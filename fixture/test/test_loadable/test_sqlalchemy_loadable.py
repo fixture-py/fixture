@@ -92,8 +92,7 @@ class TestSQLAlchemyCategory(
         HavingCategoryData, SessionFixture, SQLAlchemyCategoryTest, 
         LoadableTest):
     pass
-class TestSQLAlchemyCategoryInDefault(
-        HavingCategoryData, DefaultFixture):
+class TestSQLAlchemyCategoryInDefault(HavingCategoryData):
     style = (NamedDataStyle() + CamelAndUndersStyle())
     
     def setUp(self, dsn=conf.HEAVY_DSN):
@@ -107,9 +106,6 @@ class TestSQLAlchemyCategoryInDefault(
         clear_mappers()
         self.engine = create_engine(dsn)
         
-        self.fixture = self.new_fixture()
-        Session.configure(bind=self.engine)
-        
         mapper(Category, categories)
         mapper(Product, products, properties={
             'category': relation(Category),
@@ -120,9 +116,13 @@ class TestSQLAlchemyCategoryInDefault(
         })
         
         metadata.create_all(bind=self.engine)
-        self.fixture = self.new_fixture()
+        self.fixture = SQLAlchemyFixture(  
+                            style=self.style,
+                            env=globals(),
+                            engine=self.engine,
+                            dataclass=MergedSuperSet )
     
-    def test_collidaing_sessions(self):
+    def test_colliding_sessions(self):
         from fixture.examples.db.sqlalchemy_examples import (Category, Product, Offer)
         from sqlalchemy.exceptions import IntegrityError
         from sqlalchemy.orm import sessionmaker, scoped_session
@@ -132,7 +132,6 @@ class TestSQLAlchemyCategoryInDefault(
         Session.configure(bind=self.engine)
         
         eq_(len(Session.query(Category).all()), 0)
-        eq_(len(FixtureSession.query(Category).all()), 0)
         
         datasets = self.datasets()
         data = self.fixture.data(*datasets)
