@@ -106,15 +106,6 @@ class TestSQLAlchemyCategoryInDefault(HavingCategoryData):
         clear_mappers()
         self.engine = create_engine(dsn)
         
-        mapper(Category, categories)
-        mapper(Product, products, properties={
-            'category': relation(Category),
-        })
-        mapper(Offer, offers, properties={
-            'category': relation(Category, backref='products'),
-            'product': relation(Product)
-        })
-        
         metadata.create_all(bind=self.engine)
         self.fixture = SQLAlchemyFixture(  
                             style=self.style,
@@ -128,8 +119,63 @@ class TestSQLAlchemyCategoryInDefault(HavingCategoryData):
         from sqlalchemy.orm import sessionmaker, scoped_session
         from fixture.loadable.sqlalchemy_loadable import Session as FixtureSession
         
+        mapper(Category, categories)
+        mapper(Product, products, properties={
+            'category': relation(Category),
+        })
+        mapper(Offer, offers, properties={
+            'category': relation(Category, backref='products'),
+            'product': relation(Product)
+        })
+        
         Session = scoped_session(sessionmaker(autoflush=True, transactional=True))
         Session.configure(bind=self.engine)
+        
+        eq_(len(Session.query(Category).all()), 0)
+        
+        datasets = self.datasets()
+        data = self.fixture.data(*datasets)
+        data.setup()
+        
+        # two rows in datasets
+        eq_(len(Session.query(Category).all()), 2)
+        eq_(len(FixtureSession.query(Category).all()), 2)
+        
+        cat = Category()
+        cat.bogus_field = 'I will kill you'
+        session = Session()
+        session.save(cat)
+        try:
+            session.flush()
+        except IntegrityError:
+            pass
+        session.close()
+        
+        data.teardown()
+        eq_(FixtureSession.query(Category).all(), [])
+        eq_(Session.query(Category).all(), [])
+    
+    def test_colliding_sessions_with_assigned_mappers(self):
+        raise SkipTest("it appears this may not be possible?")
+        
+        from fixture.examples.db.sqlalchemy_examples import (Category, Product, Offer)
+        from sqlalchemy.exceptions import IntegrityError
+        from sqlalchemy.orm import sessionmaker, scoped_session
+        from fixture.loadable.sqlalchemy_loadable import Session as FixtureSession
+        
+        Session = scoped_session(sessionmaker(autoflush=True, transactional=True))
+        Session.configure(bind=self.engine)
+        
+        Session.mapper(Category, categories)
+        Session.mapper(Product, products, properties={
+            'category': relation(Category),
+            },
+            save_on_init=False,)
+        Session.mapper(Offer, offers, properties={
+            'category': relation(Category, backref='products'),
+            'product': relation(Product),
+            },
+            save_on_init=False,)
         
         eq_(len(Session.query(Category).all()), 0)
         
