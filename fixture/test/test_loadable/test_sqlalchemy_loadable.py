@@ -53,26 +53,39 @@ class SQLAlchemyFixtureTest(object):
                         
     def setUp(self, dsn=conf.LITE_DSN):
         from sqlalchemy import MetaData
+        from sqlalchemy.orm import clear_mappers, create_session
+        from fixture.examples.db.sqlalchemy_examples import (
+            metadata, Category, categories, Product, products, Offer, offers)
 
-        self.meta = MetaData(dsn)
-        # self.conn = self.meta.engine.connect()
+        clear_mappers()
         
-        # to avoid deadlocks resulting from the inserts/selects
-        # we are making simply for test assertions (not fixture loading)
-        # lets do all that work in autocommit mode...
-        # if dsn.startswith('postgres'):
-        #     import psycopg2.extensions
-        #     self.conn.connection.connection.set_isolation_level(
-        #             psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        self.engine = create_engine(dsn)
+        self.meta = MetaData(self.engine)
+        self.conn = self.engine.connect()
         
         self.session_context = SessionContext(
-            lambda: sqlalchemy.create_session(bind_to=self.conn))
+            lambda: create_session(bind=self.conn))
         
+        c = self.session_context
         self.fixture = self.new_fixture()
-        setup_db(self.meta, self.session_context)
+        assign_mapper(c, Category, categories)
+        assign_mapper(c, Product, products, properties={
+            'category': relation(Category),
+        })
+        assign_mapper(c, Offer, offers, properties={
+            'category': relation(Category, backref='products'),
+            'product': relation(Product)
+        })
+        self.meta.create_all()
+        # setup_db(self.meta, self.session_context)
     
     def tearDown(self):
-        teardown_db(self.meta, self.session_context)
+        import sqlalchemy.orm
+        self.meta.drop_all()
+        sqlalchemy.orm.clear_mappers()
+        self.conn.close()
+        self.engine.dispose()
+        self.session_context.current.clear()
 
 class SQLAlchemyCategoryTest(SQLAlchemyFixtureTest):
     def assert_data_loaded(self, dataset):
