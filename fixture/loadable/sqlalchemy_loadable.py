@@ -71,20 +71,32 @@ class SQLAlchemyFixture(DBLoadableFixture):
     """
     Medium = staticmethod(negotiated_medium)
     
-    def __init__(self, engine=None, connection=None, session_context=None, **kw):
+    def __init__(self, engine=None, connection=None, session=None, session_context=None, **kw):
         DBLoadableFixture.__init__(self, **kw)
         self.engine = engine
         self.connection = connection
+        self.session = session
         self.session_context = session_context
     
     def begin(self, unloading=False):
-        if self.connection is None:
-            self.connection = self.engine.connect()
         if self.session_context is not None:
             self.session = self.session_context.current
-        else:
+        if self.connection is None and self.engine is None:
+            if hasattr(self.session, 'bind'):
+                self.engine = self.session.bind
+            elif hasattr(self.session, 'bind_to'):
+                self.engine = self.session.bind_to
+            else:
+                raise UninitializedError(
+                    "connection= and engine= keywords were not specified; couldn't find "
+                    "a connection as session.bind, session.bind_to")
+        if self.connection is None:
+            self.connection = self.engine.connect()
+        
+        if self.session is None:
             Session.configure(bind=self.connection)
             self.session = Session()
+            
         DBLoadableFixture.begin(self, unloading=unloading)
     
     def commit(self):
