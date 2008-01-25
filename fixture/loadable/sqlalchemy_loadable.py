@@ -9,7 +9,7 @@ try:
 except ImportError:
     Session = None
 else:
-    Session = scoped_session(sessionmaker(autoflush=True, transactional=True), scopefunc=lambda:__name__)
+    Session = scoped_session(sessionmaker(autoflush=False, transactional=True), scopefunc=lambda:__name__)
 
 def negotiated_medium(obj, dataset):
     if is_table(obj):
@@ -71,16 +71,18 @@ class SQLAlchemyFixture(DBLoadableFixture):
     """
     Medium = staticmethod(negotiated_medium)
     
-    def __init__(self, engine=None, session_context=None, **kw):
+    def __init__(self, engine=None, connection=None, session_context=None, **kw):
         DBLoadableFixture.__init__(self, **kw)
         self.engine = engine
+        self.connection = connection
         self.session_context = session_context
     
     def begin(self, unloading=False):
+        if self.connection is None:
+            self.connection = self.engine.connect()
         if self.session_context is not None:
             self.session = self.session_context.current
         else:
-            self.connection = self.engine.connect()
             Session.configure(bind=self.connection)
             self.session = Session()
         DBLoadableFixture.begin(self, unloading=unloading)
@@ -90,10 +92,8 @@ class SQLAlchemyFixture(DBLoadableFixture):
         DBLoadableFixture.commit(self)
     
     def create_transaction(self):
-        if hasattr(self.session, 'begin'):
-            transaction = self.session.begin()
-        else:
-            transaction = self.session.create_transaction()
+        transaction = self.connection.begin()
+        # transaction = self.session.create_transaction()
         return transaction
     
     def dispose(self):

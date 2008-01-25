@@ -118,13 +118,30 @@ class TestSQLAlchemyCategoryInDefault(HavingCategoryData):
 
         clear_mappers()
         self.engine = create_engine(dsn)
+        self.conn = self.engine.connect()
         
         metadata.create_all(bind=self.engine)
         self.fixture = SQLAlchemyFixture(  
                             style=self.style,
-                            env=globals(),
-                            engine=self.engine,
-                            dataclass=MergedSuperSet )
+                            connection=self.conn,
+                            dataclass=MergedSuperSet,
+                            env=globals() )
+        
+        if dsn.startswith('postgres'):            
+            # postgres will put everything in a transaction, even after a commit,
+            # and it seems that this makes it near impossible to drop tables after a test
+            # (deadlock)
+            import psycopg2.extensions
+            self.conn.connection.connection.set_isolation_level(
+                    psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+    
+    def tearDown(self):
+        from fixture.examples.db.sqlalchemy_examples import metadata
+        import sqlalchemy.orm
+        metadata.drop_all(bind=self.engine)
+        sqlalchemy.orm.clear_mappers()
+        # self.conn.close()
+        # self.engine.dispose()
     
     def test_colliding_sessions(self):
         from fixture.examples.db.sqlalchemy_examples import (Category, Product, Offer)
@@ -142,7 +159,7 @@ class TestSQLAlchemyCategoryInDefault(HavingCategoryData):
         })
         
         Session = scoped_session(sessionmaker(autoflush=True, transactional=True))
-        Session.configure(bind=self.engine)
+        Session.configure(bind=self.conn)
         
         eq_(len(Session.query(Category).all()), 0)
         
@@ -151,17 +168,15 @@ class TestSQLAlchemyCategoryInDefault(HavingCategoryData):
         data.setup()
         
         # two rows in datasets
-        eq_(len(Session.query(Category).all()), 2)
         eq_(len(FixtureSession.query(Category).all()), 2)
+        eq_(len(Session.query(Category).all()), 2)
         
-        cat = Category()
-        cat.bogus_field = 'I will kill you'
         session = Session()
-        session.save(cat)
-        try:
-            session.flush()
-        except IntegrityError:
-            pass
+        trans = self.conn.begin()
+        prod = Product()
+        session.save(prod)
+        session.flush()
+        trans.rollback()
         session.close()
         
         data.teardown()
@@ -169,26 +184,22 @@ class TestSQLAlchemyCategoryInDefault(HavingCategoryData):
         eq_(Session.query(Category).all(), [])
     
     def test_colliding_sessions_with_assigned_mappers(self):
-        raise SkipTest("it appears this may not be possible?")
-        
         from fixture.examples.db.sqlalchemy_examples import (Category, Product, Offer)
         from sqlalchemy.exceptions import IntegrityError
         from sqlalchemy.orm import sessionmaker, scoped_session
         from fixture.loadable.sqlalchemy_loadable import Session as FixtureSession
         
-        Session = scoped_session(sessionmaker(autoflush=True, transactional=True))
-        Session.configure(bind=self.engine)
+        Session = scoped_session(sessionmaker(autoflush=False, transactional=True))
+        Session.configure(bind=self.conn)
         
-        Session.mapper(Category, categories)
+        Session.mapper(Category, categories, save_on_init=False)
         Session.mapper(Product, products, properties={
             'category': relation(Category),
-            },
-            save_on_init=False,)
+        }, save_on_init=False)
         Session.mapper(Offer, offers, properties={
             'category': relation(Category, backref='products'),
-            'product': relation(Product),
-            },
-            save_on_init=False,)
+            'product': relation(Product)
+        }, save_on_init=False)
         
         eq_(len(Session.query(Category).all()), 0)
         
@@ -197,22 +208,71 @@ class TestSQLAlchemyCategoryInDefault(HavingCategoryData):
         data.setup()
         
         # two rows in datasets
-        eq_(len(Session.query(Category).all()), 2)
         eq_(len(FixtureSession.query(Category).all()), 2)
+        eq_(len(Session.query(Category).all()), 2)
         
-        cat = Category()
-        cat.bogus_field = 'I will kill you'
         session = Session()
-        session.save(cat)
-        try:
-            session.flush()
-        except IntegrityError:
-            pass
+        trans = self.conn.begin()
+        prod = Product()
+        session.save(prod)
+        session.flush()
+        trans.rollback()
         session.close()
         
         data.teardown()
         eq_(FixtureSession.query(Category).all(), [])
         eq_(Session.query(Category).all(), [])
+        
+    def test_colliding_sessions_with_elixir(self):
+        from sqlalchemy.exceptions import IntegrityError
+        from sqlalchemy.orm import sessionmaker, scoped_session
+        from fixture.loadable.sqlalchemy_loadable import Session as FixtureSession
+        from elixir import Entity, using_options, using_mapper_options, OneToMany, ManyToOne, setup_all
+        
+        Session = scoped_session(sessionmaker(autoflush=False, transactional=True))
+        Session.configure(bind=self.conn)
+        
+        class CategoryEntity(Entity):
+            products = OneToMany('ProductEntity')
+            using_options(tablename=str(categories))
+            using_mapper_options(save_on_init=False)
+            
+        class ProductEntity(Entity):
+            category = ManyToOne('CategoryEntity')
+            offers = OneToMany('OfferEntity')
+            using_options(tablename=str(products))
+            using_mapper_options(save_on_init=False)
+            
+        class OfferEntity(Entity):
+            product = ManyToOne('ProductEntity')
+            using_options(tablename=str(offers))
+            using_mapper_options(save_on_init=False)
+        
+        setup_all()
+        
+        self.fixture.env = {'Category':CategoryEntity, 'Product':ProductEntity, 'Offer':OfferEntity}
+        
+        eq_(len(Session.query(CategoryEntity).all()), 0)
+        
+        datasets = self.datasets()
+        data = self.fixture.data(*datasets)
+        data.setup()
+        
+        # two rows in datasets
+        eq_(len(FixtureSession.query(CategoryEntity).all()), 2)
+        eq_(len(Session.query(CategoryEntity).all()), 2)
+        
+        session = Session()
+        trans = self.conn.begin()
+        prod = ProductEntity()
+        session.save(prod)
+        session.flush()
+        trans.rollback()
+        session.close()
+        
+        data.teardown()
+        eq_(FixtureSession.query(CategoryEntity).all(), [])
+        eq_(Session.query(CategoryEntity).all(), [])
 
 class HavingCategoryDataStorable:
     def datasets(self):
