@@ -87,7 +87,7 @@ evolve and there are probably undiscovered bugs so please don't hesitate to
 
 """
 
-__version__ = "0.9.1"
+__version__ = "1.0.0"
 
 import logging
 import sys
