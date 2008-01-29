@@ -4,36 +4,31 @@
 Fixtures with SQLAlchemy and nose
 ---------------------------------
 
-Create your tables and mappers.  Note that sqlalchemy extensions are used here 
-only to make the assertions easier to read.::
+Create your tables and mappers.  Note that if you have mappers attached to sessions, those mappers *must* be created with the option ``save_on_init=False``.  This is allows fixture to use a privately-scoped session when performing setup/teardown and thus work independently from the application under test.::
 
     >>> from sqlalchemy import *
     >>> from sqlalchemy.orm import *
-    >>> from sqlalchemy.ext.assignmapper import assign_mapper
-    >>> from sqlalchemy.ext.sessioncontext import SessionContext
-    
     >>> meta = MetaData("sqlite:///:memory:")
-    >>> session_context = SessionContext(
-    ...     lambda: create_session(bind=meta.bind))
-    ...
+    >>> Session = scoped_session(sessionmaker(bind=meta.bind, autoflush=True, transactional=True))
     >>> affiliates = Table('affiliates', meta,
     ...     Column('id', INT, primary_key=True),
-    ...     Column('name', String),)
+    ...     Column('name', String(60)),)
     ...     
     >>> class Affiliate(object): 
     ...     pass
-    >>> m = assign_mapper(session_context, Affiliate, affiliates)
+    >>> m = Session.mapper(Affiliate, affiliates, save_on_init=False)
     
     >>> events = Table('events', meta,
     ...     Column('id', INT, primary_key=True),
-    ...     Column('type', String),
+    ...     Column('type', String(30)),
     ...     Column('affiliate_id', INT,
     ...         ForeignKey('affiliates.id')),)
     ... 
     >>> class Event(object): 
     ...     pass
-    >>> m = assign_mapper(session_context, Event, events, properties = {
-    ...                 'affiliate': relation(Affiliate), }) 
+    >>> m = Session.mapper(Event, events, properties = {
+    ...         'affiliate': relation(Affiliate), 
+    ...     }, save_on_init=False) 
     ...
 
 Note that using mappers above is not necessary.  The fixture module supports 
@@ -70,12 +65,10 @@ DataSet object(s).  We are also going to tell it to derive SQLAlchemy table
 names by looking in the global scope and chopping off "_data" from the DataSet 
 class name (there are other ways to do this more or less explicitly).
 
-We are going to pass it a session_context to create connections with, but again 
-there are alternatives to this::
+We are going to pass it an engine to use and a custom type that can be used to find mapped objects::
 
     >>> from fixture import SQLAlchemyFixture, TrimmedNameStyle
-    >>> db = SQLAlchemyFixture( env=globals(), session_context=session_context,
-    ...                         style=TrimmedNameStyle(suffix="_data"))
+    >>> db = SQLAlchemyFixture( env=globals(), engine=meta.bind, style=TrimmedNameStyle(suffix="_data"))
     ...
 
 Now we are ready to write a test that uses the fixture.  Here is a test class 
@@ -97,8 +90,8 @@ using the provided TestCase mixin with python's builtin unittest module
     ...         # and do whatever else ...
     ...     
     ...     def test_event_something(self):
-    ...         joe = Affiliate.get(self.data.affiliates_data.joe.id)
-    ...         click = Event.get(self.data.events_data.joes_click.id)
+    ...         joe = Affiliate.query().get(self.data.affiliates_data.joe.id)
+    ...         click = Event.query().get(self.data.events_data.joes_click.id)
     ...         assert click.affiliate is joe
     ...         assert click.type == self.data.events_data.joes_click.type
     ... 
@@ -114,8 +107,8 @@ Another way to write simpler tests is to use the builtin decorator, @with_data, 
     ...
     >>> @db.with_data(events_data, setup=setup_data, teardown=teardown_data)
     ... def test_event_something(data):
-    ...     joe = Affiliate.get(data.affiliates_data.joe.id)
-    ...     click = Event.get(data.events_data.joes_click.id)
+    ...     joe = Affiliate.query().get(data.affiliates_data.joe.id)
+    ...     click = Event.query().get(data.events_data.joes_click.id)
     ...     assert click.affiliate is joe
     ...     assert click.type == data.events_data.joes_click.type
     ... 
@@ -131,12 +124,8 @@ you automatically by nose_ or unittest)::
     >>> s = suite(result)
     >>> case = nose.case.FunctionTestCase(test_event_something)
     >>> case(result)
-    >>> result.testsRun
-    2
-    >>> result.errors
-    []
-    >>> result.failures
-    []
+    >>> result
+    <fixture.test.PrudentTestResult run=2 errors=0 failures=0>
 
 Here are some things to note.  @db.with_data() takes an arbitrary number of 
 DataSet classes as an argument and passes an instance of Fixture.Data to the 
@@ -254,4 +243,7 @@ def teardown_db(meta, session_context):
     sqlalchemy.orm.clear_mappers()
     session_context.current.clear()
     session_context.current = None
-    
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()

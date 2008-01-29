@@ -28,9 +28,10 @@ Let's set up a database and insert some data (using `sqlalchemy code`_) so we ca
     >>> DSN = 'sqlite:////tmp/fixture_example.db'
     >>> from fixture.examples.db.sqlalchemy_examples import (
     ...                                 Author, Book, metadata)
-    >>> metadata.connect(DSN)
+    >>> metadata.bind = create_engine(DSN)
     >>> metadata.create_all()
-    >>> session = create_session(bind=metadata.bind)
+    >>> Session = sessionmaker(bind=metadata.bind, autoflush=True, transactional=True)
+    >>> session = Session()
 
 ::
 
@@ -46,9 +47,6 @@ Let's set up a database and insert some data (using `sqlalchemy code`_) so we ca
     >>> dune.author = frank
     >>> session.save(dune)
 
-::
-
-    >>> session.flush()
 
 It's now possible to run a command that points at our ``Book`` object, sends it a SQL query with a custom where clause, and turns the record sets into ``DataSet`` classes:
 

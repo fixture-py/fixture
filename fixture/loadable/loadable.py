@@ -20,11 +20,13 @@ DataSet classes can be loaded into `Table`_ objects or `mapped classes`_ via the
 
     >>> from fixture import SQLAlchemyFixture
     
-    >>> from sqlalchemy.orm import create_session
-    >>> from sqlalchemy.ext.sessioncontext import SessionContext
+    >>> from sqlalchemy import *
+    >>> from sqlalchemy.orm import *
+    >>> meta = MetaData("sqlite:///:memory:")
+    >>> Session = scoped_session(sessionmaker(bind=meta.bind, autoflush=True, transactional=True))
     >>> from fixture.examples.db import sqlalchemy_examples
     >>> dbfixture = SQLAlchemyFixture(
-    ...                 session_context=SessionContext(create_session), 
+    ...                 engine=meta.bind, 
     ...                 env=sqlalchemy_examples)
     ... 
 
@@ -59,12 +61,13 @@ Fixture is designed for applications that already define a way of accessing its 
 
     >>> from sqlalchemy import *
     >>> engine = create_engine('sqlite:///:memory:')
-    >>> meta = BoundMetaData(engine)
-    >>> session = create_session(engine)
+    >>> meta = MetaData(engine)
+    >>> Session = scoped_session(sessionmaker(bind=meta.bind, autoflush=True, transactional=True))
+    >>> session = Session()
     >>> authors = Table('authors', meta,
     ...     Column('id', Integer, primary_key=True),
-    ...     Column('first_name', String),
-    ...     Column('last_name', String))
+    ...     Column('first_name', String(60)),
+    ...     Column('last_name', String(60)))
     ... 
     >>> class Author(object):
     ...     pass
@@ -73,7 +76,7 @@ Fixture is designed for applications that already define a way of accessing its 
     <sqlalchemy.orm.mapper.Mapper object at ...>
     >>> books = Table('books', meta, 
     ...     Column('id', Integer, primary_key=True),
-    ...     Column('title', String),
+    ...     Column('title', String(30)),
     ...     Column('author_id', Integer, ForeignKey('authors.id')))
     ... 
     >>> class Book(object):
@@ -102,7 +105,7 @@ This is a fixture with minimal configuration to support loading data into the Bo
     >>> from fixture import SQLAlchemyFixture
     >>> dbfixture = SQLAlchemyFixture(
     ...     env={'BookData': Book, 'AuthorData': Author},
-    ...     session=session )
+    ...     engine=meta.bind )
     ... 
 
 There are several shortcuts, like `fixture.style.NamedDataStyle`_ and specifying the `session_context keyword`_.
@@ -135,13 +138,15 @@ As you recall, we passed a dictionary into the Fixture that associates DataSet n
     
     >>> data = dbfixture.data(AuthorData, BookData)
     >>> data.setup() 
-    >>> all_books = list(session.query(Book).select()) 
+    >>> dbfixture.session.query(Book).all() #doctest: +ELLIPSIS
+    [<...Book object at ...>]
+    >>> all_books = session.query(Book).all()
     >>> all_books #doctest: +ELLIPSIS
     [<...Book object at ...>]
     >>> all_books[0].author.first_name
-    'Frank'
+    u'Frank'
     >>> data.teardown()
-    >>> list(session.query(Book).select())
+    >>> session.query(Book).all()
     []
 
 Discovering storable objects with Style
@@ -153,7 +158,7 @@ If you didn't want to create a strict mapping of DataSet class names to their st
     >>> dbfixture = SQLAlchemyFixture(
     ...     env=globals(),
     ...     style=TrimmedNameStyle(suffix="Data"),
-    ...     session=session )
+    ...     engine=meta.bind )
     ... 
 
 This would take the name ``AuthorData`` and trim off "Data" from its name to find ``Author``, its mapped sqlalchemy class for storing data.  Since this is a logical convention to follow for naming DataSet classes, you can use a shortcut:
@@ -162,7 +167,7 @@ This would take the name ``AuthorData`` and trim off "Data" from its name to fin
     >>> dbfixture = SQLAlchemyFixture(
     ...     env=globals(),
     ...     style=NamedDataStyle(),
-    ...     session=session )
+    ...     engine=meta.bind )
     ... 
 
 See the `Style API`_ for all available Style objects.
@@ -173,20 +178,6 @@ Loading DataSet classes in a test
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now that you have a Fixture object to load DataSet classes you are ready to write some tests.  You can either write your own code that creates a data instance and calls setup/teardown manually (like in previous examples), or you can use one of several utilities.  
-
-As a hoky attempt to make these tests somewhat realistic, here is a function we will be testing, that returns True if a book by author or title is in stock:
-
-    >>> def in_stock(book_title=None, author_last_name=None):
-    ...     if book_title:
-    ...         rs = session.query(Book).select(books.c.title==book_title)
-    ...     elif author_last_name:
-    ...         rs = session.query(Book).select(
-    ...                 authors.c.last_name==author_last_name,
-    ...                 from_obj=[books.join(authors)])
-    ...     else:
-    ...         return False
-    ...     if len(list(rs)):
-    ...         return True
 
 Loading objects using DataTestCase
 ++++++++++++++++++++++++++++++++++
@@ -200,7 +191,8 @@ DataTestCase is a mixin class to use with Python's built-in ``unittest.TestCase`
     ...     datasets = [BookData]
     ...
     ...     def test_books_are_in_stock(self):
-    ...         assert in_stock(book_title=self.data.BookData.dune.title)
+    ...         b = session.query(Book).filter_by(title=self.data.BookData.dune.title).one()
+    ...         assert b
     ... 
     >>> suite = unittest.TestLoader().loadTestsFromTestCase(TestBookShop)
     >>> unittest.TextTestRunner().run(suite)
@@ -224,7 +216,7 @@ The special decorator method is an instance method of a Fixture class, ``with_da
 
     >>> @dbfixture.with_data(AuthorData, BookData)
     ... def test_books_are_in_stock(data):
-    ...     assert in_stock(book_title=data.BookData.dune.title)
+    ...     session.query(Book).filter_by(title=data.BookData.dune.title).one()
     ... 
     >>> import nose
     >>> case = nose.case.FunctionTestCase(test_books_are_in_stock)
@@ -246,7 +238,7 @@ In Python 2.5 or later you can write test code in a more logical manner by using
 
     from __future__ import with_statement
     with dbfixture.data(AuthorData, BookData) as data:
-        assert in_stock(book_title=data.BookData.dune.title)    
+        session.query(Book).filter_by(title=self.data.BookData.dune.title).one()
 
 .. _with statement: http://www.python.org/dev/peps/pep-0343/
 
@@ -345,6 +337,7 @@ Now let's load some data into the custom Fixture using a simple ``env`` mapping:
 
 """
 # from __future__ import with_statement
+__all__ = ['LoadableFixture', 'EnvLoadableFixture', 'DBLoadableFixture', 'DeferredStoredObject']
 import sys, types
 from fixture.base import Fixture
 from fixture.util import ObjRegistry, _mklog
