@@ -18,9 +18,8 @@ from fixture.examples.db.sqlalchemy_examples import (
             categories, products, offers )
 
 realmeta = None
-realcontext = None
+RealSession = None
 memmeta = None
-memcontext = None
 
 def setup():
     if not env_supports.sqlalchemy:
@@ -28,8 +27,8 @@ def setup():
 
 @attr(unit=True)
 def test_TableEnv():
-    from sqlalchemy import Table, BoundMetaData, INT, Column
-    meta = BoundMetaData(conf.LITE_DSN)
+    from sqlalchemy import Table, MetaData, INT, Column, create_engine
+    meta = MetaData(bind=create_engine(conf.LITE_DSN))
     class env(object):
         taxi = Table('taxi', meta, Column('id', INT, primary_key=True))
     somedict = {
@@ -67,13 +66,10 @@ class StubTemplate(Template):
 class SQLAlchemyHandlerTest(object):
     def setUp(self):
         import sqlalchemy
-        from sqlalchemy import BoundMetaData
-        from sqlalchemy.ext.sessioncontext import SessionContext
+        from sqlalchemy import MetaData, create_engine
         
-        self.meta = BoundMetaData(conf.LITE_DSN)
-        self.connection = self.meta.engine.connect()
-        self.ctx = SessionContext(
-                lambda: sqlalchemy.create_session(bind_to=self.connection))
+        self.meta = MetaData(bind=create_engine(conf.LITE_DSN))
+        self.connection = self.meta.bind.connect()
                 
         class options:
             dsn = conf.LITE_DSN
@@ -81,10 +77,11 @@ class SQLAlchemyHandlerTest(object):
         self.options = options
         self.generator = DataSetGenerator(self.options, template=StubTemplate())
             
-        setup_db(self.meta, self.ctx)
+        # setup_db(self.meta, self.ctx)
     
     def tearDown(self):
-        teardown_db(self.meta, self.ctx)
+        # teardown_db(self.meta, self.ctx)
+        pass
 
 class TestSQLAlchemyHandler(SQLAlchemyHandlerTest):
     @attr(unit=True)
@@ -222,7 +219,7 @@ class SQLAlchemyGenerateTest(GenerateTest):
     
     def assert_env_is_clean(self):
         # sanity check :
-        session = realcontext.current
+        session = RealSession()
         assert len(session.query(Product).select())
         session = memcontext.current
         eq_(len(session.query(Product).select()), 0)
@@ -230,7 +227,7 @@ class SQLAlchemyGenerateTest(GenerateTest):
     def assert_env_generated_ok(self, e):
         # get rid of the source so that we
         # are sure we aren't ever querying the source db
-        engine = realmeta.engine
+        engine = realmeta.bind
         e['offers'].drop(connectable=engine)
         e['products'].drop(connectable=engine)
         e['categories'].drop(connectable=engine)
@@ -241,40 +238,48 @@ class SQLAlchemyGenerateTest(GenerateTest):
         return data
     
     def setUp(self):
+        global realmeta, RealSession, memmeta
         import sqlalchemy
-        from sqlalchemy import BoundMetaData
-        from sqlalchemy.ext.sessioncontext import SessionContext
+        from sqlalchemy import MetaData, create_engine
+        from sqlalchemy.orm import clear_mappers, scoped_session, sessionmaker, relation
+        clear_mappers()
         
-        global realmeta, realcontext, memmeta, memcontext
-        realmeta = BoundMetaData(conf.HEAVY_DSN)
-        realcontext = SessionContext(
-                lambda: sqlalchemy.create_session(bind_to=realmeta.engine))
-            
-        memmeta = BoundMetaData(conf.LITE_DSN)
-        memcontext = SessionContext(
-                lambda: sqlalchemy.create_session(bind_to=memmeta.engine))
-            
-        setup_db(realmeta, realcontext)
+        realmeta = MetaData(bind=create_engine(conf.HEAVY_DSN))
+        RealSession = scoped_session(sessionmaker(autoflush=True, transactional=True, bind=realmeta.bind))
         
-        session = realcontext.current
+        RealSession.mapper(Category, categories)
+        RealSession.mapper(Product, products, properties={
+            'category': relation(Category)
+        })
+        RealSession.mapper(Offer, offers, properties={
+            'category': relation(Category),
+            'product': relation(Product)
+        })
+        categories.create(bind=realmeta.bind)
+        products.create(bind=realmeta.bind)
+        offers.create(bind=realmeta.bind)
+        session = RealSession()
         
-        parkas = Category(name="parkas", id=1)
+        parkas = Category()
+        parkas.name = "parkas"
         session.save(parkas)
+        jersey = Product()
+        jersey.name = "jersey"
+        jersey.category = parkas
+        session.save(jersey)
+        
         rebates = Category(name="rebates", id=2)
+        super_cashback = Offer()
+        super_cashback.name = "super cash back!"
+        super_cashback.product = jersey
+        super_cashback.category = rebates
+        session.save(super_cashback)
         session.save(rebates)
         
+        # realmeta.bind.echo = 0
         session.flush()
         
-        jersey = Product(id=1, name="jersey", category_id=parkas.id)
-        session.save(jersey)
-        session.flush()
-        super_cashback = Offer( name="super cash back!", 
-                                product_id=jersey.id, category_id=rebates.id)
-        session.save(super_cashback)
-        session.flush()
-        # realmeta.engine.echo = 0
-                                    
-        setup_db(memmeta, memcontext, non_primary=True)
+        memmeta = MetaData(bind=create_engine(conf.LITE_DSN))
     
     def tearDown(self):
         teardown_db(realmeta, realcontext)

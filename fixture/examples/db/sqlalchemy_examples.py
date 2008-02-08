@@ -149,9 +149,6 @@ Category, Product, Offer = None, None, None
 if sqlalchemy:
     from sqlalchemy import *
     from sqlalchemy.orm import *
-    from sqlalchemy.orm.mapper import global_extensions
-    from sqlalchemy.ext.sessioncontext import SessionContext
-    from sqlalchemy.ext.assignmapper import assign_mapper
     metadata = MetaData()
     
     categories = Table("fixture_sqlalchemy_category",
@@ -192,7 +189,6 @@ if sqlalchemy:
     class Author(object):
         pass
 
-    mapper(Author, authors)
     books = Table('books', metadata, 
         Column('id', Integer, primary_key=True),
         Column('title', String(100)),
@@ -200,10 +196,6 @@ if sqlalchemy:
 
     class Book(object):
         pass
-
-    mapper(Book, books, properties={
-        'author': relation(Author, backref='books')
-    })
 
 def setup_db(meta, session_context=None, mapper=None, **kw):
     assert sqlalchemy, "sqlalchemy module does not exist or had ImportErrors"
