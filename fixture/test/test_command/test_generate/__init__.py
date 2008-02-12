@@ -59,7 +59,7 @@ class GenerateTest(object):
             print code
             raise
     
-    def test_query(self):
+    def test_query(self):        
         self.dataset_generator(['-w', "name = 'super cash back!'"])
     
     def test_query_no_data(self):

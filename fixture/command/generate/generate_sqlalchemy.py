@@ -59,9 +59,6 @@ class TableEnv(object):
     
     def _find_objects(self, obj, module):
         from sqlalchemy.schema import Table
-        from sqlalchemy.orm.mapper import (
-                        has_mapper, class_mapper, object_mapper, 
-                        mapper_registry)
         
         # get dict key/vals or dir() through object ...
         if not hasattr(obj, 'items'):
@@ -95,21 +92,22 @@ class SQLAlchemyHandler(DataHandler):
             raise NotImplementedError
     
     def __init__(self, object_path, options, connection=None, **kw):
-        from sqlalchemy import BoundMetaData, create_engine
-        from sqlalchemy.ext.sessioncontext import SessionContext
+        from sqlalchemy import MetaData, create_engine
+        from sqlalchemy.orm import sessionmaker, scoped_session
         
+        self.engine = None
         self.connection = connection
         super(SQLAlchemyHandler, self).__init__(object_path, options, **kw)
         if not self.connection:
-            if self.options.dsn:
-                self.meta = BoundMetaData(self.options.dsn)
-            else:
+            if not self.options.dsn:
                 raise MisconfiguredHandler(
                         "--dsn option is required by %s" % self.__class__)
-            self.connection = self.meta.engine.connect()
-    
-        self.session_context = SessionContext(
-            lambda: sqlalchemy.create_session(bind_to=self.connection))
+            self.engine = create_engine(self.options.dsn)
+            self.meta = MetaData(bind=self.engine)
+            self.connection = self.engine.connect()
+        
+        Session = scoped_session(sessionmaker(autoflush=True, transactional=True, bind=self.engine))
+        self.session = Session()
         
         self.env = TableEnv(*[self.obj.__module__] + self.options.env)
     
@@ -120,8 +118,7 @@ class SQLAlchemyHandler(DataHandler):
     
     def begin(self, *a,**kw):
         DataHandler.begin(self, *a,**kw)
-        self.transaction = self.session_context.current.create_transaction()
-        self.transaction.add(self.connection)
+        self.transaction = self.session.begin()
     
     def commit(self):
         self.transaction.commit()
@@ -137,13 +134,13 @@ class SQLAlchemyHandler(DataHandler):
         
     def findall(self, query=None):
         """gets record set for query."""
-        session = self.session_context.current
+        session = self.session
         if query:
-            self.rs = session.query(self.obj).select_whereclause(query)
+            self.rs = session.query(self.obj).filter(query)
         else:
-            self.rs = session.query(self.obj).select()
-        if not len(self.rs):
-            raise NoData("no data for query \"%s\" on %s" % (query, self.obj))
+            self.rs = session.query(self.obj).all()
+        if not self.rs.count():
+            raise NoData("no data for query \"%s\" on %s, handler=%s" % (query, self.obj, self.__class__))
         return self.rs
     
     @staticmethod

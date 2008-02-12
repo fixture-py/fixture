@@ -20,6 +20,7 @@ from fixture.examples.db.sqlalchemy_examples import (
 realmeta = None
 RealSession = None
 memmeta = None
+MemSession = None
 
 def setup():
     if not env_supports.sqlalchemy:
@@ -220,9 +221,9 @@ class SQLAlchemyGenerateTest(GenerateTest):
     def assert_env_is_clean(self):
         # sanity check :
         session = RealSession()
-        assert len(session.query(Product).select())
-        session = memcontext.current
-        eq_(len(session.query(Product).select()), 0)
+        assert session.query(Product).count()
+        session = MemSession()
+        eq_(session.query(Product).count(), 0)
     
     def assert_env_generated_ok(self, e):
         # get rid of the source so that we
@@ -238,7 +239,7 @@ class SQLAlchemyGenerateTest(GenerateTest):
         return data
     
     def setUp(self):
-        global realmeta, RealSession, memmeta
+        global realmeta, RealSession, memmeta, MemSession
         import sqlalchemy
         from sqlalchemy import MetaData, create_engine
         from sqlalchemy.orm import clear_mappers, scoped_session, sessionmaker, relation
@@ -255,10 +256,13 @@ class SQLAlchemyGenerateTest(GenerateTest):
             'category': relation(Category),
             'product': relation(Product)
         })
+        # self.tearDown()
+        
         categories.create(bind=realmeta.bind)
         products.create(bind=realmeta.bind)
         offers.create(bind=realmeta.bind)
         session = RealSession()
+        trans = session.begin()
         
         parkas = Category()
         parkas.name = "parkas"
@@ -278,14 +282,41 @@ class SQLAlchemyGenerateTest(GenerateTest):
         
         # realmeta.bind.echo = 0
         session.flush()
+        trans.commit()
+        
+        # clear_mappers()
+        # print list(session.query(Offer).filter("name = 'super cash back!'"))
+        
+        # from fixture.examples.db.sqlalchemy_examples import Offer
+        # from sqlalchemy import MetaData, create_engine
+        # from sqlalchemy.orm import scoped_session, sessionmaker
+        # realmeta = MetaData(bind=create_engine(conf.HEAVY_DSN))
+        # RealSession = scoped_session(sessionmaker(autoflush=True, transactional=True, bind=realmeta.bind))
+        # session = RealSession()
+        # print list(session.query(Offer).filter("name = 'super cash back!'"))
+        
         
         memmeta = MetaData(bind=create_engine(conf.LITE_DSN))
+        MemSession = scoped_session(sessionmaker(autoflush=True, transactional=True, bind=memmeta.bind))
+        
+        categories.create(bind=memmeta.bind)
+        products.create(bind=memmeta.bind)
+        offers.create(bind=memmeta.bind)
     
     def tearDown(self):
-        teardown_db(realmeta, realcontext)
+        if realmeta:
+            offers.drop(bind=realmeta.bind)
+            products.drop(bind=realmeta.bind)
+            categories.drop(bind=realmeta.bind)
+        if memmeta:
+            offers.drop(bind=memmeta.bind)
+            products.drop(bind=memmeta.bind)
+            categories.drop(bind=memmeta.bind)
+        
+        # teardown_db(realmeta, realcontext)
         # realcontext.current.clear()
         
-        teardown_db(memmeta, memcontext)
+        # teardown_db(memmeta, memcontext)
         # memcontext.current.clear()
 
 class TestGenerateSQLAlchemyFixture(
