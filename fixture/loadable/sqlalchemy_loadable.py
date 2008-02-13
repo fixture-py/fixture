@@ -90,7 +90,8 @@ class SQLAlchemyFixture(DBLoadableFixture):
                 raise UninitializedError(
                     "connection= and engine= keywords were not specified; couldn't find "
                     "a connection as session.bind, session.bind_to")
-        if self.connection is None:
+                
+        if self.engine is not None and self.connection is None:
             self.connection = self.engine.connect()
         
         if self.session is None:
@@ -104,8 +105,10 @@ class SQLAlchemyFixture(DBLoadableFixture):
         DBLoadableFixture.commit(self)
     
     def create_transaction(self):
-        transaction = self.connection.begin()
-        # transaction = self.session.create_transaction()
+        if self.connection is not None:
+            transaction = self.connection.begin()
+        else:
+            transaction = self.session.create_transaction()
         return transaction
     
     def dispose(self):
