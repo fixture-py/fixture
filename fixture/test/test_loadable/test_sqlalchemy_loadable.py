@@ -464,12 +464,6 @@ class TestSQLAlchemyFixtureRefInheritForKeysWithHeavyDB(
 
 @raises(UninitializedError)
 @attr(unit=True)
-def test_unitialized_SQLAlchemyFixture():
-    f = SQLAlchemyFixture()
-    f.begin()
-
-@raises(UninitializedError)
-@attr(unit=True)
 def test_TableMedium_requires_bound_session():
     stub_medium = {}
     stub_dataset = {}
@@ -587,7 +581,8 @@ def test_SQLAlchemyFixture_configured_with_bound_scoped_session():
 @attr(unit=True)
 def test_SQLAlchemyFixture_configured_with_bound_session_and_conn():
     class StubConnection:
-        pass
+        def begin(self):
+            pass
     stub_conn = StubConnection()
     class StubTransaction:
         def add(self, engine):
@@ -608,7 +603,8 @@ def test_SQLAlchemyFixture_configured_with_bound_session_and_conn():
 @attr(unit=True)
 def test_SQLAlchemyFixture_configured_with_bound_session_and_conn_04():
     class StubConnection:
-        pass
+        def begin(self):
+            pass
     stub_conn = StubConnection()
     class StubTransaction:
         def add(self, engine):
@@ -626,14 +622,6 @@ def test_SQLAlchemyFixture_configured_with_bound_session_and_conn_04():
     eq_(f.session, stub_session)
     eq_(f.connection, stub_conn)
     eq_(f.session_context, None)
-    
-@raises(UninitializedError)
-@attr(unit=True)
-def test_SQLAlchemyFixture_configured_with_connection():
-    class StubConnection:
-        pass
-    f = SQLAlchemyFixture(connection=StubConnection())
-    f.begin()
     
 @attr(unit=True)
 def test_SQLAlchemyFixture_configured_with_unbound_context():
@@ -657,7 +645,8 @@ def test_SQLAlchemyFixture_configured_with_unbound_context():
 def test_SQLAlchemyFixture_configured_with_bound_context():
     tally = []
     class StubConnectedEngine:
-        pass
+        def begin(self):
+            tally.append((self.__class__, 'begin'))
     stub_connected_engine = StubConnectedEngine()
     class StubEngine:
         def connect(self):
@@ -679,44 +668,35 @@ def test_SQLAlchemyFixture_configured_with_bound_context():
     eq_(f.session, stub_session)
     eq_(f.connection, stub_connected_engine)
     eq_(f.session_context, stub_context)
-    assert (MockTransaction, 'add', stub_connected_engine) in tally, (
-        "expected an engine added to the transaction; calls were: %s" % tally)
+    assert (StubConnectedEngine, 'begin') in tally, (
+        "expected connection.begin() to be called; calls were %s" % tally)
+    # assert (MockTransaction, 'add', stub_connected_engine) in tally, (
+    #     "expected an engine added to the transaction; calls were: %s" % tally)
         
 @attr(unit=True)
 def test_SQLAlchemyFixture_configured_with_bound_scoped_session():
     tally = []
     class StubConnectedEngine:
-        pass
+        def begin(self):
+            tally.append((self.__class__, 'begin'))
     stub_connected_engine = StubConnectedEngine()
     class StubEngine:
         def connect(self):
             return stub_connected_engine
     stub_engine = StubEngine()
-    class MockTransaction:
-        def add(self, engine):
-            tally.append((self.__class__, 'add', engine))
     class StubScopedSession:
         bind = stub_engine
-        def create_transaction(self):
-            return MockTransaction()
+        @classmethod
+        def configure(cls,**kw):
+            for k,v in kw.items():
+                setattr(cls,k,v)
     f = SQLAlchemyFixture(scoped_session=StubScopedSession)
     f.begin()
     assert isinstance(f.session, StubScopedSession), (
         "unexpected session: %s" % f.session)
     eq_(f.connection, stub_connected_engine)
-    eq_(f.scoped_session, StubScopedSession)
-    assert (MockTransaction, 'add', stub_connected_engine) in tally, (
-        "expected an engine added to the transaction; calls were: %s" % tally)
-
-@attr(unit=True)
-def test_is_assigned_mapper_04():
-    from sqlalchemy import Table, MetaData, Column, Integer
-    from sqlalchemy.ext.assignmapper import assign_mapper
-    from sqlalchemy.ext.sessioncontext import SessionContext
-    from sqlalchemy.orm import Mapper
-    class Stub(object):
-        pass
-    stub_context = SessionContext(lambda: 'noop')
-    stub_table = Table('stub', MetaData(), Column('id', Integer, primary_key=True))
-    m = assign_mapper(stub_context, Stub, stub_table)
-    eq_(is_assigned_mapper(m), True)
+    eq_(f.Session, StubScopedSession)
+    eq_(f.session.__class__, StubScopedSession)
+    eq_(f.engine, stub_engine) # because of Session.configure(bind=engine) inside the loader
+    assert (StubConnectedEngine, 'begin') in tally, (
+        "expected session.begin(); calls were: %s" % tally)

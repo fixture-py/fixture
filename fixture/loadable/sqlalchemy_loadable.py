@@ -33,17 +33,21 @@ class SQLAlchemyFixture(DBLoadableFixture):
     
     - scoped_session
     
-      - An instance of sqlalchemy.orm.scoped_session.ScopedSession
+      - An class-like Session created by sqlalchemy.orm.scoped_session() .  
+        Only declare a custom Session if you have to.  The preferred way 
+        is to let fixture use its own Session in a private scope.
 
     - session_context
 
       - An instance of sqlalchemy.ext.sessioncontext.SessionContext.  A session 
-        will be created from session_context.current
+        will be created from session_context.current .  Only use this if you need to 
+        support legacy 0.3 sqlalchemy code.
     
     - session
       
       - A session from sqlalchemy.create_session().  This will override the 
-        ScopedSession and SessionContext approaches.
+        ScopedSession and SessionContext approaches.  Only declare a session if you have to.  
+        The preferred way is to let fixture use its own session in a private scope.
     
     - connection
     
@@ -71,12 +75,15 @@ class SQLAlchemyFixture(DBLoadableFixture):
     """
     Medium = staticmethod(negotiated_medium)
     
-    def __init__(self, engine=None, connection=None, session=None, session_context=None, **kw):
+    def __init__(self, engine=None, connection=None, session=None, scoped_session=None, session_context=None, **kw):
         DBLoadableFixture.__init__(self, **kw)
         self.engine = engine
         self.connection = connection
         self.session = session
         self.session_context = session_context
+        if scoped_session is None:
+            scoped_session = Session
+        self.Session = scoped_session
     
     def begin(self, unloading=False):
         if self.session_context is not None:
@@ -86,17 +93,20 @@ class SQLAlchemyFixture(DBLoadableFixture):
                 self.engine = self.session.bind
             elif hasattr(self.session, 'bind_to'):
                 self.engine = self.session.bind_to
+            elif hasattr(self.Session, 'bind'):
+                self.engine = self.Session.bind
             else:
                 raise UninitializedError(
-                    "connection= and engine= keywords were not specified; couldn't find "
-                    "a connection as session.bind, session.bind_to")
-                
+                    "connection= and engine= keywords were not specified and no engine found; "
+                    "Looked for an engine in session.bind, session.bind_to, and Session.bind")
+        
         if self.engine is not None and self.connection is None:
             self.connection = self.engine.connect()
         
         if self.session is None:
-            Session.configure(bind=self.connection)
-            self.session = Session()
+            if self.connection:
+                self.Session.configure(bind=self.connection)
+            self.session = self.Session()
             
         DBLoadableFixture.begin(self, unloading=unloading)
     
@@ -108,7 +118,10 @@ class SQLAlchemyFixture(DBLoadableFixture):
         if self.connection is not None:
             transaction = self.connection.begin()
         else:
-            transaction = self.session.create_transaction()
+            if hasattr(self.session, 'begin'):
+                transaction = self.session.begin()
+            else:
+                transaction = self.session.create_transaction()
         return transaction
     
     def dispose(self):
