@@ -112,6 +112,9 @@ class SQLAlchemyFixture(DBLoadableFixture):
     
     def commit(self):
         self.session.flush()
+        if hasattr(self.session, 'commit'):
+            # a scoped session configured with transactional=True
+            self.session.commit()
         DBLoadableFixture.commit(self)
     
     def create_transaction(self):
