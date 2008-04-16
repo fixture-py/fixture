@@ -1,8 +1,12 @@
 
 """sqlalchemy fixture components."""
 
+import sys
 from fixture.loadable import DBLoadableFixture
 from fixture.exc import UninitializedError
+import logging
+
+log = logging.getLogger('fixture.loadable.sqlalchemy_loadable')
 
 try:
     from sqlalchemy.orm import sessionmaker, scoped_session
@@ -114,17 +118,24 @@ class SQLAlchemyFixture(DBLoadableFixture):
         self.session.flush()
         if hasattr(self.session, 'commit'):
             # a scoped session configured with transactional=True
+            log.debug("session.commit() bind=%s", getattr(self.session, 'bind', None))
             self.session.commit()
+        log.debug("transaction.commit() <- %s", self.transaction)
         DBLoadableFixture.commit(self)
     
     def create_transaction(self):
+        # import traceback
+        # traceback.print_stack(file=sys.stderr)
         if self.connection is not None:
+            log.debug("connection.begin()")
             transaction = self.connection.begin()
         else:
             if hasattr(self.session, 'begin'):
+                log.debug("session.begin() bind=%s", getattr(self.session, 'bind', None))
                 transaction = self.session.begin()
             else:
                 transaction = self.session.create_transaction()
+        log.debug("create_transaction() <- %s", transaction)
         return transaction
     
     def dispose(self):
@@ -140,6 +151,10 @@ class SQLAlchemyFixture(DBLoadableFixture):
             self.transaction.close()
     
     def rollback(self):
+        if hasattr(self.session, 'rollback'):
+            # a scoped session configured with transactional=True
+            log.debug("session.rollback() bind=%s", getattr(self.session, 'bind', None))
+            self.session.rollback()
         DBLoadableFixture.rollback(self)
 
 ## this was used in an if branch of clear() ... but I think this is no longer necessary with scoped sessions

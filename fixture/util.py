@@ -110,7 +110,7 @@ def with_debug(*channels, **kw):
             stop_debug(ch)
     return with_setup(setup=setup, teardown=teardown)
 
-def start_debug(channel, stream=sys.stdout, handler=None):
+def start_debug(channel, stream=sys.stdout, handler=None, level=logging.DEBUG):
     """A shortcut to start logging a channel to a stream.
     
     For example::
@@ -146,12 +146,18 @@ def start_debug(channel, stream=sys.stdout, handler=None):
     
       - a preconfigured handler to add to the log
     
+    - level
+      
+      - a logging level to set, default is logging.DEBUG
+    
     """
     log = logging.getLogger(channel)
     stop_debug(channel)
     if not handler:
         handler = logging.StreamHandler(stream)
+    handler.setFormatter(logging.Formatter('%(name)s: %(message)s'))
     log.addHandler(handler)
+    log.setLevel(level)
 
 def stop_debug(channel):
     """The reverse of start_debug()."""
