@@ -165,7 +165,12 @@ class SQLAlchemyHandler(DataHandler):
 ## NOTE: the order that handlers are registered in is important for discovering 
 ## sqlalchemy types...
 
-class SQLAlchemyAssignedMapperHandler(SQLAlchemyHandler):    
+class SQLAlchemySessionMapperHandler(SQLAlchemyHandler):  
+    """handles a scoped session mapper
+    
+    that is, one created with sqlalchemy.orm.scoped_session(sessionmaker(...)).mapper()
+    
+    """  
     class RecordSetAdapter(SQLAlchemyHandler.RecordSetAdapter):
         def __init__(self, obj):
             self.mapped_class = obj
@@ -188,24 +193,16 @@ class SQLAlchemyAssignedMapperHandler(SQLAlchemyHandler):
     def recognizes(object_path, obj=None):
         if not SQLAlchemyHandler.recognizes(object_path, obj=obj):
             return False
+            
+        from sqlalchemy.orm.mapper import Mapper
         
-        def isa_mapper(mapper):
-            from sqlalchemy.orm.mapper import Mapper
-            if type(mapper)==Mapper:
-                return True
-                
-        if hasattr(obj, 'mapper'):
-            # i.e. assign_mapper ...
-            if isa_mapper(obj.mapper):
-                return True
-        if hasattr(obj, '_mapper'):
-            # i.e. sqlsoup ??
-            if isa_mapper(obj._mapper):
+        if hasattr(obj, 'query'): 
+            if hasattr(obj.query, 'mapper') and isinstance(obj.query.mapper, Mapper):
                 return True
         
         return False
         
-register_handler(SQLAlchemyAssignedMapperHandler)
+register_handler(SQLAlchemySessionMapperHandler)
 
 class SQLAlchemyTableHandler(SQLAlchemyHandler):        
     class RecordSetAdapter(SQLAlchemyHandler.RecordSetAdapter):

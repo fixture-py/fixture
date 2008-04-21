@@ -197,7 +197,7 @@ if sqlalchemy:
     class Book(object):
         pass
 
-def setup_db(meta, session_context=None, mapper=None, **kw):
+def setup_db(meta, session=None, mapper=None, **kw):
     assert sqlalchemy, "sqlalchemy module does not exist or had ImportErrors"
     
     if mapper is None:
@@ -214,14 +214,14 @@ def setup_db(meta, session_context=None, mapper=None, **kw):
         import sys
         table.create(meta.engine, checkfirst=checkfirst)
     
-    # assign_and_create(Category, categories)
-    # assign_and_create(Product, products, properties={
-    #     'category': relation(Category),
-    # })
-    # assign_and_create(Offer, offers, properties={
-    #     'category': relation(Category, backref='products'),
-    #     'product': relation(Product)
-    # })
+    assign_and_create(Category, categories)
+    assign_and_create(Product, products, properties={
+        'category': relation(Category),
+    })
+    assign_and_create(Offer, offers, properties={
+        'category': relation(Category, backref='products'),
+        'product': relation(Product)
+    })
 
 def teardown_db(meta, session_context):
     import sqlalchemy
