@@ -51,6 +51,8 @@ def teardown():
 def teardown_examples():
     if os.path.exists('/tmp/fixture_example.db'):
         os.unlink('/tmp/fixture_example.db')
+    if os.path.exists('/tmp/fixture_generate.db'):
+        os.unlink('/tmp/fixture_generate.db')
         
 
 class PrudentTestResult(unittest.TestResult):

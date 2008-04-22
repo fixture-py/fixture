@@ -19,14 +19,14 @@ SQLAlchemy
 DataSet classes can be loaded into `Table`_ objects or `mapped classes`_ via the `sqlalchemy`_ module::
 
     >>> from fixture import SQLAlchemyFixture
-    
     >>> from sqlalchemy import *
     >>> from sqlalchemy.orm import *
-    >>> meta = MetaData("sqlite:///:memory:")
-    >>> Session = scoped_session(sessionmaker(bind=meta.bind, autoflush=True, transactional=True))
     >>> from fixture.examples.db import sqlalchemy_examples
+    >>> from fixture.examples.db.sqlalchemy_examples import metadata
+    >>> metadata.bind = create_engine("sqlite:///:memory:")
+    >>> metadata.create_all()
     >>> dbfixture = SQLAlchemyFixture(
-    ...                 engine=meta.bind, 
+    ...                 engine=metadata.bind, 
     ...                 env=sqlalchemy_examples)
     ... 
 
@@ -43,7 +43,6 @@ SQLObject
 DataSet classes can be loaded into `SQLObject classes`_ via the `sqlobject`_ module::
 
     >>> from fixture import SQLObjectFixture
-    
     >>> from fixture.examples.db import sqlobject_examples
     >>> dbfixture = SQLObjectFixture(
     ...     dsn="sqlite:/:memory:", env=sqlobject_examples)
@@ -60,11 +59,13 @@ An Example Loading Data Using SQLAlchemy
 Fixture is designed for applications that already define a way of accessing its data; the LoadableFixture just "hooks in" to that interface.  To start this example, here is some `sqlalchemy`_ code to set up a database of books and authors::
 
     >>> from sqlalchemy import *
-    >>> engine = create_engine('sqlite:///:memory:')
-    >>> meta = MetaData(engine)
-    >>> Session = scoped_session(sessionmaker(bind=meta.bind, autoflush=True, transactional=True))
+    >>> from sqlalchemy.orm import *
+    >>> engine = create_engine('sqlite:////tmp/fixture_example.db')
+    >>> metadata = MetaData()
+    >>> metadata.bind = engine
+    >>> Session = scoped_session(sessionmaker(bind=metadata.bind, autoflush=True, transactional=True))
     >>> session = Session()
-    >>> authors = Table('authors', meta,
+    >>> authors = Table('authors', metadata,
     ...     Column('id', Integer, primary_key=True),
     ...     Column('first_name', String(60)),
     ...     Column('last_name', String(60)))
@@ -74,7 +75,7 @@ Fixture is designed for applications that already define a way of accessing its 
     ... 
     >>> mapper(Author, authors) #doctest: +ELLIPSIS
     <sqlalchemy.orm.mapper.Mapper object at ...>
-    >>> books = Table('books', meta, 
+    >>> books = Table('books', metadata, 
     ...     Column('id', Integer, primary_key=True),
     ...     Column('title', String(30)),
     ...     Column('author_id', Integer, ForeignKey('authors.id')))
@@ -86,7 +87,7 @@ Fixture is designed for applications that already define a way of accessing its 
     ...     'author': relation(Author, backref='books')
     ... }) #doctest: +ELLIPSIS
     <sqlalchemy.orm.mapper.Mapper object at ...>
-    >>> meta.create_all()
+    >>> metadata.create_all()
 
 Consult the `sqlalchemy`_ documentation for further examples of data mapping.
 
@@ -105,7 +106,7 @@ This is a fixture with minimal configuration to support loading data into the Bo
     >>> from fixture import SQLAlchemyFixture
     >>> dbfixture = SQLAlchemyFixture(
     ...     env={'BookData': Book, 'AuthorData': Author},
-    ...     engine=meta.bind )
+    ...     engine=metadata.bind )
     ... 
 
 There are several shortcuts, like `fixture.style.NamedDataStyle`_ and specifying the `session_context keyword`_.
@@ -158,7 +159,7 @@ If you didn't want to create a strict mapping of DataSet class names to their st
     >>> dbfixture = SQLAlchemyFixture(
     ...     env=globals(),
     ...     style=TrimmedNameStyle(suffix="Data"),
-    ...     engine=meta.bind )
+    ...     engine=metadata.bind )
     ... 
 
 This would take the name ``AuthorData`` and trim off "Data" from its name to find ``Author``, its mapped sqlalchemy class for storing data.  Since this is a logical convention to follow for naming DataSet classes, you can use a shortcut:
@@ -167,7 +168,7 @@ This would take the name ``AuthorData`` and trim off "Data" from its name to fin
     >>> dbfixture = SQLAlchemyFixture(
     ...     env=globals(),
     ...     style=NamedDataStyle(),
-    ...     engine=meta.bind )
+    ...     engine=metadata.bind )
     ... 
 
 See the `Style API`_ for all available Style objects.

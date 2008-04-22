@@ -25,11 +25,14 @@ Let's set up a database and insert some data (using `sqlalchemy code`_) so we ca
 
     >>> from sqlalchemy import *
     >>> from sqlalchemy.orm import *
-    >>> DSN = 'sqlite:////tmp/fixture_example.db'
     >>> from fixture.examples.db.sqlalchemy_examples import (
-    ...                                 Author, Book, metadata)
-    >>> metadata.bind = create_engine(DSN)
+    ...                                 Author, authors, Book, books, metadata)
+    >>> metadata.bind = create_engine('sqlite:////tmp/fixture_generate.db')
     >>> metadata.create_all()
+    >>> mapper(Book, books) # doctest:+ELLIPSIS
+    <sqlalchemy.orm.mapper.Mapper object at ...>
+    >>> mapper(Author, authors, properties={'books': relation(Book, backref='author')}) # doctest:+ELLIPSIS
+    <sqlalchemy.orm.mapper.Mapper object at ...>
     >>> Session = sessionmaker(bind=metadata.bind, autoflush=True, transactional=True)
     >>> session = Session()
 
@@ -46,6 +49,8 @@ Let's set up a database and insert some data (using `sqlalchemy code`_) so we ca
     >>> dune.title = "Dune"
     >>> dune.author = frank
     >>> session.save(dune)
+    
+    >>> session.commit()
 
 
 It's now possible to run a command that points at our ``Book`` object, sends it a SQL query with a custom where clause, and turns the record sets into ``DataSet`` classes:
