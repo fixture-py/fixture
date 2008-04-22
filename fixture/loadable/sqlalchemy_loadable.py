@@ -109,6 +109,7 @@ class SQLAlchemyFixture(DBLoadableFixture):
         
         if self.session is None:
             if self.connection:
+                # print self.connection.engine.raw_connection
                 self.Session.configure(bind=self.connection)
             self.session = self.Session()
             
