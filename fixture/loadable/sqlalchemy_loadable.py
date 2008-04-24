@@ -80,6 +80,7 @@ class SQLAlchemyFixture(DBLoadableFixture):
     Medium = staticmethod(negotiated_medium)
     
     def __init__(self, engine=None, connection=None, session=None, scoped_session=None, session_context=None, **kw):
+        from sqlalchemy.orm import sessionmaker # ensure import error
         DBLoadableFixture.__init__(self, **kw)
         self.engine = engine
         self.connection = connection
@@ -90,6 +91,10 @@ class SQLAlchemyFixture(DBLoadableFixture):
         self.Session = scoped_session
     
     def begin(self, unloading=False):
+        if not unloading:
+            # ...then we are loading, so let's *lazily* 
+            # clean up after a previous setup/teardown
+            Session.remove()
         if self.session_context is not None:
             self.session = self.session_context.current
         if self.connection is None and self.engine is None:
@@ -159,7 +164,7 @@ class SQLAlchemyFixture(DBLoadableFixture):
         DBLoadableFixture.rollback(self)
 
 ## this was used in an if branch of clear() ... but I think this is no longer necessary with scoped sessions
-## does it need to exist for 0.3 ?  not sure
+## does it need to exist for 0.4 ?  not sure
 # def object_was_deleted(session, obj):
 #     # hopefully there is a more future proof way to do this...
 #     from sqlalchemy.orm.mapper import object_mapper

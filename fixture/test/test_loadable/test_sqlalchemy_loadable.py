@@ -59,48 +59,6 @@ class TestSetupTeardown(unittest.TestCase):
         self.session.clear()
         eq_(list(self.session.query(Category)), [])
         
-
-class TestScopedSessions(unittest.TestCase):
-    class CategoryData(DataSet):
-        class cars:
-            name = 'cars'
-        class free_stuff:
-            name = 'get free stuff'
-            
-    def setUp(self):
-        from sqlalchemy.orm import clear_mappers
-        self.engine = create_engine(conf.LITE_DSN)
-        self.conn = self.engine.connect()
-        metadata.bind = self.engine
-        metadata.create_all()
-        ScopedSession = scoped_session(sessionmaker(bind=metadata.bind, autoflush=True, transactional=True))
-        self.session = ScopedSession()
-        self.fixture = SQLAlchemyFixture(
-            env={'CategoryData':Category},
-            engine=metadata.bind
-        )
-        
-        clear_mappers()
-        mapper(Category, categories)
-    
-    def tearDown(self):
-        metadata.drop_all()
-        self.session.close()
-    
-    @attr(functional=1)
-    def test_setup_then_teardown(self):
-        eq_(self.session.query(Category).all(), [])
-        
-        data = self.fixture.data(self.CategoryData)
-        data.setup()
-        self.session.clear()
-        cats = self.session.query(Category).order_by('name').all()
-        eq_(cats[0].name, 'cars')
-        eq_(cats[1].name, 'get free stuff')
-        
-        data.teardown()
-        self.session.clear()
-        eq_(list(self.session.query(Category)), [])
         
 class CategoryData(DataSet):
     class cars:
@@ -164,43 +122,43 @@ class TestCascadingReferences(unittest.TestCase):
         # self.conn.close()
         metadata.bind.dispose()
     
-    # @attr(functional=1)
-    # def test_setup_then_teardown(self):
-    #     eq_(self.session.query(Category).all(), [])
-    #     eq_(self.session.query(Product).all(), [])
-    #     eq_(self.session.query(Offer).all(), [])
-    #     
-    #     data = self.fixture.data(self.OfferData)
-    #     data.setup()
-    #     self.session.clear()
-    #     
-    #     cats = self.session.query(Category).order_by('name').all()
-    #     eq_(cats[0].name, 'cars')
-    #     eq_(cats[1].name, 'get free stuff')
-    #     
-    #     prods = self.session.query(Product).order_by('name').all()
-    #     eq_(prods[0].name, 'truck')
-    #     eq_(prods[0].category, cats[0])
-    #     
-    #     off = self.session.query(Offer).order_by('name').all()
-    #     eq_(off[0].name, "it's a free TV")
-    #     eq_(off[0].product, prods[0])
-    #     eq_(off[0].category, cats[1])
-    #     
-    #     eq_(off[1].name, "it's a free spaceship")
-    #     eq_(off[1].product, prods[0])
-    #     eq_(off[1].category, cats[1])
-    #     
-    #     eq_(off[2].name, "it's a free truck")
-    #     eq_(off[2].product, prods[0])
-    #     eq_(off[2].category, cats[1])
-    #     
-    #     data.teardown()
-    #     self.session.clear()
-    #     
-    #     eq_(self.session.query(Category).all(), [])
-    #     eq_(self.session.query(Product).all(), [])
-    #     eq_(self.session.query(Offer).all(), [])
+    @attr(functional=1)
+    def test_setup_then_teardown(self):
+        eq_(self.session.query(Category).all(), [])
+        eq_(self.session.query(Product).all(), [])
+        eq_(self.session.query(Offer).all(), [])
+        
+        data = self.fixture.data(self.OfferData)
+        data.setup()
+        self.session.clear()
+        
+        cats = self.session.query(Category).order_by('name').all()
+        eq_(cats[0].name, 'cars')
+        eq_(cats[1].name, 'get free stuff')
+        
+        prods = self.session.query(Product).order_by('name').all()
+        eq_(prods[0].name, 'truck')
+        eq_(prods[0].category, cats[0])
+        
+        off = self.session.query(Offer).order_by('name').all()
+        eq_(off[0].name, "it's a free TV")
+        eq_(off[0].product, prods[0])
+        eq_(off[0].category, cats[1])
+        
+        eq_(off[1].name, "it's a free spaceship")
+        eq_(off[1].product, prods[0])
+        eq_(off[1].category, cats[1])
+        
+        eq_(off[2].name, "it's a free truck")
+        eq_(off[2].product, prods[0])
+        eq_(off[2].category, cats[1])
+        
+        data.teardown()
+        self.session.clear()
+        
+        eq_(self.session.query(Category).all(), [])
+        eq_(self.session.query(Product).all(), [])
+        eq_(self.session.query(Offer).all(), [])
 
 class TestCollidingSessions(unittest.TestCase):
     class CategoryData(DataSet):
@@ -212,7 +170,7 @@ class TestCollidingSessions(unittest.TestCase):
     def setUp(self):
         from sqlalchemy.orm import clear_mappers
         self.engine = create_engine(conf.LITE_DSN)
-        self.conn = self.engine.connect()
+        # self.conn = self.engine.connect()
         metadata.bind = self.engine
         # metadata.bind.echo = True
         metadata.create_all()
@@ -230,8 +188,6 @@ class TestCollidingSessions(unittest.TestCase):
     def tearDown(self):
         metadata.drop_all()
         self.session.close()
-        self.conn.close()
-        self.engine.dispose()
     
     @attr(functional=1)
     def test_setup_then_teardown(self):
@@ -256,6 +212,50 @@ class TestCollidingSessions(unittest.TestCase):
         self.session.clear()
         
         print [(c.id, c.name) for c in self.session.query(Category).all()]
+        eq_(list(self.session.query(Category)), [])
+
+class TestScopedSessions(unittest.TestCase):
+    class CategoryData(DataSet):
+        class cars:
+            name = 'cars'
+        class free_stuff:
+            name = 'get free stuff'
+            
+    def setUp(self):
+        from sqlalchemy.orm import clear_mappers
+        self.engine = create_engine(conf.LITE_DSN)
+        metadata.bind = self.engine
+        # metadata.bind.echo = True
+        metadata.create_all()
+        # metadata.bind.echo = False
+        ScopedSession = scoped_session(sessionmaker(bind=metadata.bind, autoflush=True, transactional=True))
+        self.session = ScopedSession()
+        self.fixture = SQLAlchemyFixture(
+            env={'CategoryData':Category},
+            engine=metadata.bind
+        )
+        
+        clear_mappers()
+        mapper(Category, categories)
+    
+    def tearDown(self):
+        metadata.drop_all()
+        self.session.close()
+    
+    @attr(functional=1)
+    def test_setup_then_teardown(self):
+        eq_(self.session.query(Category).all(), [])
+        
+        # metadata.bind.echo = True
+        data = self.fixture.data(self.CategoryData)
+        data.setup()
+        self.session.clear()
+        cats = self.session.query(Category).order_by('name').all()
+        eq_(cats[0].name, 'cars')
+        eq_(cats[1].name, 'get free stuff')
+        
+        data.teardown()
+        self.session.clear()
         eq_(list(self.session.query(Category)), [])
 
 @raises(UninitializedError)
@@ -945,3 +945,6 @@ class TestSQLAlchemyFixtureRefInheritForKeysWithHeavyDB(
         SQLAlchemyFixtureForKeysTestWithPsql, LoadableTest):
     pass
 
+if __name__ == '__main__':
+    import nose
+    nose.main()
