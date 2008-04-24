@@ -139,7 +139,7 @@ As you recall, we passed a dictionary into the Fixture that associates DataSet n
     
     >>> data = dbfixture.data(AuthorData, BookData)
     >>> data.setup() 
-    >>> dbfixture.session.query(Book).all() #doctest: +ELLIPSIS
+    >>> session.query(Book).all() #doctest: +ELLIPSIS
     [<...Book object at ...>]
     >>> all_books = session.query(Book).all()
     >>> all_books #doctest: +ELLIPSIS
