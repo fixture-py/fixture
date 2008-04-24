@@ -15,7 +15,7 @@ from fixture.test.test_command.test_generate import (
 from fixture.examples.db import sqlalchemy_examples
 from fixture.examples.db.sqlalchemy_examples import (
             Category, Product, Offer, setup_db, teardown_db,
-            categories, products, offers )
+            categories, products, offers, metadata )
 
 realmeta = None
 RealSession = None
@@ -138,7 +138,7 @@ class TestSQLAlchemyHandler(SQLAlchemyHandlerTest):
         hnd = self.generator.get_handler("%s.Category" % (Category.__module__))
         assert isinstance(hnd, SQLAlchemySessionMapperHandler)
 
-class SQLAlchemyHandlerQueryTest(SQLAlchemyHandlerTest):
+class SQLAlchemyHandlerQueryTest(object):
     class CategoryData(DataSet):
         class bumpy:
             name='bumpy'
@@ -148,26 +148,48 @@ class SQLAlchemyHandlerQueryTest(SQLAlchemyHandlerTest):
             name='jagged'
     
     handler_path = None
-            
-    def setUp(self):
-        super(SQLAlchemyHandlerQueryTest, self).setUp()
         
+    def setUp(self):
         from fixture import SQLAlchemyFixture, NamedDataStyle
+        import sqlalchemy
+        from sqlalchemy.orm import mapper, relation, clear_mappers
+        from sqlalchemy import MetaData, create_engine
+        
+        metadata.bind = create_engine(conf.LITE_DSN)
+        metadata.create_all()
+                
+        class options:
+            dsn = conf.LITE_DSN
+            env = ['fixture.examples.db.sqlalchemy_examples']
+        self.options = options
+        self.generator = DataSetGenerator(self.options, template=StubTemplate())
+        
+        mapper(Category, categories)
+        mapper(Product, products, properties={
+            'category': relation(Category),
+        })
+        mapper(Offer, offers, properties={
+            'category': relation(Category, backref='products'),
+            'product': relation(Product)
+        })
+        
         self.fixture = SQLAlchemyFixture(
                             env=sqlalchemy_examples, 
                             style=NamedDataStyle(),
-                            session_context=self.ctx)
+                            engine=metadata.bind)
         self.data = self.fixture.data(self.CategoryData)
         self.data.setup()
         
         self.hnd = self.generator.get_handler(
                             self.handler_path,
-                            connection=self.connection)
+                            connection=metadata.bind)
         self.hnd.begin()
     
     def tearDown(self):
+        from sqlalchemy.orm import clear_mappers
         self.data.teardown()
-        super(SQLAlchemyHandlerQueryTest, self).tearDown()
+        metadata.drop_all()
+        clear_mappers()
     
     @attr(unit=True)
     def test_find(self):
