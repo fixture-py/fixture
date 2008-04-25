@@ -102,11 +102,21 @@ class SQLAlchemyHandler(DataHandler):
             if not self.options.dsn:
                 raise MisconfiguredHandler(
                         "--dsn option is required by %s" % self.__class__)
+            
             self.engine = create_engine(self.options.dsn)
+            self.connection = self.engine
             self.meta = MetaData(bind=self.engine)
-            self.connection = self.engine.connect()
+            ################################################
+            if self.options.dsn.startswith('postgres'):            
+                # postgres will put everything in a transaction, even after a commit,
+                # and it seems that this makes it near impossible to drop tables after a test
+                # (deadlock), so let's fix that...
+                import psycopg2.extensions
+                self.connection.raw_connection().set_isolation_level(
+                        psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+            ################################################
         
-        Session = scoped_session(sessionmaker(autoflush=True, transactional=True, bind=self.engine))
+        Session = scoped_session(sessionmaker(autoflush=True, transactional=False, bind=self.engine))
         self.session = Session()
         
         self.env = TableEnv(*[self.obj.__module__] + self.options.env)
@@ -118,13 +128,12 @@ class SQLAlchemyHandler(DataHandler):
     
     def begin(self, *a,**kw):
         DataHandler.begin(self, *a,**kw)
-        self.transaction = self.session.begin()
     
     def commit(self):
-        self.transaction.commit()
+        pass
     
     def rollback(self):
-        self.transaction.rollback()
+        pass
     
     def find(self, idval):
         self.rs = [self.obj.get(idval)]
@@ -160,32 +169,81 @@ class SQLAlchemyHandler(DataHandler):
             yield SQLAlchemyFixtureSet(row, self.obj, self.connection, self.env,
                                             adapter=self.RecordSetAdapter)
 
+class SQLAlchemyMappedClassBase(SQLAlchemyHandler):
+    class RecordSetAdapter(SQLAlchemyHandler.RecordSetAdapter):
+        def __init__(self, obj):
+            self.columns = obj.c
+            
+            # could grab this from the Handler :
+            from sqlalchemy.orm.mapper import object_mapper
+            self.mapper = object_mapper(obj())
+            
+            if self.mapper.local_table:
+                self.table = self.mapper.local_table
+            elif self.mapper.select_table:
+                self.table = self.mapper.select_table
+            else:
+                raise LookupError(
+                    "not sure how to get a table from mapper %s" % 
+                                                        self.mapper)
+            
+            self.id_attr = self.table.primary_key.columns.keys()
+            
+        def primary_key_from_instance(self, data):
+            return self.mapper.primary_key_from_instance(data)
+            
+    def __init__(self, *args, **kw):
+        super(SQLAlchemyMappedClassBase, self).__init__(*args, **kw)
+        
+        from sqlalchemy.orm.mapper import class_mapper
+        self.mapper = class_mapper(self.obj)
+        
+        if self.mapper.local_table:
+            self.table = self.mapper.local_table
+        elif self.mapper.select_table:
+            self.table = self.mapper.select_table
+        else:
+            raise LookupError(
+                "not sure how to get a table from mapper %s" % 
+                                                    self.mapper)
+            
+    def find(self, idval):                                                        
+        q = self.session.query(self.obj)
+        primary_keys = self.table.primary_key.columns.keys() # I think this is 0.4 only
+        try:
+            len(idval)
+        except TypeError:
+            idval = [idval]
+        assert len(primary_keys) == len(idval), (
+            "length of idval did not match length of the table's primary keys (%s ! %s)" % (
+                                                                            primary_keys, idval))
+        table_cols = self.table.c
+        for i, keyname in enumerate(primary_keys):
+            q = q.filter(getattr(table_cols, keyname) == idval[i])
+            
+        self.rs = q.all()
+        return self.rs
+        
+    def findall(self, query=None):
+        """gets record set for query."""
+        session = self.session
+        if query:
+            self.rs = session.query(self.obj).filter(query)
+        else:
+            self.rs = session.query(self.obj)
+        if not self.rs.count():
+            raise NoData("no data for query \"%s\" on %s, handler=%s" % (query, self.obj, self.__class__))
+        return self.rs
+
 ## NOTE: the order that handlers are registered in is important for discovering 
 ## sqlalchemy types...
 
-class SQLAlchemySessionMapperHandler(SQLAlchemyHandler):  
+class SQLAlchemySessionMapperHandler(SQLAlchemyMappedClassBase):  
     """handles a scoped session mapper
     
     that is, one created with sqlalchemy.orm.scoped_session(sessionmaker(...)).mapper()
     
     """  
-    class RecordSetAdapter(SQLAlchemyHandler.RecordSetAdapter):
-        def __init__(self, obj):
-            self.mapped_class = obj
-            
-            if self.mapped_class.mapper.local_table:
-                self.table = self.mapped_class.mapper.local_table
-            elif self.mapped_class.mapper.select_table:
-                self.table = self.mapped_class.mapper.select_table
-            else:
-                raise LookupError(
-                    "not sure how to get a table from mapped class %s" % 
-                                                        self.mapped_class)
-            self.columns = self.mapped_class.mapper.columns
-            self.id_attr = self.table.primary_key
-            
-        def primary_key_from_instance(self, data):
-            return self.mapped_class.mapper.primary_key_from_instance(data)
             
     @staticmethod
     def recognizes(object_path, obj=None):
@@ -235,70 +293,7 @@ class SQLAlchemyTableHandler(SQLAlchemyHandler):
         
 register_handler(SQLAlchemyTableHandler)
 
-class SQLAlchemyMappedClassHandler(SQLAlchemyHandler):
-    class RecordSetAdapter(SQLAlchemyHandler.RecordSetAdapter):
-        def __init__(self, obj):
-            self.columns = obj.c
-            self.id_attr = obj.id.key
-            
-            # could grab this from the Handler :
-            from sqlalchemy.orm.mapper import object_mapper
-            self.mapper = object_mapper(obj())
-            
-            if self.mapper.local_table:
-                self.table = self.mapper.local_table
-            elif self.mapper.select_table:
-                self.table = self.mapper.select_table
-            else:
-                raise LookupError(
-                    "not sure how to get a table from mapper %s" % 
-                                                        self.mapper)
-            
-        def primary_key_from_instance(self, data):
-            return self.mapper.primary_key_from_instance(data)
-    
-    def __init__(self, *args, **kw):
-        super(SQLAlchemyMappedClassHandler, self).__init__(*args, **kw)
-        
-        from sqlalchemy.orm.mapper import class_mapper
-        self.mapper = class_mapper(self.obj)
-        
-        if self.mapper.local_table:
-            self.table = self.mapper.local_table
-        elif self.mapper.select_table:
-            self.table = self.mapper.select_table
-        else:
-            raise LookupError(
-                "not sure how to get a table from mapper %s" % 
-                                                    self.mapper)
-            
-    def find(self, idval):                                                        
-        q = self.session.query(self.obj)
-        primary_keys = self.table.primary_key.columns.keys() # I think this is 0.4 only
-        try:
-            len(idval)
-        except TypeError:
-            idval = [idval]
-        assert len(primary_keys) == len(idval), (
-            "length of idval did not match length of the table's primary keys (%s ! %s)" % (
-                                                                            primary_keys, idval))
-        table_cols = self.table.c
-        for i, keyname in enumerate(primary_keys):
-            q = q.filter(getattr(table_cols, keyname) == idval[i])
-            
-        self.rs = q.all()
-        return self.rs
-        
-    def findall(self, query=None):
-        """gets record set for query."""
-        session = self.session
-        if query:
-            self.rs = session.query(self.obj).filter(query)
-        else:
-            self.rs = session.query(self.obj)
-        if not self.rs.count():
-            raise NoData("no data for query \"%s\" on %s, handler=%s" % (query, self.obj, self.__class__))
-        return self.rs
+class SQLAlchemyMappedClassHandler(SQLAlchemyMappedClassBase):
         
     @staticmethod
     def recognizes(object_path, obj=None):
@@ -332,8 +327,8 @@ class SQLAlchemyFixtureSet(FixtureSet):
         self.data_dict = {}
         for col in self.obj.columns:
             sendkw = {}
-            if col.foreign_key:
-                sendkw['foreign_key'] = col.foreign_key
+            for fk in col.foreign_keys:
+                sendkw['foreign_key'] = fk
                 
             val = self.get_col_value(col.name, **sendkw)
             self.data_dict[col.name] = val

@@ -197,44 +197,22 @@ if sqlalchemy:
     class Book(object):
         pass
 
-def setup_db(meta, session=None, mapper=None, **kw):
-    assert sqlalchemy, "sqlalchemy module does not exist or had ImportErrors"
-    
-    if mapper is None:
-        def mapper(*args, **kw):
-            # the old 0.3 way:
-            return assign_mapper(session_context, *args, **kw)
-            
-    def assign_and_create(obj, table, **localkw):
-        table.tometadata(meta)
-        sendkw = dict([(k,v) for k,v in localkw.items()])
-        sendkw.update(kw)
-        mapper(obj, table, **sendkw)
-        checkfirst=False
-        import sys
-        table.create(meta.engine, checkfirst=checkfirst)
-    
-    assign_and_create(Category, categories)
-    assign_and_create(Product, products, properties={
+def connect(dsn):
+    metadata.bind = create_engine(dsn)
+
+def setup_mappers():
+    mapper(Category, categories)
+    mapper(Product, products, properties={
         'category': relation(Category),
     })
-    assign_and_create(Offer, offers, properties={
+    mapper(Offer, offers, properties={
         'category': relation(Category, backref='products'),
         'product': relation(Product)
     })
-
-def teardown_db(meta, session_context):
-    import sqlalchemy
-    engine = session_context.current.bind_to
-    meta.drop_all()
-    if hasattr(engine, 'engine'):
-        # then it is a connectable...
-        engine = engine.engine
-    engine.dispose()
-    
-    sqlalchemy.orm.clear_mappers()
-    session_context.current.clear()
-    session_context.current = None
+    mapper(Author, authors)
+    mapper(Book, books, properties={
+        'author': relation(Author)
+    })
 
 if __name__ == '__main__':
     import doctest
