@@ -64,81 +64,45 @@ class StubTemplate(Template):
     def render(self, tpl):
         pass
 
-class SQLAlchemyHandlerTest(object):
+class TestHandlerRecognition(object):
     def setUp(self):
-        import sqlalchemy
-        from sqlalchemy.orm import mapper, relation, clear_mappers
-        from sqlalchemy import MetaData, create_engine
-        
-        self.meta = MetaData(bind=create_engine(conf.LITE_DSN))
-        self.connection = self.meta.bind.connect()
-                
         class options:
             dsn = conf.LITE_DSN
             env = ['fixture.examples.db.sqlalchemy_examples']
-        self.options = options
-        self.generator = DataSetGenerator(self.options, template=StubTemplate())
+        self.generator = DataSetGenerator(options, template=StubTemplate())
         
-        mapper(Category, categories)
-        mapper(Product, products, properties={
-            'category': relation(Category),
-        })
-        mapper(Offer, offers, properties={
-            'category': relation(Category, backref='products'),
-            'product': relation(Product)
-        })
-        # setup_db(self.meta, self.ctx)
-    
     def tearDown(self):
         from sqlalchemy.orm import clear_mappers
-        # teardown_db(self.meta, self.ctx)
         clear_mappers()
-
-class TestSQLAlchemyHandler(SQLAlchemyHandlerTest):    
+        
     @attr(unit=True)
     def test_recognizes_mapped_class(self):
         from sqlalchemy.orm import mapper
         mapper(MappableObject, categories)
         hnd = self.generator.get_handler(
                 "%s.MappableObject" % (MappableObject.__module__))
-        assert isinstance(hnd, SQLAlchemyMappedClassHandler)
+        eq_(type(hnd), SQLAlchemyMappedClassHandler)
+        
+    @attr(unit=True)
+    def test_recognizes_session_mapper(self):
+        from sqlalchemy.orm import mapper, sessionmaker, scoped_session
+        
+        ScopedSession = scoped_session(sessionmaker(autoflush=False, transactional=False))
+        ScopedSession.mapper(MappableObject, categories)
+        
+        hnd = self.generator.get_handler(
+                "%s.MappableObject" % (MappableObject.__module__))
+        eq_(type(hnd), SQLAlchemySessionMapperHandler)
         
     @attr(unit=True)
     @raises(NotImplementedError)
     def test_recognizes_table_object(self):
         hnd = self.generator.get_handler(
                 "%s.categories" % (sqlalchemy_examples.__name__))
-        assert isinstance(hnd, SQLAlchemyTableHandler), (
-                    "unexpected type: %s" % (type(hnd)))
-                    
-class TestSQLAlchemyHandler(SQLAlchemyHandlerTest):
-    def setUp(self):
-        super(TestSQLAlchemyHandler, self).setUp()
-        from sqlalchemy.orm import (
-                mapper, relation, clear_mappers, sessionmaker, scoped_session)
-        clear_mappers()
+        eq_(type(hnd), SQLAlchemyTableHandler)
         
-        self.Session = scoped_session(sessionmaker(autoflush=True, transactional=True))
-        
-        self.Session.mapper(Category, categories)
-        self.Session.mapper(Product, products, properties={
-            'category': relation(Category),
-        })
-        self.Session.mapper(Offer, offers, properties={
-            'category': relation(Category, backref='products'),
-            'product': relation(Product)
-        })
-    
-    def tearDown(self):
-        super(TestSQLAlchemyHandler, self).tearDown()
-        self.Session.remove()
-        
-    @attr(unit=True)
-    def test_recognizes_session_mapper(self):
-        hnd = self.generator.get_handler("%s.Category" % (Category.__module__))
-        assert isinstance(hnd, SQLAlchemySessionMapperHandler)
 
-class SQLAlchemyHandlerQueryTest(object):
+class HandlerQueryTest(object):
     class CategoryData(DataSet):
         class bumpy:
             name='bumpy'
@@ -146,50 +110,6 @@ class SQLAlchemyHandlerQueryTest(object):
             name='curvy'
         class jagged:
             name='jagged'
-    
-    handler_path = None
-        
-    def setUp(self):
-        from fixture import SQLAlchemyFixture, NamedDataStyle
-        import sqlalchemy
-        from sqlalchemy.orm import mapper, relation, clear_mappers
-        from sqlalchemy import MetaData, create_engine
-        
-        metadata.bind = create_engine(conf.LITE_DSN)
-        metadata.create_all()
-                
-        class options:
-            dsn = conf.LITE_DSN
-            env = ['fixture.examples.db.sqlalchemy_examples']
-        self.options = options
-        self.generator = DataSetGenerator(self.options, template=StubTemplate())
-        
-        mapper(Category, categories)
-        mapper(Product, products, properties={
-            'category': relation(Category),
-        })
-        mapper(Offer, offers, properties={
-            'category': relation(Category, backref='products'),
-            'product': relation(Product)
-        })
-        
-        self.fixture = SQLAlchemyFixture(
-                            env=sqlalchemy_examples, 
-                            style=NamedDataStyle(),
-                            engine=metadata.bind)
-        self.data = self.fixture.data(self.CategoryData)
-        self.data.setup()
-        
-        self.hnd = self.generator.get_handler(
-                            self.handler_path,
-                            connection=metadata.bind)
-        self.hnd.begin()
-    
-    def tearDown(self):
-        from sqlalchemy.orm import clear_mappers
-        self.data.teardown()
-        metadata.drop_all()
-        clear_mappers()
     
     @attr(unit=True)
     def test_find(self):
@@ -233,10 +153,51 @@ class SQLAlchemyHandlerQueryTest(object):
         obj = [o for o in rs]
         eq_(len(obj), 1)
 
-class TestSQLAlchemySessionMapperHandler(SQLAlchemyHandlerQueryTest):
-    handler_path = "%s.Category" % (Category.__module__)
+class TestQueryMappedClass(HandlerQueryTest):
     
-# class TestSQLAlchemyTableHandler(SQLAlchemyHandlerQueryTest):
+    def setUp(self):
+        from fixture import SQLAlchemyFixture, NamedDataStyle
+        import sqlalchemy
+        from sqlalchemy.orm import mapper, relation, clear_mappers
+        from sqlalchemy import create_engine
+        
+        metadata.bind = create_engine(conf.LITE_DSN)
+        metadata.create_all()
+                
+        class options:
+            dsn = conf.LITE_DSN
+            env = ['fixture.examples.db.sqlalchemy_examples']
+        self.options = options
+        self.generator = DataSetGenerator(self.options, template=StubTemplate())
+        
+        mapper(Category, categories)
+        mapper(Product, products, properties={
+            'category': relation(Category),
+        })
+        mapper(Offer, offers, properties={
+            'category': relation(Category, backref='products'),
+            'product': relation(Product)
+        })
+        
+        self.fixture = SQLAlchemyFixture(
+                            env=sqlalchemy_examples, 
+                            style=NamedDataStyle(),
+                            engine=metadata.bind)
+        self.data = self.fixture.data(self.CategoryData)
+        self.data.setup()
+        
+        self.hnd = self.generator.get_handler(
+                            "%s.Category" % (Category.__module__),
+                            connection=metadata.bind)
+        self.hnd.begin()
+        
+    def tearDown(self):
+        from sqlalchemy.orm import clear_mappers
+        self.data.teardown()
+        metadata.drop_all()
+        clear_mappers()
+    
+# class TestSQLAlchemyTableHandler(HandlerQueryTest):
 #     handler_path = "%s.categories" % (sqlalchemy_examples.__name__) 
 
 class SQLAlchemyGenerateTest(GenerateTest):

@@ -128,8 +128,6 @@ class SQLAlchemyHandler(DataHandler):
     
     def find(self, idval):
         self.rs = [self.obj.get(idval)]
-        # session = self.session_context.current
-        # self.rs = [session.query(self.obj).get(idval)]
         return self.rs
         
     def findall(self, query=None):
@@ -243,8 +241,8 @@ class SQLAlchemyMappedClassHandler(SQLAlchemyHandler):
             self.columns = obj.c
             self.id_attr = obj.id.key
             
+            # could grab this from the Handler :
             from sqlalchemy.orm.mapper import object_mapper
-            # is this safe?
             self.mapper = object_mapper(obj())
             
             if self.mapper.local_table:
@@ -258,7 +256,50 @@ class SQLAlchemyMappedClassHandler(SQLAlchemyHandler):
             
         def primary_key_from_instance(self, data):
             return self.mapper.primary_key_from_instance(data)
+    
+    def __init__(self, *args, **kw):
+        super(SQLAlchemyMappedClassHandler, self).__init__(*args, **kw)
+        
+        from sqlalchemy.orm.mapper import class_mapper
+        self.mapper = class_mapper(self.obj)
+        
+        if self.mapper.local_table:
+            self.table = self.mapper.local_table
+        elif self.mapper.select_table:
+            self.table = self.mapper.select_table
+        else:
+            raise LookupError(
+                "not sure how to get a table from mapper %s" % 
+                                                    self.mapper)
             
+    def find(self, idval):                                                        
+        q = self.session.query(self.obj)
+        primary_keys = self.table.primary_key.columns.keys() # I think this is 0.4 only
+        try:
+            len(idval)
+        except TypeError:
+            idval = [idval]
+        assert len(primary_keys) == len(idval), (
+            "length of idval did not match length of the table's primary keys (%s ! %s)" % (
+                                                                            primary_keys, idval))
+        table_cols = self.table.c
+        for i, keyname in enumerate(primary_keys):
+            q = q.filter(getattr(table_cols, keyname) == idval[i])
+            
+        self.rs = q.all()
+        return self.rs
+        
+    def findall(self, query=None):
+        """gets record set for query."""
+        session = self.session
+        if query:
+            self.rs = session.query(self.obj).filter(query)
+        else:
+            self.rs = session.query(self.obj)
+        if not self.rs.count():
+            raise NoData("no data for query \"%s\" on %s, handler=%s" % (query, self.obj, self.__class__))
+        return self.rs
+        
     @staticmethod
     def recognizes(object_path, obj=None):
         if not SQLAlchemyHandler.recognizes(object_path, obj=obj):
