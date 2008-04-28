@@ -69,9 +69,15 @@ class TableEnv(object):
             getitems = obj.items
         for name, o in getitems():
             if isinstance(o, Table):
-                self.tablemap.setdefault(o, {})
-                self.tablemap[o]['name'] = name
-                self.tablemap[o]['module'] = module
+                self.add_table(o, name=name, module=module)
+    
+    def add_table(self, table_obj, name=None, module=None):
+        if not name:
+            # sqlalchemy 0.4 and ??
+            name = table_obj.fullname
+        self.tablemap.setdefault(table_obj, {})
+        self.tablemap[table_obj]['name'] = name
+        self.tablemap[table_obj]['module'] = module
     
     def get_real_table(self, table):
         return getattr(self[table]['module'], self[table]['name'])
@@ -322,6 +328,9 @@ class SQLAlchemyFixtureSet(FixtureSet):
             self.obj = adapter(obj)
         else:
             self.obj = obj
+        ## do we add table objects?  elixir Entity classes get the Entity.table attribute
+        # if self.obj.table not in self.env:
+        #     self.env.add_table(self.obj.table)
         self.primary_key = None
         
         self.data_dict = {}
