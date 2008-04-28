@@ -79,7 +79,8 @@ class TestHandlerRecognition(object):
         from sqlalchemy.orm import mapper
         mapper(MappableObject, categories)
         hnd = self.generator.get_handler(
-                "%s.MappableObject" % (MappableObject.__module__))
+                "%s.MappableObject" % (MappableObject.__module__),
+                obj=MappableObject)
         eq_(type(hnd), SQLAlchemyMappedClassHandler)
         
     @attr(unit=True)
@@ -90,14 +91,16 @@ class TestHandlerRecognition(object):
         ScopedSession.mapper(MappableObject, categories)
         
         hnd = self.generator.get_handler(
-                "%s.MappableObject" % (MappableObject.__module__))
+                "%s.MappableObject" % (MappableObject.__module__),
+                obj=MappableObject)
         eq_(type(hnd), SQLAlchemySessionMapperHandler)
         
     @attr(unit=True)
     @raises(NotImplementedError)
     def test_recognizes_table_object(self):
         hnd = self.generator.get_handler(
-                "%s.categories" % (sqlalchemy_examples.__name__))
+                "%s.categories" % (sqlalchemy_examples.__name__),
+                obj=categories)
         eq_(type(hnd), SQLAlchemyTableHandler)
         
 
@@ -187,6 +190,7 @@ class TestQueryMappedClass(HandlerQueryTest):
         
         self.hnd = self.generator.get_handler(
                             "%s.Category" % (Category.__module__),
+                            obj=Category,
                             connection=metadata.bind)
         self.hnd.begin()
         
@@ -234,6 +238,7 @@ class TestQuerySessionMappedClass(HandlerQueryTest):
         
         self.hnd = self.generator.get_handler(
                             "%s.Category" % (Category.__module__),
+                            obj=Category,
                             connection=metadata.bind)
         self.hnd.begin()
         
