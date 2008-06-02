@@ -9,7 +9,7 @@ Create your tables and mappers.  Note that if you have mappers attached to sessi
     >>> from sqlalchemy import *
     >>> from sqlalchemy.orm import *
     >>> meta = MetaData("sqlite:///:memory:")
-    >>> Session = scoped_session(sessionmaker(bind=meta.bind, autoflush=True, transactional=True))
+    >>> Session = scoped_session(sessionmaker(bind=meta.bind, autoflush=False, transactional=True))
     >>> affiliates = Table('affiliates', meta,
     ...     Column('id', INT, primary_key=True),
     ...     Column('name', String(60)),)
@@ -89,15 +89,21 @@ using the provided TestCase mixin with python's builtin unittest module
     ...         meta.drop_all()
     ...         # and do whatever else ...
     ...     
-    ...     def test_event_something(self):
-    ...         joe = Affiliate.query().get(self.data.affiliates_data.joe.id)
-    ...         click = Event.query().get(self.data.events_data.joes_click.id)
+    ...     def test_events(self):
+    ...         joe = Affiliate.query().filter_by(id=self.data.affiliates_data.joe.id).one()
+    ...         click = Event.query().filter_by(id=self.data.events_data.joes_click.id).one()
     ...         assert click.affiliate is joe
     ...         assert click.type == self.data.events_data.joes_click.type
     ... 
+    >>> from fixture.test import PrudentTestResult
+    >>> result = PrudentTestResult()
+    >>> case = TestWithEventData('test_events')
+    >>> case(result)
+    >>> result
+    <fixture.test.PrudentTestResult run=1 errors=0 failures=0>
 
 Another way to write simpler tests is to use the builtin decorator, @with_data, designed for use with nose_ ::
- 
+    
     >>> def setup_data():
     ...     meta.create_all()
     ...
@@ -107,25 +113,18 @@ Another way to write simpler tests is to use the builtin decorator, @with_data, 
     ...
     >>> @db.with_data(events_data, setup=setup_data, teardown=teardown_data)
     ... def test_event_something(data):
-    ...     joe = Affiliate.query().get(data.affiliates_data.joe.id)
-    ...     click = Event.query().get(data.events_data.joes_click.id)
+    ...     joe = Affiliate.query().filter_by(id=data.affiliates_data.joe.id).all()[0]
+    ...     click = Event.query().filter_by(id=data.events_data.joes_click.id).all()[0]
     ...     assert click.affiliate is joe
     ...     assert click.type == data.events_data.joes_click.type
     ... 
-    
-The below is just code to run the tests (this is done automatically for 
-you automatically by nose_ or unittest)::
-
-    >>> import nose
+    >>> from nose.case import FunctionTestCase
     >>> from fixture.test import PrudentTestResult
     >>> result = PrudentTestResult()
-    >>> loader = unittest.TestLoader()
-    >>> suite = loader.loadTestsFromTestCase(TestWithEventData)
-    >>> s = suite(result)
-    >>> case = nose.case.FunctionTestCase(test_event_something)
+    >>> case = FunctionTestCase(test_event_something)
     >>> case(result)
     >>> result
-    <fixture.test.PrudentTestResult run=2 errors=0 failures=0>
+    <fixture.test.PrudentTestResult run=1 errors=0 failures=0>
 
 Here are some things to note.  @db.with_data() takes an arbitrary number of 
 DataSet classes as an argument and passes an instance of Fixture.Data to the 
