@@ -68,9 +68,10 @@ setup(
     entry_points = { 
         'console_scripts': [ 'fixture = fixture.command.generate:main' ] 
         },
-    ## ORed not supported?
-    # install_requires = ['sqlalchemy>=0.4 | SQLObject>=0.8.2'],
+    tests_require=['testtools', 'psycopg2', 'Elixir'],
     extras_require = {
         'decorators': ['nose>=0.9.2'],
+        'sqlalchemy': ['SQLAlchemy>=0.4'],
+        'sqlobject': ['SQLObject>=0.8'],
         },
     )

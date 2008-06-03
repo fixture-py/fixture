@@ -191,7 +191,7 @@ class TestFixture:
         def some_generator():
             def generated_test(data, step):
                 mock_call_log.append(('some_generator', data.__class__, step))
-                raise RuntimeError
+                raise RuntimeError("error raised from some_generator")
             for step in range(2):
                 yield generated_test, step
                 
@@ -209,8 +209,8 @@ class TestFixture:
                 run_tests()
             except Exception, e:
                 etype, val, tb = sys.exc_info()
-                if "exceptions.RuntimeError:" not in str(e):
-                    raise AssertionError("An unexpected exception was raised: %s" % e), None, tb
+                assert 'error raised from some_generator' in str(val), (
+                    "Unexpected: %s" % val)
             else:
                 assert False, "expected an exception to be raised"
         finally:

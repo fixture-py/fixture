@@ -80,8 +80,7 @@ class TestSQLObjectCategoryAsDataType(
 class TestSQLObjectPartialLoad(
         SQLObjectFixtureTest, LoaderPartialRecoveryTest):        
    def assert_partial_load_aborted(self):
-       # I don't think sqlobject can support this ...
-       raise SkipTest
+       raise SkipTest("I don't think sqlobject can support this feature")
        
        # t = self.conn.transaction()
        # eq_(Category.select(connection=t).count(), 0)
