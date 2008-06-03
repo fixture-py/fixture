@@ -68,7 +68,7 @@ setup(
     entry_points = { 
         'console_scripts': [ 'fixture = fixture.command.generate:main' ] 
         },
-    tests_require=['testtools', 'psycopg2', 'Elixir'],
+    tests_require=['testtools', 'psycopg2', 'Elixir>=0.5', 'Sphinx>=0.3'],
     extras_require = {
         'decorators': ['nose>=0.9.2'],
         'sqlalchemy': ['SQLAlchemy>=0.4'],

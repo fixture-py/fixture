@@ -16,6 +16,16 @@ The Fixture class is designed to support many different types of storage media a
 SQLAlchemy
 ++++++++++
 
+To ensure you are working with a compatible version of SQLAlchemy you can run ::
+
+    easy_install fixture[sqlalchemy]
+
+.. note::
+    
+    as of 1.0, fixture no longer supports SQLAlchemy less than version 0.4.  To work with SQLAlchemy 0.3, you will need `fixture 0.9`_
+    
+.. _fixture 0.9: http://farmdev.com/projects/fixture/0.9/docs/
+
 DataSet classes can be loaded into `Table`_ objects or `mapped classes`_ via the `sqlalchemy`_ module::
 
     >>> from fixture import SQLAlchemyFixture
@@ -30,16 +40,29 @@ DataSet classes can be loaded into `Table`_ objects or `mapped classes`_ via the
     ...                 env=sqlalchemy_examples)
     ... 
 
-For the more documentation see `SQLAlchemyFixture API`_
+For more info see `SQLAlchemyFixture API`_
 
 Elixir
 ++++++
 
 DataSet class can be loaded into `Elixir entities`_ by using the SQLAlchemyFixture (see previous example).
 
+**WARNING**: fixture uses its own scoped session to load data so that objects are separate from the application under test.  
+This means you will need to configure all Elixir entities (and any classes mapped with ``Session.mapper()``) like so::
+
+    class MyElixirEntity(Entity):
+        # ...
+        using_mapper_options(save_on_init=False)
+
+Without this, fixture has no way of saving objects to its own session.
+
 SQLObject
 +++++++++
 
+To ensure you are working with a compatible version of SQLObject you can run ::
+
+    easy_install fixture[sqlobject]
+    
 DataSet classes can be loaded into `SQLObject classes`_ via the `sqlobject`_ module::
 
     >>> from fixture import SQLObjectFixture
@@ -48,7 +71,7 @@ DataSet classes can be loaded into `SQLObject classes`_ via the `sqlobject`_ mod
     ...     dsn="sqlite:/:memory:", env=sqlobject_examples)
     ... 
 
-For the more documentation see `SQLObjectFixture API`_.
+For more info see `SQLObjectFixture API`_.
 
 .. _SQLAlchemyFixture API: ../apidocs/fixture.loadable.sqlalchemy_loadable.SQLAlchemyFixture.html
 .. _SQLObjectFixture API: ../apidocs/fixture.loadable.sqlobject_loadable.SQLObjectFixture.html
@@ -65,6 +88,9 @@ Fixture is designed for applications that already define a way of accessing its 
     >>> metadata.bind = engine
     >>> Session = scoped_session(sessionmaker(bind=metadata.bind, autoflush=True, transactional=True))
     >>> session = Session()
+
+Set up a place to store authors ...
+
     >>> authors = Table('authors', metadata,
     ...     Column('id', Integer, primary_key=True),
     ...     Column('first_name', String(60)),
@@ -75,6 +101,9 @@ Fixture is designed for applications that already define a way of accessing its 
     ... 
     >>> mapper(Author, authors) #doctest: +ELLIPSIS
     <sqlalchemy.orm.mapper.Mapper object at ...>
+
+Next set up a place to store books with each book having an author ...
+
     >>> books = Table('books', metadata, 
     ...     Column('id', Integer, primary_key=True),
     ...     Column('title', String(30)),
@@ -87,6 +116,9 @@ Fixture is designed for applications that already define a way of accessing its 
     ...     'author': relation(Author, backref='books')
     ... }) #doctest: +ELLIPSIS
     <sqlalchemy.orm.mapper.Mapper object at ...>
+
+::
+
     >>> metadata.create_all()
 
 Consult the `sqlalchemy`_ documentation for further examples of data mapping.
@@ -109,13 +141,10 @@ This is a fixture with minimal configuration to support loading data into the Bo
     ...     engine=metadata.bind )
     ... 
 
-There are several shortcuts, like `fixture.style.NamedDataStyle`_ and specifying the `session_context keyword`_.
-
-.. note::
-    - Any keyword attribute of a LoadableFixture can be set later on as an 
-      attribute of the instance.
-    - LoadableFixture instances can safely be module-level objects
-    - An ``env`` can be a dict or a module
+- Any keyword attribute of a LoadableFixture can be set later on as an 
+  attribute of the instance.
+- LoadableFixture instances can safely be module-level objects
+- An ``env`` can be a dict or a module
     
 .. _session_context keyword: ../apidocs/fixture.loadable.sqlalchemy_loadable.SQLAlchemyFixture.html
 .. _fixture.style.NamedDataStyle: ../apidocs/fixture.style.NamedDataStyle.html
@@ -123,7 +152,7 @@ There are several shortcuts, like `fixture.style.NamedDataStyle`_ and specifying
 Loading DataSet objects
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The job of the Fixture object is to load and unload DataSet objects.  Let's consider the following DataSet objects (reusing the examples from earlier)::
+To load some data for a test, you define it first in ``DataSet`` classes::
 
     >>> from fixture import DataSet
     >>> class AuthorData(DataSet):
@@ -135,10 +164,15 @@ The job of the Fixture object is to load and unload DataSet objects.  Let's cons
     ...         title = "Dune"
     ...         author = AuthorData.frank_herbert
 
-As you recall, we passed a dictionary into the Fixture that associates DataSet names with storage objects.  Using this dict, a Fixture.Data instance now knows to use the sqlalchemy mapped class ``Book`` when saving a DataSet named ``BookData``.  Since we also gave it a ``session`` keyword, this will be used to actually save objects::
+As you recall, we passed a dictionary into the Fixture that associates DataSet names with storage objects.  Using this dict, a ``Fixture.Data`` instance now knows to use the sqlalchemy mapped class ``Book`` when saving a DataSet named ``BookData``.
+
+The ``Fixture.Data`` instance implements the ``setup()`` and ``teardown()`` methods typical to any test object.  At the beginning of a test the ``DataSet`` objects are loaded like so::
     
     >>> data = dbfixture.data(AuthorData, BookData)
     >>> data.setup() 
+
+::
+
     >>> session.query(Book).all() #doctest: +ELLIPSIS
     [<...Book object at ...>]
     >>> all_books = session.query(Book).all()
@@ -146,39 +180,17 @@ As you recall, we passed a dictionary into the Fixture that associates DataSet n
     [<...Book object at ...>]
     >>> all_books[0].author.first_name
     u'Frank'
+
+... And are removed like this::
+
     >>> data.teardown()
     >>> session.query(Book).all()
     []
 
-Discovering storable objects with Style
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you didn't want to create a strict mapping of DataSet class names to their storable object names you can use Style objects to translate DataSet class names.  For example, consider this Fixture :
-
-    >>> from fixture import SQLAlchemyFixture, TrimmedNameStyle
-    >>> dbfixture = SQLAlchemyFixture(
-    ...     env=globals(),
-    ...     style=TrimmedNameStyle(suffix="Data"),
-    ...     engine=metadata.bind )
-    ... 
-
-This would take the name ``AuthorData`` and trim off "Data" from its name to find ``Author``, its mapped sqlalchemy class for storing data.  Since this is a logical convention to follow for naming DataSet classes, you can use a shortcut:
-
-    >>> from fixture import NamedDataStyle
-    >>> dbfixture = SQLAlchemyFixture(
-    ...     env=globals(),
-    ...     style=NamedDataStyle(),
-    ...     engine=metadata.bind )
-    ... 
-
-See the `Style API`_ for all available Style objects.
-
-.. _Style API: ../apidocs/fixture.style.html
-
 Loading DataSet classes in a test
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now that you have a Fixture object to load DataSet classes you are ready to write some tests.  You can either write your own code that creates a data instance and calls setup/teardown manually (like in previous examples), or you can use one of several utilities.  
+Now that you have a Fixture object to load DataSet classes and you know how setup / teardown works, you are ready to write some tests.  You can either write your own code that creates a data instance and calls setup/teardown manually (like in previous examples), or you can use one of several utilities.  
 
 Loading objects using DataTestCase
 ++++++++++++++++++++++++++++++++++
@@ -209,11 +221,11 @@ See the `DataTestCase API`_ for a full explanation of how it can be configured.
 Loading objects using @dbfixture.with_data
 ++++++++++++++++++++++++++++++++++++++++++
 
-If you use nose_, a test runner for Python, then you may be familiar with its `discovery of test methods`_.  Test methods (as opposed to unittest.TestCase classes) provide a quick way to write procedural tests and often illustrate concisely what features are being tested.  Nose supports test methods that are decorated with setup and teardown methods and fixture provides a way to setup/teardown DataSet objects for a test method.  If you don't have nose_ installed, simply install fixture like so and nose will be installed for you::
+If you use nose_, a test runner for Python, then you may be familiar with its `discovery of test functions`_.  Test functions provide a quick way to write procedural tests and often illustrate more concisely what features are being tested.  Fixture provides a decorator method called ``@with_data`` that wraps around a test function so that data is loaded before the test.  If you don't have nose_ installed, simply install fixture like so and the correct version will be installed for you::
     
     easy_install fixture[decorators]
 
-The special decorator method is an instance method of a Fixture class, ``with_data``; it can be used like so::
+Load data for a test function like this::
 
     >>> @dbfixture.with_data(AuthorData, BookData)
     ... def test_books_are_in_stock(data):
@@ -224,24 +236,49 @@ The special decorator method is an instance method of a Fixture class, ``with_da
     >>> unittest.TextTestRunner().run(case)
     <unittest._TextTestResult run=1 errors=0 failures=0>
 
-Like in the previous example, the ``data`` attribute is a SuperSet object you can use to reference loaded data.  This is passed to your decorated test method as its first argument.  (nose_ will run the above code automatically; the inline execution of the test here is merely for example.)
+Like in the previous example, the ``data`` attribute is a SuperSet object you can use to reference loaded data.  This is passed to your decorated test method as its first argument.
 
 See the `Fixture.Data.with_data API`_ for more information.
 
 .. _nose: http://somethingaboutorange.com/mrl/projects/nose/
-.. _discovery of test methods: http://code.google.com/p/python-nose/wiki/WritingTests
+.. _discovery of test functions: http://code.google.com/p/python-nose/wiki/WritingTests
 .. _Fixture.Data.with_data API: ../apidocs/fixture.base.Fixture.html#with_data
 
 Loading objects using the with statement
 ++++++++++++++++++++++++++++++++++++++++
 
-In Python 2.5 or later you can write test code in a more logical manner by using the `with statement`_.  Anywhere in your code, when you enter a with block using a Fixture.Data instance, the data is loaded and you have an instance in which to reference the data.  When you exit, the data is torn down for you, regardless of whether there was an exception or not.  For example::
+In Python 2.5 or later you can also load data for a test using the `with statement`_.  Anywhere in your code, when you enter a with block using a Fixture.Data instance, the data is loaded and you have an instance with which to reference the data.  When you exit the block, the data is torn down for you, regardless of whether there was an exception or not.  For example::
 
     from __future__ import with_statement
     with dbfixture.data(AuthorData, BookData) as data:
         session.query(Book).filter_by(title=self.data.BookData.dune.title).one()
 
 .. _with statement: http://www.python.org/dev/peps/pep-0343/
+
+Discovering storable objects with Style
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you didn't want to create a strict mapping of DataSet class names to their storable object names you can use Style objects to translate DataSet class names.  For example, consider this Fixture :
+
+    >>> from fixture import SQLAlchemyFixture, TrimmedNameStyle
+    >>> dbfixture = SQLAlchemyFixture(
+    ...     env=globals(),
+    ...     style=TrimmedNameStyle(suffix="Data"),
+    ...     engine=metadata.bind )
+    ... 
+
+This would take the name ``AuthorData`` and trim off "Data" from its name to find ``Author``, its mapped sqlalchemy class for storing data.  Since this is a logical convention to follow for naming DataSet classes, you can use a shortcut:
+
+    >>> from fixture import NamedDataStyle
+    >>> dbfixture = SQLAlchemyFixture(
+    ...     env=globals(),
+    ...     style=NamedDataStyle(),
+    ...     engine=metadata.bind )
+    ... 
+
+See the `Style API`_ for all available Style objects.
+
+.. _Style API: ../apidocs/fixture.style.html
 
 Defining a custom LoadableFixture
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

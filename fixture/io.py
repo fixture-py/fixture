@@ -3,9 +3,6 @@
 
 .. contents:: :local:
 
-TempIO: a temporary file system object
---------------------------------------
-
 This object is useful for tests that need to set up a directory structure 
 and work with files and paths.  Once you instantiate it, you have a temporary 
 directory that will self-destruct when it falls out of scope::
@@ -19,7 +16,7 @@ Add sub-directories by simply assigning an attribute the basename of the new
 subdirectory, like so::
 
     >>> tmp.incoming = "incoming"
-    >>> tmp.incoming.exists()
+    >>> os.path.exists(tmp.incoming)
     True
 
 The new attribute is now an absolute path to a subdirectory, "incoming", of 

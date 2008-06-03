@@ -1,16 +1,17 @@
 
 ========================
 Using the fixture module
-========================
+========================   
+   
+-------------
+Related Sites
+-------------
 
-`< fixture project`_
+- `fixture project`_
+- `farmdev.com`_
 
-`< farmdev.com`_
-
-.. _< farmdev.com: http://farmdev.com/
-.. _< fixture project: http://code.google.com/p/fixture/
-
-.. contents::
+.. _farmdev.com: http://farmdev.com/
+.. _fixture project: http://code.google.com/p/fixture/
 
 ------------------
 Download / Install
@@ -20,19 +21,19 @@ Using the easy_install_ command::
 
     easy_install fixture
 
-Or, if you want to create a link to the source without installing anything, cd into the root directory and type::
-
-    python setup.py develop
-
 Or ... if you're old school, this works with or without setuptools_::
 
     python setup.py install
+    
+The source is available from the `fixture package`_ or the `fixture subversion repository`_
 
 .. note::
     The above commands may require root access
 
 .. _easy_install: http://peak.telecommunity.com/DevCenter/EasyInstall
 .. _setuptools: http://peak.telecommunity.com/DevCenter/setuptools
+.. _fixture package: http://pypi.python.org/pypi/fixture
+.. _fixture subversion repository: http://fixture.googlecode.com/svn/trunk/#egg=fixture-dev
 
 ---------------------------------
 Loading and referencing test data
@@ -49,34 +50,21 @@ DataSet
 Fixture
     knows how to load data
 
-The details of loading the actual data is left up to your application's database layer itself (more info on this later).
+The details of loading the actual data is left up to your application's database layer itself.  Dive in ...
 
 .. _mock objects: http://en.wikipedia.org/wiki/Mock_object
 .. _unit testing: http://en.wikipedia.org/wiki/Unit_testing
 .. _functional test: http://en.wikipedia.org/wiki/Functional_test
 .. _code coverage: http://en.wikipedia.org/wiki/Code_coverage
 
-Using DataSet
--------------
-
-.. include_docstring:: fixture.dataset
-
-Using LoadableFixture
----------------------
-
-.. include_docstring:: fixture.loadable
-
-Using the fixture command
--------------------------
-
-.. include_docstring:: fixture.command.generate
-
-------------------------------------
-Testing with a temporary file system
-------------------------------------
-
-.. include_docstring:: fixture.io
-
+.. toctree::
+   :maxdepth: 2
+   
+   using-dataset
+   using-loadable-fixture
+   using-fixture-cmd
+   using-temp-io
+   
 -----------------
 API Documentation
 -----------------
