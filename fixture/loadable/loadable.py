@@ -11,7 +11,7 @@ A DataSet class is loaded via some storage medium, say, an object that implement
 Supported storage media
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The Fixture class is designed to support many different types of storage media and there is a section later about creating your own Fixture.  Here are the various storage media supported by built-in Fixture subclasses:
+The Fixture class is designed to support many different types of databases and other storage media by supporting modules that know how to work with that media.  There is also a section later about creating your own Fixture.  Here are the various modules supported by built-in Fixture subclasses:
 
 SQLAlchemy
 ++++++++++
