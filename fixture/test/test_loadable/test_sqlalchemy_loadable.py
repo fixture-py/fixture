@@ -57,7 +57,53 @@ class TestSetupTeardown(unittest.TestCase):
         data.teardown()
         self.session.clear()
         eq_(list(self.session.query(Category)), [])
+
+
+class TestSABinding(unittest.TestCase):
+    class CategoryData(DataSet):
+        class cars:
+            name = 'cars'
+        class free_stuff:
+            name = 'get free stuff'
+            
+    def setUp(self):
+        engine = create_engine(conf.LITE_DSN)
+        metadata.bind = engine
+        # metadata.bind.echo = True
+        metadata.create_all()
         
+        Session = sessionmaker(bind=metadata.bind, autoflush=True, transactional=True)
+        self.session = Session()
+        
+        # note the lack of explicit binding :
+        self.fixture = SQLAlchemyFixture(
+            env={'CategoryData':Category},
+        )
+        
+        clear_mappers()
+        # since categories is assigned to metadata, SA should handle binding for us
+        mapper(Category, categories)
+    
+    def tearDown(self):
+        # metadata.bind.echo = False
+        metadata.drop_all()
+        self.session.close()
+    
+    @attr(functional=1)
+    def test_setup_then_teardown(self):
+        eq_(self.session.query(Category).all(), [])        
+        
+        data = self.fixture.data(self.CategoryData)
+        data.setup()
+        
+        self.session.clear()
+        cats = self.session.query(Category).order_by('name').all()
+        eq_(cats[0].name, 'cars')
+        eq_(cats[1].name, 'get free stuff')
+        
+        data.teardown()
+        self.session.clear()
+        eq_(list(self.session.query(Category)), [])
         
 class CategoryData(DataSet):
     class cars:
