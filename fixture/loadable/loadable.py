@@ -54,7 +54,14 @@ This means you will need to configure all Elixir entities (and any classes mappe
         # ...
         using_mapper_options(save_on_init=False)
 
-Without this, fixture has no way of saving objects to its own session.
+Without this, fixture has no way of saving objects to its own session.  To use Elixir entities without specifiying ``save_on_init=False`` you would have to share the fixture session in Elixir.  You can get the fixture session like this::
+
+    >>> from fixture.loadable.sqlalchemy_loadable import Session
+    >>> app_session = Session()
+
+There are several ways to assign a session to Elixir, one of which is simply::
+    
+    elixir.session = app_session
 
 SQLObject
 +++++++++

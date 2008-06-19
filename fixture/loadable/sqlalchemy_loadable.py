@@ -8,12 +8,8 @@ import logging
 
 log = logging.getLogger('fixture.loadable.sqlalchemy_loadable')
 
-try:
-    from sqlalchemy.orm import sessionmaker, scoped_session
-except ImportError:
-    Session = None
-else:
-    Session = scoped_session(sessionmaker(autoflush=False, transactional=True), scopefunc=lambda:__name__)
+from sqlalchemy.orm import sessionmaker, scoped_session
+Session = scoped_session(sessionmaker(autoflush=False, transactional=True), scopefunc=lambda:__name__)
 
 def negotiated_medium(obj, dataset):
     if is_table(obj):
@@ -122,8 +118,7 @@ class SQLAlchemyFixture(DBLoadableFixture):
     
     def commit(self):
         self.session.flush()
-        if hasattr(self.session, 'commit'):
-            # a scoped session configured with transactional=True
+        if self.session.transactional:
             log.debug("session.commit() bind=%s", getattr(self.session, 'bind', None))
             self.session.commit()
         log.debug("transaction.commit() <- %s", self.transaction)
@@ -157,8 +152,7 @@ class SQLAlchemyFixture(DBLoadableFixture):
             self.transaction.close()
     
     def rollback(self):
-        if hasattr(self.session, 'rollback'):
-            # a scoped session configured with transactional=True
+        if self.session.transactional:
             log.debug("session.rollback() bind=%s", getattr(self.session, 'bind', None))
             self.session.rollback()
         DBLoadableFixture.rollback(self)
@@ -192,7 +186,8 @@ class MappedClassMedium(DBLoadableFixture.StorageMediumAdapter):
         obj = self.medium()
         for c, val in column_vals:
             setattr(obj, c, val)
-        self.session.save(obj)
+        if obj not in self.session.new:
+            self.session.save(obj)
         return obj
         
 class TableMedium(DBLoadableFixture.StorageMediumAdapter):
