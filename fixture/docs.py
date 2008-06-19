@@ -75,7 +75,10 @@ def include_docstring(
         mod = obj.__module__
     else:
         mod = obj # big assumption :/
+    
+    ## grrr, this needs to run so that the shell documentation passes
     doctest.run_docstring_examples(source, mod.__dict__)
+    
     if source is None:
         raise ValueError("cannot find docstring for %s" % obj)
     summary, body = pydoc.splitdoc(source)
