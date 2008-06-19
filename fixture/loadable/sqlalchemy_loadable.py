@@ -43,6 +43,11 @@ class SQLAlchemyFixture(DBLoadableFixture):
         will be created from session_context.current .  Only use this if you need to 
         support legacy 0.3 sqlalchemy code.
     
+    - engine
+      
+      - A specific connectable/engine object to use when one is not bound.  
+        engine.connect() will be called.
+    
     - session
       
       - A session from sqlalchemy.create_session().  This will override the 
@@ -51,9 +56,8 @@ class SQLAlchemyFixture(DBLoadableFixture):
     
     - connection
     
-      - A specific connectable/engine object (must be connected).  This is only 
-        necessary if you are working with an unbound session *and* you want to 
-        use the TableMedium for data storage.
+      - A specific connectable/engine object (must be connected) to use 
+        when one is not bound.
     
     - dataclass
     
