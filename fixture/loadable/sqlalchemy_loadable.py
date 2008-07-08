@@ -149,11 +149,11 @@ class SQLAlchemyFixture(DBLoadableFixture):
         if self.connection:
             self.connection.close()
         if self.session:
-            if self.session_bind:
-                self.session_bind.dispose()
             self.session.close()
         if self.transaction:
             self.transaction.close()
+        if self.engine:
+            self.engine.dispose()
     
     def rollback(self):
         if self.session.transactional:
