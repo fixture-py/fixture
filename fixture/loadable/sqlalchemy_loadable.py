@@ -121,10 +121,7 @@ class SQLAlchemyFixture(DBLoadableFixture):
         DBLoadableFixture.begin(self, unloading=unloading)
     
     def commit(self):
-        self.session.flush()
-        if self.session.transactional:
-            log.debug("session.commit() bind=%s", getattr(self.session, 'bind', None))
-            self.session.commit()
+        self.session.flush() # <--- WHY???  transaction.commit() should automatically flush, yet this passes tests
         log.debug("transaction.commit() <- %s", self.transaction)
         DBLoadableFixture.commit(self)
     
@@ -156,9 +153,6 @@ class SQLAlchemyFixture(DBLoadableFixture):
             self.engine.dispose()
     
     def rollback(self):
-        if self.session.transactional:
-            log.debug("session.rollback() bind=%s", getattr(self.session, 'bind', None))
-            self.session.rollback()
         DBLoadableFixture.rollback(self)
 
 ## this was used in an if branch of clear() ... but I think this is no longer necessary with scoped sessions
