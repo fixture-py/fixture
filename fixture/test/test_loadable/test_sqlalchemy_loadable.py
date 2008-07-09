@@ -60,7 +60,7 @@ class TestSetupTeardown(unittest.TestCase):
         eq_(list(self.session.query(Category)), [])
 
 
-class TestSABinding(unittest.TestCase):
+class TestImplicitSABinding(unittest.TestCase):
     class CategoryData(DataSet):
         class cars:
             name = 'cars'
