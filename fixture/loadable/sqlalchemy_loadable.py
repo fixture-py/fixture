@@ -98,16 +98,8 @@ class SQLAlchemyFixture(DBLoadableFixture):
         if self.session_context is not None:
             self.session = self.session_context.current
         if self.connection is None and self.engine is None:
-            if hasattr(self.session, 'bind'):
-                self.engine = self.session.bind
-            elif hasattr(self.session, 'bind_to'):
-                self.engine = self.session.bind_to
-            elif hasattr(self.Session, 'bind'):
-                self.engine = self.Session.bind
-            else:
-                raise UninitializedError(
-                    "connection= and engine= keywords were not specified and no engine found; "
-                    "Looked for an engine in session.bind, session.bind_to, and Session.bind")
+            if self.session:
+                self.engine = self.session.bind # might be None
         
         if self.engine is not None and self.connection is None:
             self.connection = self.engine.connect()
@@ -132,11 +124,7 @@ class SQLAlchemyFixture(DBLoadableFixture):
             log.debug("connection.begin()")
             transaction = self.connection.begin()
         else:
-            if hasattr(self.session, 'begin'):
-                log.debug("session.begin() bind=%s", getattr(self.session, 'bind', None))
-                transaction = self.session.begin()
-            else:
-                transaction = self.session.create_transaction()
+            transaction = self.session.begin()
         log.debug("create_transaction() <- %s", transaction)
         return transaction
     
