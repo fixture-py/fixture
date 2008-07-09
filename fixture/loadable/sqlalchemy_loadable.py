@@ -36,12 +36,6 @@ class SQLAlchemyFixture(DBLoadableFixture):
       - An class-like Session created by sqlalchemy.orm.scoped_session() .  
         Only declare a custom Session if you have to.  The preferred way 
         is to let fixture use its own Session in a private scope.
-
-    - session_context
-
-      - An instance of sqlalchemy.ext.sessioncontext.SessionContext.  A session 
-        will be created from session_context.current .  Only use this if you need to 
-        support legacy 0.3 sqlalchemy code.
     
     - engine
       
@@ -79,13 +73,12 @@ class SQLAlchemyFixture(DBLoadableFixture):
     """
     Medium = staticmethod(negotiated_medium)
     
-    def __init__(self, engine=None, connection=None, session=None, scoped_session=None, session_context=None, **kw):
+    def __init__(self, engine=None, connection=None, session=None, scoped_session=None, **kw):
         from sqlalchemy.orm import sessionmaker # ensure import error
         DBLoadableFixture.__init__(self, **kw)
         self.engine = engine
         self.connection = connection
         self.session = session
-        self.session_context = session_context
         if scoped_session is None:
             scoped_session = Session
         self.Session = scoped_session

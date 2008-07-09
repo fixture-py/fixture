@@ -461,7 +461,6 @@ def test_SQLAlchemyFixture_configured_with_bound_session_and_conn():
     f.begin()
     eq_(f.session, stub_session)
     eq_(f.connection, stub_conn)
-    eq_(f.session_context, None)
 
 
 ### was using this to work around postgres deadlocks...
