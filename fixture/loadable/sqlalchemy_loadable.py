@@ -95,8 +95,6 @@ class SQLAlchemyFixture(DBLoadableFixture):
             # ...then we are loading, so let's *lazily* 
             # clean up after a previous setup/teardown
             Session.remove()
-        if self.session_context is not None:
-            self.session = self.session_context.current
         if self.connection is None and self.engine is None:
             if self.session:
                 self.engine = self.session.bind # might be None
