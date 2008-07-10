@@ -104,7 +104,12 @@ class SQLAlchemyFixture(DBLoadableFixture):
         DBLoadableFixture.begin(self, unloading=unloading)
     
     def commit(self):
-        self.session.flush() # <--- WHY???  transaction.commit() should automatically flush, yet this passes tests
+        # yes, confusing, but the short answer is flush() is needed when there 
+        # is a connection since a connection transaction (unlike session transaction)
+        # does not flush the session.  Connection transactions are needed to isolate 
+        # scoped sessions from one another.
+        self.session.flush()
+        
         log.debug("transaction.commit() <- %s", self.transaction)
         DBLoadableFixture.commit(self)
     
