@@ -97,25 +97,23 @@ class SQLAlchemyFixture(DBLoadableFixture):
         
         if self.session is None:
             if self.connection:
-                # print self.connection.engine.raw_connection
                 self.Session.configure(bind=self.connection)
+            else:
+                self.Session.configure(bind=None)
             self.session = self.Session()
             
         DBLoadableFixture.begin(self, unloading=unloading)
     
     def commit(self):
-        # yes, confusing, but the short answer is flush() is needed when there 
-        # is a connection since a connection transaction (unlike session transaction)
-        # does not flush the session.  Connection transactions are needed to isolate 
-        # scoped sessions from one another.
-        self.session.flush()
+        if self.connection:
+            # note that when not using a connection, calling session.commit() 
+            # as the inheirted code does will automatically flush\ the session
+            self.session.flush()
         
         log.debug("transaction.commit() <- %s", self.transaction)
         DBLoadableFixture.commit(self)
     
     def create_transaction(self):
-        # import traceback
-        # traceback.print_stack(file=sys.stderr)
         if self.connection is not None:
             log.debug("connection.begin()")
             transaction = self.connection.begin()
