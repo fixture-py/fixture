@@ -430,16 +430,6 @@ def test_fixture_can_be_disposed():
     data = fixture.data(CategoryData)
     data.setup()
     data.teardown()
-
-@raises(UninitializedError)
-@attr(unit=True)
-def test_TableMedium_requires_bound_session():
-    stub_medium = {}
-    stub_dataset = {}
-    m = TableMedium(stub_medium, stub_dataset)
-    class StubLoader:
-        connection = None
-    m.visit_loader(StubLoader())
         
 @attr(unit=True)
 def test_SQLAlchemyFixture_configured_with_bound_session_and_conn():

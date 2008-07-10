@@ -174,10 +174,9 @@ class MappedClassMedium(DBLoadableFixture.StorageMediumAdapter):
         
 class TableMedium(DBLoadableFixture.StorageMediumAdapter):
     class LoadedTableRow(object):
-        def __init__(self, table, inserted_key, connection):
+        def __init__(self, table, inserted_key):
             self.table = table
             self.inserted_key = [k for k in inserted_key]
-            self.connection = connection
             self.row = None
         
         def __getattr__(self, col):
@@ -191,9 +190,8 @@ class TableMedium(DBLoadableFixture.StorageMediumAdapter):
                 
                 first_pk = [k for k in self.table.primary_key][0]
                 id = getattr(self.table.c, first_pk.key)
-                c = self.connection.execute(self.table.select(
-                                                id==self.inserted_key[0]))
-                self.row = c.fetchone()
+                rs = self.table.select(id==self.inserted_key[0]).execute()
+                self.row = rs.fetchone()
             return getattr(self.row, col)
             
     def __init__(self, *a,**kw):
@@ -204,17 +202,8 @@ class TableMedium(DBLoadableFixture.StorageMediumAdapter):
         for k in obj.table.primary_key:
             id = getattr(obj.table.c, k.key)
             stmt = obj.table.delete(id==obj.inserted_key[i])
-            c = self.connection.execute(stmt)
+            stmt.execute()
             i+=1
-    
-    def visit_loader(self, loader):
-        if loader.connection is None:
-            raise UninitializedError(
-                "The loader using %s() has a None type connection.  "
-                "To fix this, either pass in the connection keyword or use "
-                "a session bound to an engine" % (
-                    self.__class__.__name__))
-        self.connection = loader.connection
         
     def save(self, row, column_vals):
         from sqlalchemy.schema import Table
@@ -223,7 +212,7 @@ class TableMedium(DBLoadableFixture.StorageMediumAdapter):
                 "medium %s must be a Table instance" % self.medium)
                 
         stmt = self.medium.insert()
-        c = self.connection.execute(stmt, dict(list(column_vals)))
+        c = stmt.execute(dict(list(column_vals)))
         primary_key = c.last_inserted_ids()
         if primary_key is None:
             raise NotImplementedError(
@@ -235,7 +224,7 @@ class TableMedium(DBLoadableFixture.StorageMediumAdapter):
                 "expected primary_key %s, got %s (using table %s)" % (
                                 table_keys, inserted_keys, self.medium))
         
-        return self.LoadedTableRow(self.medium, primary_key, self.connection)
+        return self.LoadedTableRow(self.medium, primary_key)
 
 def is_assigned_mapper(obj):
     from sqlalchemy.orm.mapper import Mapper
