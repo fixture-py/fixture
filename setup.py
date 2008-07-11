@@ -3,43 +3,50 @@ import sys, os
 import ez_setup
 ez_setup.use_setuptools()
 from setuptools import setup, find_packages
+import compiler
+import pydoc
+from compiler import visitor
 
-## in setup.cfg for nosetests
-# os.environ['NOSE_WITH_COVERAGE'] = "1"
-# os.environ['NOSE_WITH_DOCTEST'] = "1"
-# os.environ['NOSE_COVER_PACKAGES'] = "fixture"
-# os.environ['NOSE_VERBOSE'] = "1"
+class DefaultModuleVisitor:
+    def default(self, node):
+        for child in node.getChildNodes():
+            self.visit(child)
 
-class Package(object):
-    """encapsulates the package to setup."""            
-    _real_module = None
-    def _get_module(self):
-        if self._real_module is None:
-            import fixture
-            self._real_module = fixture
-        return self._real_module
-    module = property(_get_module)
-    
-    docparts = None
-    def _get_from_doc(self, index):
-        if self.docparts is None:
-            import inspect
-            from pydoc import splitdoc
-            self.docparts = splitdoc(inspect.getdoc(self.module))
-        return self.docparts[index]
-    
-    description = property(fget=lambda s: s._get_from_doc(0))
-    long_description = property(fget=lambda s: s._get_from_doc(1))
-    version = property(fget=lambda s: getattr(s.module, '__version__'))
-    
-package = Package()
+def get_module_meta(modfile):
+    class ModuleVisitor(DefaultModuleVisitor):
+        def __init__(self):
+            self.mod_doc = None
+            self.mod_version = None
+        def visitModule(self, node):
+            self.mod_doc = node.doc
+            self.default(node)
+        def visitAssign(self, node):
+            if self.mod_version:
+                return
+            asn = node.nodes[0]
+            assert asn.name == '__version__', (
+                "expected __version__ node: %s" % asn)
+            self.mod_version = node.expr.value
+            self.default(node)
+    ast = compiler.parseFile(modfile)
+    modnode = ModuleVisitor()
+    visitor.walk(ast, modnode)
+    if modnode.mod_doc is None:
+        raise RuntimeError(
+            "could not parse doc string from %s" % modfile)
+    if modnode.mod_version is None:
+        raise RuntimeError(
+            "could not parse __version__ from %s" % modfile)
+    return (modnode.mod_version,) + pydoc.splitdoc(modnode.mod_doc)
+
+version, description, long_description = get_module_meta("./fixture/__init__.py")
 
 setup(
     name = 'fixture',
-    version = package.version,
+    version = version,
     author = 'Kumar McMillan',
     author_email = 'kumar dot mcmillan / gmail.com',
-    description = package.description,
+    description = description,
     classifiers = [ 'Environment :: Other Environment',
                     'Intended Audience :: Developers',
                     (   'License :: OSI Approved :: GNU Library or Lesser '
@@ -50,25 +57,21 @@ setup(
                     'Topic :: Software Development :: Testing',
                     'Topic :: Software Development :: Quality Assurance',
                     'Topic :: Utilities'],
-    long_description = package.long_description,
+    long_description = long_description,
     license = 'GNU Lesser General Public License (LGPL)',
     keywords = ('test testing tools unittest fixtures setup teardown '
                 'database stubs IO tempfile'),
-    url = 'http://farmdev.com/',
+    url = 'http://code.google.com/p/fixture/',
     
-    # for trunk ...
-    download_url="http://fixture.googlecode.com/svn/trunk/#egg=fixture-dev",
-    
-    # download_url = 'http://farmdev.com/src/fixture-%s-py%s.%s.egg' % \
-    #                 (   package.version, sys.version_info[0], 
-    #                     sys.version_info[1]),
     packages = find_packages(),
     
     test_suite="fixture.setup_test_not_supported",
     entry_points = { 
         'console_scripts': [ 'fixture = fixture.command.generate:main' ] 
         },
-    tests_require=['testtools', 'psycopg2', 'Elixir>=0.5', 'Sphinx>=0.3'],
+    tests_require=[
+        'testtools', 'psycopg2', 'SQLObject>=0.8', 'Elixir>=0.5', 
+        'SQLAlchemy>=0.4,<0.5', 'Sphinx>=0.3'],
     extras_require = {
         'decorators': ['nose>=0.9.2'],
         'sqlalchemy': ['SQLAlchemy>=0.4'],

@@ -62,6 +62,8 @@ Or ... if you're old school, this works with or without [http://peak.telecommuni
 
 {{{python setup.py install}}}
 
+You can check out a development version from [http://fixture.googlecode.com/svn/trunk/#egg=fixture-dev http://fixture.googlecode.com/svn/trunk/].
+
 ===Requirements===
 
 At the moment fixture is only tested on Python 2.4 and 2.5 so it may or may not 
