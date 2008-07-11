@@ -7,27 +7,29 @@ import compiler
 import pydoc
 from compiler import visitor
 
-class DefaultModuleVisitor:
+class ModuleVisitor(object):
+    def __init__(self):
+        self.mod_doc = None
+        self.mod_version = None
+        
     def default(self, node):
         for child in node.getChildNodes():
             self.visit(child)
-
-def get_module_meta(modfile):
-    class ModuleVisitor(DefaultModuleVisitor):
-        def __init__(self):
-            self.mod_doc = None
-            self.mod_version = None
-        def visitModule(self, node):
-            self.mod_doc = node.doc
-            self.default(node)
-        def visitAssign(self, node):
-            if self.mod_version:
-                return
-            asn = node.nodes[0]
-            assert asn.name == '__version__', (
-                "expected __version__ node: %s" % asn)
-            self.mod_version = node.expr.value
-            self.default(node)
+            
+    def visitModule(self, node):
+        self.mod_doc = node.doc
+        self.default(node)
+        
+    def visitAssign(self, node):
+        if self.mod_version:
+            return
+        asn = node.nodes[0]
+        assert asn.name == '__version__', (
+            "expected __version__ node: %s" % asn)
+        self.mod_version = node.expr.value
+        self.default(node)
+        
+def get_module_meta(modfile):            
     ast = compiler.parseFile(modfile)
     modnode = ModuleVisitor()
     visitor.walk(ast, modnode)
