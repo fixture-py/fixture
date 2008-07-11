@@ -172,8 +172,9 @@ class MappedClassMedium(DBLoadableFixture.StorageMediumAdapter):
         
 class TableMedium(DBLoadableFixture.StorageMediumAdapter):
     class LoadedTableRow(object):
-        def __init__(self, table, inserted_key):
+        def __init__(self, table, inserted_key, conn):
             self.table = table
+            self.conn = conn
             self.inserted_key = [k for k in inserted_key]
             self.row = None
         
@@ -182,26 +183,40 @@ class TableMedium(DBLoadableFixture.StorageMediumAdapter):
                 if len(self.inserted_key) > 1:
                     raise NotImplementedError(
                         "%s does not support making a select statement with a "
-                        "composite key, %s.  probably fixable" % (
+                        "composite key, %s.  This is probably fixable" % (
                                             self.__class__.__name__, 
                                             self.table.primary_key))
                 
                 first_pk = [k for k in self.table.primary_key][0]
                 id = getattr(self.table.c, first_pk.key)
-                rs = self.table.select(id==self.inserted_key[0]).execute()
-                self.row = rs.fetchone()
+                stmt = self.table.select(id==self.inserted_key[0])
+                if self.conn:
+                    c = self.conn.execute(stmt)
+                else:
+                    c = stmt.execute()
+                self.row = c.fetchone()
             return getattr(self.row, col)
             
     def __init__(self, *a,**kw):
         DBLoadableFixture.StorageMediumAdapter.__init__(self, *a,**kw)
+        self.conn = None
         
     def clear(self, obj):
         i=0
         for k in obj.table.primary_key:
             id = getattr(obj.table.c, k.key)
             stmt = obj.table.delete(id==obj.inserted_key[i])
-            stmt.execute()
+            if self.conn:
+                c = self.conn.execute(stmt)
+            else:
+                c = stmt.execute()
             i+=1
+    
+    def visit_loader(self, loader):
+        if loader.connection:
+            self.conn = loader.connection
+        else:
+            self.conn = None
         
     def save(self, row, column_vals):
         from sqlalchemy.schema import Table
@@ -210,7 +225,11 @@ class TableMedium(DBLoadableFixture.StorageMediumAdapter):
                 "medium %s must be a Table instance" % self.medium)
                 
         stmt = self.medium.insert()
-        c = stmt.execute(dict(list(column_vals)))
+        params = dict(list(column_vals))
+        if self.conn:
+            c = self.conn.execute(stmt, params)
+        else:
+            c = stmt.execute(params)
         primary_key = c.last_inserted_ids()
         if primary_key is None:
             raise NotImplementedError(
@@ -222,7 +241,7 @@ class TableMedium(DBLoadableFixture.StorageMediumAdapter):
                 "expected primary_key %s, got %s (using table %s)" % (
                                 table_keys, inserted_keys, self.medium))
         
-        return self.LoadedTableRow(self.medium, primary_key)
+        return self.LoadedTableRow(self.medium, primary_key, self.conn)
 
 def is_assigned_mapper(obj):
     from sqlalchemy.orm.mapper import Mapper

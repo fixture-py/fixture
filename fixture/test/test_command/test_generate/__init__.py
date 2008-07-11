@@ -31,6 +31,10 @@ class GenerateTest(object):
     """
     args = []
     
+    def __init__(self, *a, **kw):
+        super(GenerateTest, self).__init__(*a, **kw)
+        self.env = None
+    
     def assert_env_is_clean(self):
         raise NotImplementedError
     
@@ -39,6 +43,9 @@ class GenerateTest(object):
         
     def assert_data_loaded(self, data):
         raise NotImplementedError
+    
+    def create_fixture(self):
+        raise NotImplementedError("must return a concrete LoadableFixture instance, i.e. SQLAlchemyFixture")
     
     def load_env(self, module):
         raise NotImplementedError
@@ -51,9 +58,9 @@ class GenerateTest(object):
         self.assert_env_is_clean()
         code = dataset_generator(args)
         try:
-            e = compile_(code)
-            self.assert_env_generated_ok(e)
-            data = self.load_env(e)
+            self.env = compile_(code)
+            self.assert_env_generated_ok(self.env)
+            data = self.load_env(self.env)
             self.assert_data_loaded(data)
         except:
             print code
@@ -100,7 +107,8 @@ class UsingFixtureTemplate(object):
         pass
     
     def load_datasets(self, module, datasets):
-        self.visit_loader(module['fixture'].loader)
-        d = module['fixture'].data(*datasets)
+        fixture = self.create_fixture()
+        self.visit_loader(fixture.loader)
+        d = fixture.data(*datasets)
         d.setup()
         return d

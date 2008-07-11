@@ -387,6 +387,61 @@ class TestTableObjects(unittest.TestCase):
         self.session.clear()
         eq_(self.session.execute(categories.select()).fetchall(), [])
 
+class TestTableObjectsExplicitConn(object):
+    class CategoryData(DataSet):
+        class cars:
+            name = 'cars'
+        class free_stuff:
+            name = 'get free stuff'
+            
+    def setUp(self):
+        if not conf.HEAVY_DSN:
+            raise SkipTest("conf.HEAVY_DSN not defined")
+    
+        self.litemeta = MetaData(bind=conf.LITE_DSN)
+        LiteSession = sessionmaker(bind=self.litemeta.bind)
+        self.litesession = LiteSession()
+        
+        heavymeta = MetaData(bind=create_engine(conf.HEAVY_DSN))
+        HeavySession = sessionmaker(bind=heavymeta.bind)
+        self.heavysession = HeavySession()
+    
+        # this creates the default bind:
+        metadata.bind = heavymeta.bind
+        metadata.create_all()
+    
+        # this creates the table in mem but does not bind 
+        # the connection to the table:
+        categories.create(bind=self.litemeta.bind)
+        
+        clear_mappers()
+        mapper(Category, categories)
+    
+    def tearDown(self):
+        metadata.drop_all()
+    
+    def test_with_engine_connection(self):
+        fixture = SQLAlchemyFixture(
+            # maps to a table object :
+            env={'CategoryData':categories},
+            # this should overwrite the default bind:
+            engine = self.litemeta.bind
+        )
+        data = fixture.data(CategoryData)
+        data.setup()
+        
+        rs = self.heavysession.query(Category).all()
+        assert rs==[], "unexpected records in HEAVY_DSN db: %s" % rs 
+        
+        rs = self.litesession.query(Category).all()
+        eq_(len(rs), 2)
+        
+        data.teardown()
+        
+        rs = self.litesession.query(Category).all()
+        eq_(len(rs), 0)
+
+
 def test_fixture_can_be_disposed():
     engine = create_engine(conf.LITE_DSN)
     metadata.bind = engine

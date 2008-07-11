@@ -4,6 +4,8 @@ from nose.tools import eq_, raises
 from nose.exc import SkipTest
 
 from fixture import DataSet
+from fixture.dataset import MergedSuperSet
+from fixture.style import NamedDataStyle
 from fixture.command.generate import DataSetGenerator
 from fixture.command.generate.template import Template
 from fixture.command.generate.generate_sqlalchemy import *
@@ -362,6 +364,15 @@ class TestSQLAlchemyGenerate(UsingFixtureTemplate, GenerateTest):
         # offers.drop(bind=engine)
         # products.drop(bind=engine)
         # categories.drop(bind=engine)
+    
+    def create_fixture(self):
+        return SQLAlchemyFixture(
+            env = self.env,
+            style = NamedDataStyle(),
+            dataclass = MergedSuperSet,
+            # *load* data into the memory db :
+            engine = memmeta.bind
+        )
     
     def load_env(self, env):
         data = self.load_datasets(env, 
