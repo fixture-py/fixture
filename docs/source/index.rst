@@ -21,6 +21,10 @@ For more info, this concept is explained in the wikipedia article, `Test Fixture
 
 .. _Test Fixture: http://en.wikipedia.org/wiki/Test_fixture
 
+*Database testing is easier than I had thought. Kumar's fixture helps provide a stable database to drive testing.* -- `Steven F. Lott summarizing PyCon 2007`_
+
+.. _Steven F. Lott summarizing PyCon 2007: http://homepage.mac.com/s_lott/iblog/architecture/C1597055042/E20070226153515/index.html
+
 ------------------
 Download / Install
 ------------------
@@ -29,19 +33,49 @@ Using the easy_install_ command::
 
     easy_install fixture
 
+To work with `SQLAlchemy`_ run::
+    
+    easy_install 'fixture[sqlalchemy]'
+    
+Likewise to work with `SQLObject`_ run::
+    
+    easy_install 'fixture[sqlobject]'
+
+If you want to use decorators like ``@fixture.with_data()`` you need `nose`_ installed, so run::
+    
+    easy_install 'fixture[decorators]'
+
 The source is available from the `fixture package`_ or the `fixture subversion repository`_ and this works with or without setuptools_::
 
     cd /path/to/source
     python setup.py install
-    
 
 .. note::
     The above commands may require root access
+    
+If you want to try out fixture before installing it globally, you may be interested in `virtualenv`_.
 
+
+.. _SQLAlchemy: http://www.sqlalchemy.org/
+.. _SQLObject: http://www.sqlobject.org/
+.. _nose: http://somethingaboutorange.com/mrl/projects/nose/
+.. _virtualenv: http://pypi.python.org/pypi/virtualenv
 .. _easy_install: http://peak.telecommunity.com/DevCenter/EasyInstall
 .. _setuptools: http://peak.telecommunity.com/DevCenter/setuptools
 .. _fixture package: http://pypi.python.org/pypi/fixture
 .. _fixture subversion repository: http://fixture.googlecode.com/svn/trunk/#egg=fixture-dev
+
+------------
+Requirements
+------------
+
+At the moment fixture is only tested on Python 2.4 and 2.5 so it may or may not 
+work with other versions.  If you submit a patch to support another 
+version, I will try my best to accommodate it.
+
+The module does not depend on external libraries for its core functionality but 
+to do something interesting you will need one of several 3rd party libraries 
+(explained later in the documentation).
 
 ---------------------------------
 Loading and referencing test data
@@ -78,16 +112,25 @@ Now, on to the knitty gritty details ...
 API Documentation
 -----------------
 
-`See API documentation`_ for detailed documentation of individual ``fixture`` components
+.. toctree::
+   :glob:
+   
+   api/*
 
-.. _See API documentation: ../apidocs/index.html
+------
+Status
+------
+
+fixture is a reimplementation of `testtools.fixtures`_ which was my first attempt at the idea.  As of July 2008 the fixture module is used in several test suites by my development teams at work.  One project is a data migration (ETL) framework using SQLObject and another is an in-house Pylons + Ext JS application using SQLAlchemy and Elixir.  It has been open source for a while but with only a few contributors so I'm not sure how much it's used outside of that.  
+
+.. _testtools.fixtures : http://testtools.python-hosting.com/
 
 -------------------------------------
 Where to submit issues, patches, bugs
 -------------------------------------
 
 Please submit any issues, patches, failing tests, and/or bugs using the `Issue
-Tracker`_ on the `fixture project site`_. Even vague ideas for improvement are welcome. If your code is used, your contribution will be
+Tracker`_ on the `fixture project site`_.  If your code is used, your contribution will be
 documented.
 
 .. _Issue Tracker: http://code.google.com/p/fixture/issues/list

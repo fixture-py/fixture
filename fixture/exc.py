@@ -22,3 +22,10 @@ class LoadError(DataSetActionException):
 class UnloadError(DataSetActionException):
     """an exception while unloading data from a DataSet."""
     pass
+
+class StorageMediaNotFound(LookupError):
+    """Looking up a storable object failed.
+    
+    used by :mod:`fixture.loadable` classes
+    """
+    pass

@@ -1,7 +1,7 @@
 
-"""Base Fixture components.
+"""Abstract (base) Fixture components.
 
-The more useful bits are in LoadableFixture
+The more useful bits are in :mod:`fixture.loadable`
 
 """
 import sys, traceback
@@ -27,6 +27,52 @@ def is_generator(func):
     except AttributeError:
         return False
 
+class FixtureData(object):
+    """loads one or more DataSet objects and provides an interface into that 
+    data.
+    
+    Typically this is attached to a concrete Fixture class and constructed by ``data = fixture.data(...)``
+    """
+    def __init__(self, datasets, dataclass, loader):
+        self.datasets = datasets
+        self.dataclass = dataclass
+        self.loader = loader
+        self.data = None # instance of dataclass
+
+    def __enter__(self):
+        """enter a with statement block.
+        
+        calls self.setup()
+        """
+        self.setup()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        """exit a with statement block.
+        
+        calls self.teardown()
+        """
+        self.teardown()
+
+    def __getattr__(self, name):
+        """self.name is self.data.name"""
+        return getattr(self.data, name)
+
+    def __getitem__(self, name):
+        """self['name'] is self.data['name']"""
+        return self.data[name]
+
+    def setup(self):
+        """load all datasets, populating self.data."""
+        self.data = self.dataclass(*[
+                    ds.shared_instance( default_refclass=self.dataclass ) \
+                        for ds in iter(self.datasets)])
+        self.loader.load(self.data)
+
+    def teardown(self):
+        """unload all datasets."""
+        self.loader.unload()
+
 class Fixture(object):
     """An environment for loading data.
     
@@ -34,63 +80,17 @@ class Fixture(object):
     It may be more useful to use a concrete LoadableFixture, such as
     SQLAlchemyFixture
     
-    Keywords
-    --------
-    - dataclass
-  
-      - class to instantiate with datasets (defaults to SuperSet)
-
-    - loader
-  
-      - class to instantiate and load data sets with.
+    Keywords arguments:
+    
+    dataclass
+        class to instantiate with datasets (defaults to SuperSet)
+    loader
+        class to instantiate and load data sets with.
       
     """
     dataclass = SuperSet
     loader = None
-    
-    class Data(object):
-        """loads one or more DataSet objects and provides an interface into that 
-        data.    
-        """
-        def __init__(self, datasets, dataclass, loader):
-            self.datasets = datasets
-            self.dataclass = dataclass
-            self.loader = loader
-            self.data = None # instance of dataclass
-    
-        def __enter__(self):
-            """enter a with statement block.
-            
-            calls self.setup()
-            """
-            self.setup()
-            return self
-    
-        def __exit__(self, type, value, traceback):
-            """exit a with statement block.
-            
-            calls self.teardown()
-            """
-            self.teardown()
-    
-        def __getattr__(self, name):
-            """self.name is self.data.name"""
-            return getattr(self.data, name)
-    
-        def __getitem__(self, name):
-            """self['name'] is self.data['name']"""
-            return self.data[name]
-    
-        def setup(self):
-            """load all datasets, populating self.data."""
-            self.data = self.dataclass(*[
-                        ds.shared_instance( default_refclass=self.dataclass ) \
-                            for ds in iter(self.datasets)])
-            self.loader.load(self.data)
-    
-        def teardown(self):
-            """unload all datasets."""
-            self.loader.unload()
+    Data = FixtureData
                 
     def __init__(self, dataclass=None, loader=None):
         if dataclass:
@@ -110,15 +110,12 @@ class Fixture(object):
         the decorated method will receive a new first argument, 
         the Fixture.Data instance.
     
-        Keywords
-        --------
-        - setup
-    
-          - optional callable to be executed before test
-     
-        - teardown
+        Keyword arguments:
         
-          - optional callable to be executed (finally) after test
+        setup
+            optional callable to be executed before test
+        teardown
+            optional callable to be executed (finally) after test
 
         """
         from nose.tools import with_setup
@@ -219,6 +216,6 @@ class Fixture(object):
         return decorate_with_data
     
     def data(self, *datasets):
-        """returns a Data object for datasets."""
+        """returns a :class:`FixtureData` object for datasets."""
         return self.Data(datasets, self.dataclass, self.loader)
         
