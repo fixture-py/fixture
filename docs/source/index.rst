@@ -33,17 +33,11 @@ Using the easy_install_ command::
 
     easy_install fixture
 
-To work with `SQLAlchemy`_ run::
-    
-    easy_install 'fixture[sqlalchemy]'
-    
-Likewise to work with `SQLObject`_ run::
-    
-    easy_install 'fixture[sqlobject]'
-
 If you want to use decorators like ``@fixture.with_data()`` you need `nose`_ installed, so run::
     
     easy_install 'fixture[decorators]'
+
+For more variants on the easy_install command, such as installing database libraries, see :ref:`Using LoadableFixture <using-loadable-fixture>`.
 
 The source is available from the `fixture package`_ or the `fixture subversion repository`_ and this works with or without setuptools_::
 

@@ -31,12 +31,12 @@ class StorageMediumAdapter(object):
                 self.__class__.__name__, hex(id(self)), self.medium)
         
     def clear(self, obj):
-        """clear the stored object.
+        """Must clear the stored object.
         """
         raise NotImplementedError
     
     def clearall(self):
-        """clear all stored objects.
+        """Must clear all stored objects.
         """
         log.info("CLEARING stored objects for %s", self.dataset)
         for obj in self.dataset.meta._stored_objects:
@@ -48,14 +48,17 @@ class StorageMediumAdapter(object):
                                      stored_object=obj), None, tb
         
     def save(self, row, column_vals):
-        """given a DataRow, save it somehow.
+        """Given a DataRow, must save it somehow.
         
         column_vals is an iterable of (column_name, column_value)
         """
         raise NotImplementedError
         
     def visit_loader(self, loader):
-        """a chance to visit the LoadableFixture object."""
+        """A chance to visit the LoadableFixture object.
+        
+        By default it does nothing.
+        """
         pass
 
 class LoadQueue(ObjRegistry):
@@ -362,10 +365,11 @@ class EnvLoadableFixture(LoadableFixture):
             return column_val
 
 class DBLoadableFixture(EnvLoadableFixture):
-    """An abstract fixture that will be loadable into a database.
+    """
+    An abstract fixture that can load a DataSet into a database like thing.
     
     More specifically, one that forces its implementation to run atomically 
-    (within a begin/ commit/ rollback block).
+    (within a begin / commit / rollback block).
     """
     def __init__(self, dsn=None, **kw):
         EnvLoadableFixture.__init__(self, **kw)
@@ -373,16 +377,24 @@ class DBLoadableFixture(EnvLoadableFixture):
         self.transaction = None
     
     def begin(self, unloading=False):
+        """begin loading data"""
         EnvLoadableFixture.begin(self, unloading=unloading)
         self.transaction = self.create_transaction()
     
     def commit(self):
+        """call transaction.commit() on transaction returned by :meth:`DBLoadableFixture.create_transaction`"""
         self.transaction.commit()
     
     def create_transaction(self):
+        """must return a transaction object that implements commit() and rollback()
+        
+        .. note:: transaction.begin() will not be called.  If that is necessary then call begin before returning the object.
+        
+        """
         raise NotImplementedError
     
     def rollback(self):
+        """call transaction.rollback() on transaction returned by :meth:`DBLoadableFixture.create_transaction`"""
         self.transaction.rollback()
 
 class DeferredStoredObject(object):

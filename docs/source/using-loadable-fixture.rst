@@ -1,3 +1,5 @@
+.. _using-loadable-fixture:
+
 ---------------------
 Using LoadableFixture
 ---------------------
@@ -19,7 +21,7 @@ SQLAlchemy
 
 To ensure you are working with a compatible version of SQLAlchemy you can run ::
 
-    easy_install fixture[sqlalchemy]
+    easy_install 'fixture[sqlalchemy]'
 
 .. note::
     
@@ -69,7 +71,7 @@ SQLObject
 
 To ensure you are working with a compatible version of SQLObject you can run ::
 
-    easy_install fixture[sqlobject]
+    easy_install 'fixture[sqlobject]'
     
 DataSet classes can be loaded into `SQLObject classes`_ via the `sqlobject`_ module::
 
