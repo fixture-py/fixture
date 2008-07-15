@@ -1,0 +1,2 @@
+recursive-include addressbook/public *
+recursive-include addressbook/templates *
