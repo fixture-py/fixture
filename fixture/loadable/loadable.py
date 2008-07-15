@@ -321,6 +321,22 @@ class EnvLoadableFixture(LoadableFixture):
         self.env = env
     
     def attach_storage_medium(self, ds):
+        """Lookup a storage medium in the ``env`` and attach it to a DataSet.
+        
+        A storage medium is looked up by name.  If a specific name has not been declared in the DataSet 
+        then it will be guessed using the :meth:`Style.guess_storable_name <fixture.style.Style.guess_storable_name>` method.  
+        
+        Once a name is found (typically the name of a DataSet class, say, EmployeeData) then it is looked up 
+        in the ``env`` which is expected to be a dict or module like object.
+        
+        The method first tries ``env.get('EmployeedData')`` then ``getattr(env, 'EmployeeData')``.
+        
+        The return value is the storage medium (i.e. a data mapper for the Employees table)
+        
+        Note that a :mod:`style <fixture.style>` might translate a name to maintain a consistent 
+        naming scheme between DataSet classes and data mappers.
+        
+        """
         if ds.meta.storage_medium is not None:
             # already attached...
             return

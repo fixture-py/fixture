@@ -39,17 +39,19 @@ class SQLObjectFixture(DBLoadableFixture):
     Keyword Arguments:
     
     ``style``
-        A Style object to translate names with
+        A :class:`Style <fixture.style.Style>` object to translate names with
+    
+    ``env``
+        A dict or module that contains `SQLObject`_ classes.  The :class:`Style <fixture.style.Style>` object will 
+        look here when translating DataSet names into `SQLObject`_ class names.
+        See :meth:`EnvLoadableFixture.attach_storage_medium <fixture.loadable.loadable.EnvLoadableFixture.attach_storage_medium>` for details on 
+        how ``env`` works.
     
     ``dsn``
         A dsn to create a connection with.
     
     ``dataclass``
         SuperSet to represent loaded data with
-    
-    ``env``
-        A dict or module that contains `SQLObject`_ classes.  The Style object will 
-        look here when translating DataSet names into `SQLObject`_ class names.
     
     ``medium``
         A custom :class:`StorageMediumAdapter <fixture.loadable.loadable.StorageMediumAdapter>` to instantiate when storing a DataSet.

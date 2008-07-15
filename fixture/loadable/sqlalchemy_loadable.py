@@ -43,12 +43,14 @@ class SQLAlchemyFixture(DBLoadableFixture):
     Keyword Arguments:
     
     ``style``
-        A Style object to translate names with
+        A :class:`Style <fixture.style.Style>` object to translate names with
     
     ``env``
         A dict or module that contains either mapped classes or Table objects,
-        or both.  This will be search when style translates DataSet names into
-        storage media.
+        or both.  This will be searched when :class:`Style <fixture.style.Style>` 
+        translates DataSet names into
+        storage media.  See :meth:`EnvLoadableFixture.attach_storage_medium <fixture.loadable.loadable.EnvLoadableFixture.attach_storage_medium>` for details on 
+        how ``env`` works.
     
     ``engine``
         A specific connectable/engine object to use when one is not bound.  

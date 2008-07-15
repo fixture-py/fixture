@@ -152,7 +152,7 @@ This is a fixture with minimal configuration to support loading data into the ``
 - Any keyword attribute of a :class:`LoadableFixture <fixture.loadable.loadable.LoadableFixture>` can be set later on as an 
   attribute of the instance.
 - :class:`LoadableFixture <fixture.loadable.loadable.LoadableFixture>` instances can safely be module-level objects
-- An ``env`` can be a dict or a module
+- An ``env`` can be a dict or a module.  See :meth:`EnvLoadableFixture.attach_storage_medium <fixture.loadable.loadable.EnvLoadableFixture.attach_storage_medium>` for details.
 
 Loading DataSet objects
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -279,7 +279,7 @@ This would take the name ``AuthorData`` and trim off "Data" from its name to fin
     ...     engine=metadata.bind )
     ... 
 
-See the `Style API`_ for all available Style objects.
+See the :mod:`Style API <fixture.style>` for all available Style objects.
 
 Defining a custom LoadableFixture
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

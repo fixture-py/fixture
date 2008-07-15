@@ -6,7 +6,8 @@ __all__ = [
     'PaddedNameStyle', 'ChainedStyle']
 
 class Style(object):
-    """utility for deriving new names from existing names.
+    """
+    Utility for deriving new names from existing names.
     
     each method receives a name and returns a new name.
     """
@@ -25,7 +26,8 @@ class Style(object):
         return "<%s at %s>" % (self.__class__.__name__, hex(id(self)))
 
 class ChainedStyle(Style):
-    """combination of two styles, piping first translation 
+    """
+    Combination of two styles, piping first translation 
     into second translation.
     """
     def __init__(self, first_style, next_style):
@@ -53,29 +55,38 @@ class ChainedStyle(Style):
         return "%s + %s" % (self.first_style, self.next_style)
 
 class OriginalStyle(Style):
-    """style that honors all original names."""
+    """
+    Style that honors all original names.
+    """
     def to_attr(self, name):
         return name
     def guess_storable_name(self, name):
         return name
 
 class CamelAndUndersStyle(Style):
+    """
+    Style that assumes classes are already in came case 
+    but attributes should be underscore separated
+    """
     def to_attr(self, name):        
-        """derives lower case, underscored names from camel case class names.
+        """
+        Derives lower case, underscored names from camel case class names.
     
         i.e. EmployeeData translates to employee_data
         """
         return camel_to_under(name)
     
     def guess_storable_name(self, name):
-        """assume a storage name is the same as original.
+        """
+        Assume a storage name is the same as original.
         
         i.e. Employee becomes Employee
         """
         return name
 
 class TrimmedNameStyle(Style):
-    """derives new names from trimming off prefixes/suffixes.
+    """
+    Derives new names from trimming off prefixes/suffixes.
     """
     def __init__(self, prefix=None, suffix=None):
         self.prefix = prefix
@@ -102,7 +113,9 @@ class TrimmedNameStyle(Style):
         return self._trim(name)
 
 class PaddedNameStyle(Style):
-    """derives new names from padding names with prefixes/suffixes."""
+    """
+    Derives new names from padding names with prefixes/suffixes.
+    """
     def __init__(self, prefix=None, suffix=None):
         self.prefix = prefix
         self.suffix = suffix
@@ -121,7 +134,8 @@ class PaddedNameStyle(Style):
         return self._pad(name)
 
 class NamedDataStyle(TrimmedNameStyle):
-    """derives names from datasets assuming "Data" as a suffix.
+    """
+    Derives names from datasets assuming "Data" as a suffix.
     
     for example, consider this data object and this DataSet::
         
