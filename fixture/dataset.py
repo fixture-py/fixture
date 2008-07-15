@@ -1,5 +1,9 @@
 
-"""Representation of Data
+"""Representations of Data
+
+The main class you will work with is :class:`DataSet` but there are a 
+few variations on it: :class:`SuperSet` and :class:`MergedSuperSet`
+
 """
 
 import sys, types
@@ -8,7 +12,8 @@ from fixture.util import ObjRegistry
 __all__ = ['DataSet']
 
 class DataContainer(object):
-    """contains data accessible by attribute and/or key.
+    """
+    Contains data accessible by attribute and/or key.
     
     for all internally used attributes, use the inner class Meta.
     On instances, use self.meta instead.
@@ -28,13 +33,15 @@ class DataContainer(object):
         self.meta.keys = keys
     
     def __contains__(self, name):
+        """True if name is a known key"""
         return name in self.meta.keys
     
     def __getitem__(self, key):
+        """self['foo'] returns self.meta.data['foo']"""
         return self.meta.data[key]
         
     def __getattribute__(self, name):
-        
+        """Attributes are always fetched first from self.meta.data[name] if possible"""
         # it is necessary to completely override __getattr__
         # so that class attributes don't interfer
         if name.startswith('_') or name in self._reserved_attr:
@@ -54,16 +61,59 @@ class DataContainer(object):
                 hex(id(self)), keys)
     
     def get(self, k, default=None):
+        """self.meta.get(k, default)"""
         return self.meta.data.get(k, default)
     
     def _setdata(self, key, value):
+        """Adds value to self.meta.data[key]"""
         if key not in self.meta.data:
             self.meta.keys.append(key)
         self.meta.data[key] = value
+
+class RefValue(object):
+    """A reference to a value in a row of a DataSet class."""
+    def __init__(self, ref, attr_name):
+        self.attr_name = attr_name
+        self.ref = ref
+    
+    def __repr__(self):
+        return "<%s.%s for %s.%s.%s (%s)>" % (
+            Ref.__name__, self.__class__.__name__,
+            self.ref.dataset_class.__name__, self.ref.key, self.attr_name,
+            (self.ref.dataset_obj is None and 'not yet loaded' or 'loaded'))
+
+    def __get__(self, obj, type=None):
+        """Returns the :class:`Ref` instance or a value stored in the dataset.
         
+        The value returned depends on how this instance of :class:`RefValue` is 
+        accessed.  
+        
+        Read more about the ``__get__`` `descriptor`_ to understand how it works or read 
+        some `in-depth descriptor examples`_.
+        
+        .. _descriptor: http://docs.python.org/ref/descriptors.html
+        .. _in-depth descriptor examples: http://users.rcn.com/python/download/Descriptor.htm
+        
+        """
+        if obj is None:
+            # self was assigned to a class object
+            return self
+        else:
+            # self was assigned to an instance
+            if self.ref.dataset_obj is None:
+                raise AttributeError(
+                    "Cannot access %s, referenced %s %s has not "
+                    "been loaded yet" % (
+                        self, DataSet.__name__, self.ref.dataset_class))
+            obj = self.ref.dataset_obj.meta._stored_objects.get_object(
+                                                            self.ref.key)
+            return getattr(obj, self.attr_name)
+            # raise ValueError("called __get__(%s, %s)" % (obj, type))
 
 class Ref(object):
     """A reference to a row in a DataSet class.
+    
+    An instance of this class is accessible on the inner class (a row) in a :class:`DataSet` as :class:`Row.ref() <RefValue.__get__>`
     
     This allows a DataSet to reference an id column of a "foreign key" DataSet 
     before it exists.
@@ -77,33 +127,7 @@ class Ref(object):
     handled by the LoadableFixture.
     
     """
-    class Value(object):
-        """A reference to a value in a row of a DataSet class."""
-        def __init__(self, ref, attr_name):
-            self.attr_name = attr_name
-            self.ref = ref
-        
-        def __repr__(self):
-            return "<%s.%s for %s.%s.%s (%s)>" % (
-                Ref.__name__, self.__class__.__name__,
-                self.ref.dataset_class.__name__, self.ref.key, self.attr_name,
-                (self.ref.dataset_obj is None and 'not yet loaded' or 'loaded'))
-    
-        def __get__(self, obj, type=None):
-            if obj is None:
-                # self was assigned to a class object
-                return self
-            else:
-                # self was assigned to an instance
-                if self.ref.dataset_obj is None:
-                    raise RuntimeError(
-                        "Cannot access %s, referenced %s %s has not "
-                        "been loaded yet" % (
-                            self, DataSet.__name__, self.ref.dataset_class))
-                obj = self.ref.dataset_obj.meta._stored_objects.get_object(
-                                                                self.ref.key)
-                return getattr(obj, self.attr_name)
-                # raise ValueError("called __get__(%s, %s)" % (obj, type))
+    Value = RefValue
             
     def __init__(self, dataset_class, row):
         self.dataset_class = dataset_class
@@ -113,6 +137,7 @@ class Ref(object):
         self.key = self.row.__name__
     
     def __call__(self, ref_name):
+        """Return a :class:`RefValue` instance for ref_name"""
         return self.Value(self, ref_name)
     
     def __repr__(self):
@@ -127,7 +152,9 @@ def is_row_class(attr):
                 not issubclass(attr, DataContainer.Meta))
 
 class DataType(type):
-    """meta class for creating DataSet classes."""
+    """
+    Meta class for creating :class:`DataSet` classes.
+    """
     default_primary_key = ['id']
                     
     def __init__(cls, name, bases, cls_attr):
@@ -148,6 +175,43 @@ class DataType(type):
         del cls_attr['_primary_key']
     
     def decorate_row(cls, row, name, bases, cls_attr):
+        """Each row (an inner class) assigned to a :class:`DataSet` will be customized after it is created.
+        
+        This is because it's easier to type::
+            
+            class MyData(DataSet):
+                class foo:
+                    col1 = "bz"
+                    col2 = "bx"
+        
+        ... than it is to type:
+        
+            class MyData(DataSet):
+                class foo(Row):
+                    col1 = "bz"
+                    col2 = "bx"
+        
+        (Note the subclassing that would be required in inner classes without this behavior.)
+        
+        But more importantly, rows must be able to inherit from other rows, like::
+        
+            class MyData(DataSet):
+                class joe:
+                    first_name = "Joe"
+                    last_name = "Phelps"
+                class joe_gibbs(joe):
+                    last_name = "Gibbs"
+        
+        Here is what happens to each inner class object as it is assigned to a :class:`DataSet`:
+        
+        1. A ``Row._dataset`` property is added which is a reference to the :class:`DataSet` instance.
+        2. A ``Row.ref()`` property (instance of :class:`Ref`) is added
+        3. Any database primary key inherited from another Row is de-referenced 
+           since primary keys must be unique per row.  See :ref:`Using Dataset <using-dataset>` for an 
+           example of referencing primary key values that may or may not exist yet.
+        
+        
+        """
         # store a backref to the container dataset
         row._dataset = cls
         
@@ -198,7 +262,9 @@ def is_rowlike(candidate):
                                                             DataType, DataSet)
 
 class DataRow(object):
-    """a DataSet row, values accessible by attibute or key."""
+    """
+    a DataSet row, values accessible by attibute or key.
+    """
     _reserved_attr = ('columns',)
     
     def __init__(self, dataset):
@@ -207,9 +273,11 @@ class DataRow(object):
         object.__setattr__(self, '_key', self.__class__.__name__)
     
     def __getitem__(self, item):
+        """self['foo'] works the same as self.foo"""
         return getattr(self, item)
     
     def __getattr__(self, name):
+        """Undefined attributes are fetched from the actual data object stored for this row."""
         # an undefined data attribute was referenced,
         # let's look for it in the stored object.
         # an example of this would be an ID, which was
@@ -222,6 +290,9 @@ class DataRow(object):
     
     @classmethod
     def columns(self):
+        """Classmethod that yields all attribute names (except reserved attributes) 
+        in alphabetical order
+        """
         for k in dir(self):
             if k.startswith('_') or k in self._reserved_attr:
                 continue
@@ -261,8 +332,57 @@ class DataSetStore(list):
 
 dataset_registry = ObjRegistry()
 
+class DataSetMeta(DataContainer.Meta):
+    """
+    Configures a DataSet class.
+    
+    When defining a :class:`DataSet` class, declare this as ``DataSet.Meta`` to configure the ``DataSet``.  
+    The following are acknowledged attributes:
+
+    ``storable``
+        an object that should be used to store this :class:`DataSet`.  If omitted the 
+        loader's :class:`Style <fixture.style>` object will look for a storable object in its env, 
+        using ``storable_name``
+
+    ``storable_name``
+        the name of the storable object that the loader should fetch from 
+        its env to load this ``DataSet`` with.  If omitted, the loader's style 
+        object will try to guess the storable_name based on its env and the 
+        name of the ``DataSet`` class
+
+    ``primary_key``
+        this is a list of names that should be acknowledged as primary keys 
+        in a ``DataSet``.  The default is simply ``['id']``.
+        
+    Here is an example of using an inner ``Meta`` class to specify a custom 
+    storable object to be used when storing a :class:`DataSet`::
+        
+        >>> class RecipeStore(object):
+        ...     '''pretend this knows how to save recipes'''
+        ... 
+        >>> class Recipes(DataSet):
+        ...     class Meta:
+        ...         storable = RecipeStore
+        ...     class chowder:
+        ...         is_soup = True
+        ...         name = "Clam Chowder"
+        ...     class tomato_bisque(chowder):
+        ...         name = "Tomato Bisque"
+        ... 
+        
+    """
+    row = DataRow
+    storable = None
+    storable_name = None
+    storage_medium = None
+    primary_key = [k for k in DataType.default_primary_key]
+    references = []
+    _stored_objects = None
+    _built = False
+
 class DataSet(DataContainer):
-    """defines data to be loaded
+    """
+    Defines data to be loaded
     
     a loader will typically want to load a dataset into a 
     single storage medium.  I.E. a table in a database.
@@ -280,8 +400,10 @@ class DataSet(DataContainer):
         >>> f.violets.color
         'blue'
     
+    See :class:`DataType` for info on how inner classes are constructed.
+    
     Row values can also be inherited from other rows, just as normal inheritance 
-    works in Python.  See the primary_key Meta attribute above for how 
+    works in Python.  See the ``primary_key`` :class:`Meta <DataSetMeta>` attribute for how 
     inheritance works on primary keys::
     
         >>> class Recipes(DataSet):
@@ -297,50 +419,20 @@ class DataSet(DataContainer):
         >>> r.tomato_bisque.is_soup
         True
     
-    Keyword Arguments
-    -----------------
-    - default_refclass
-  
-      - a SuperSet to use if None has already been specified in Meta
-
-    Special inner Meta class
-    ------------------------
+    Keyword Arguments:
     
-    See DataSet.Meta for details
+    default_refclass
+        A :class:`SuperSet` to use if None has already been specified in ``Meta``
+    
+    See :class:`DataSetMeta` for details about the special inner ``Meta`` class
+    
+    See :ref:`Using Dataset <using-dataset>` for more examples of usage.
     
     """
     __metaclass__ = DataType
     _reserved_attr = DataContainer._reserved_attr + ('data', 'shared_instance')
     ref = None
-    class Meta(DataContainer.Meta):
-        """configures a DataSet class.
-        
-        The inner class Meta is used to configure a DataSet .  The following are 
-        acknowledged attributes:
-
-        storable
-            an object that should be used to store this DataSet.  If omitted the 
-            loader's style object will look for a storable object in its env, 
-            using storable_name
-
-        storable_name
-            the name of the storable object that the loader should fetch from 
-            its env to load this DataSet with.  If omitted, the loader's style 
-            object will try to guess the storable_name based on its env and the 
-            name of the DataSet class
-
-        primary_key
-            this is a list of names that should be acknowledged as primary keys 
-            in a DataSet.  The default is simply ['id'].
-        """
-        row = DataRow
-        storable = None
-        storable_name = None
-        storage_medium = None
-        primary_key = [k for k in DataType.default_primary_key]
-        references = []
-        _stored_objects = None
-        _built = False
+    Meta = DataSetMeta
     
     def __init__(self, default_refclass=None, default_meta=None):
         DataContainer.__init__(self)
@@ -401,11 +493,14 @@ class DataSet(DataContainer):
             self.ref = mkref()
     
     def __iter__(self):
+        """yields keys of self.meta"""
         for key in self.meta.keys:
             yield (key, getattr(self, key))
     
     def data(self):
         """returns iterable key/dict pairs.
+        
+        .. note:: If possible, use attribute-style definition of rows and columns instead (explained above)
         
         You would only need to override this if you have a DataSet that will 
         break unless it is ordered very specifically.  Since class-style DataSet 
@@ -485,6 +580,7 @@ class DataSet(DataContainer):
     
     @classmethod
     def shared_instance(cls, **kw):
+        """Returns or creates the singleton instance for this :class:`DataSet` class"""
         # fixme: default_refclass might be in **kw.  But only a loader can set a 
         # refclass.  hmm
         if cls in dataset_registry:
@@ -495,7 +591,11 @@ class DataSet(DataContainer):
         return dataset
 
 class DataSetContainer(object):
-    """yields datasets when itered over."""
+    """
+    A ``DataSet`` of :class:`DataSet` classes
+    
+    yields :class:`DataSet` classes when itered over.
+    """
     class Meta:
         datasets = None
         dataset_keys = None
@@ -507,14 +607,20 @@ class DataSetContainer(object):
         self.meta._cache = ObjRegistry()
     
     def __iter__(self):
+        """yields dataset keys"""
         for k in self.meta.dataset_keys:
             yield self.meta.datasets[k]
         
     def _dataset_to_key(self, dataset):
+        """Returns a key for dataset (the name of the DataSet subclass)"""
         return dataset.__class__.__name__
         
     def _setdataset(self, dataset, key=None, isref=False):
+        """sets a dataset in this container.
         
+        Returns False if DataSet has already been added and does nothing.
+        Otherwise adds the DataSet and returns True.
+        """
         # due to reference resolution we might get colliding data sets...
         if dataset in self.meta._cache:
             return False
@@ -531,9 +637,32 @@ class DataSetContainer(object):
         return True
 
 class SuperSet(DataContainer, DataSetContainer):
-    """a set of data sets.
+    """
+    A set of :class:`DataSet` classes.
     
-    each attribute/key is a DataSet.
+    each attribute / key is a :class:`DataSet` instance.
+    
+    For example::
+    
+        >>> from fixture import DataSet
+        >>> from fixture.dataset import SuperSet
+        >>> class RecipeData(DataSet):
+        ...     class tomato_bisque:
+        ...         name = "Tomato Bisque"
+        ... 
+        >>> class CookwareData(DataSet):
+        ...     class pots:
+        ...         type = "cast-iron"
+        ... 
+        >>> s = SuperSet(RecipeData(), CookwareData())
+    
+    Now each instance is available by class name::
+    
+        >>> s.RecipeData.tomato_bisque.name
+        'Tomato Bisque'
+        >>> s.CookwareData.pots.type
+        'cast-iron'
+    
     """
     class Meta(DataContainer.Meta, DataSetContainer.Meta):
         pass
@@ -555,11 +684,33 @@ class SuperSet(DataContainer, DataSetContainer):
                 self._setdataset(ref_d, key=k, isref=True)
 
 class MergedSuperSet(SuperSet):
-    """a collection of data sets.
+    """
+    A collection of :class:`DataSet` instances.
     
-    all attributes of all data sets are merged together so that they are 
-    accessible in this class, independent of dataset.  duplicate attribute 
-    names are not allowed
+    all attributes of all :class:`DataSet` classes are merged together so that they are 
+    accessible in this class.  Duplicate attribute names are not allowed.
+    
+    For example::
+        
+        >>> from fixture import DataSet
+        >>> from fixture.dataset import MergedSuperSet
+        >>> class RecipeData(DataSet):
+        ...     class tomato_bisque:
+        ...         name = "Tomato Bisque"
+        ... 
+        >>> class CookwareData(DataSet):
+        ...     class pots:
+        ...         type = "cast-iron"
+        ... 
+        >>> m = MergedSuperSet(RecipeData(), CookwareData())
+    
+    Now the rows of each ``DataSet`` are available as if they were rows of the ``MergedSuperSet``::
+    
+        >>> m.tomato_bisque.name
+        'Tomato Bisque'
+        >>> m.pots.type
+        'cast-iron'
+    
     """
     class Meta(SuperSet.Meta):
         pass

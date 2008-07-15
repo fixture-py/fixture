@@ -9,26 +9,24 @@ import logging
 __all__ = ['DataTestCase']
 
 class DataTestCase(object):
-    """A mixin to use with unittest.TestCase.
+    """
+    A mixin to use with unittest.TestCase.
     
     Upon setUp() the TestCase will load the DataSet classes using your Fixture, 
     specified in class variables.  At tearDown(), all loaded data will be 
     removed.  During your test, you will have ``self.data``, a SuperSet instance 
     to reference loaded data
     
-    Class Attributes
-    ----------------
-    - fixture
-      
-      - the Fixture instance to load DataSet classes with
+    Class Attributes:
     
-    - datasets
-      
-      - a list of DataSet classes to load
+    ``fixture``
+        the :class:`Fixture <fixture.base.Fixture>` instance to load :class:`DataSet <fixture.dataset.DataSet>` classes with
     
-    - data
-      
-      - self.data, a Fixture.Data instance populated for you after setUp()
+    ``datasets``
+        A list of :class:`DataSet <fixture.dataset.DataSet>` classes to load
+    
+    ``data``
+        ``self.data``, a :class:`Fixture.Data <fixture.base.FixtureData>` instance populated for you after ``setUp()``
     
     """
     fixture = None
@@ -95,11 +93,15 @@ class ObjRegistry:
         return id
 
 def with_debug(*channels, **kw):
-    """A nose decorator calls start_debug/start_debug before and after the 
+    """
+    A `nose`_ decorator calls :func:`start_debug` / :func:`start_debug` before and after the 
     decorated method.
     
     All positional arguments are considered channels that should be debugged.  
-    Keyword arguments are passed to start_debug()
+    Keyword arguments are passed to :func:`start_debug`
+    
+    .. _nose: http://somethingaboutorange.com/mrl/projects/nose/
+    
     """
     from nose.tools import with_setup
     def setup():
@@ -111,7 +113,8 @@ def with_debug(*channels, **kw):
     return with_setup(setup=setup, teardown=teardown)
 
 def start_debug(channel, stream=sys.stdout, handler=None, level=logging.DEBUG):
-    """A shortcut to start logging a channel to a stream.
+    """
+    A shortcut to start logging a channel to a stream.
     
     For example::
     
@@ -125,30 +128,25 @@ def start_debug(channel, stream=sys.stdout, handler=None, level=logging.DEBUG):
     
     ...turns it off.
     
-    Available Channels
-    ------------------
-    - fixture.loadable
+    Available Channels:
     
-      - logs LOAD and CLEAR messages, referring to dataset actions
+    ``fixture.loadable``
+        logs LOAD and CLEAR messages, referring to dataset actions
     
-    - fixture.loadable.tree
-    
-      - logs a tree view of datasets loaded by datasets (recursion)
+    ``fixture.loadable.tree``
+        logs a tree view of datasets loaded by datasets (recursion)
     
         
-    Keyword Arguments
-    -----------------
-    - stream
+    Keyword Arguments:
     
-      - stream to create a loggin.StreamHandler with.  defaults to stdout
+    ``stream``
+        stream to create a loggin.StreamHandler with.  defaults to stdout
     
-    - handler
+    ``handler``
+        a preconfigured handler to add to the log
     
-      - a preconfigured handler to add to the log
-    
-    - level
-      
-      - a logging level to set, default is logging.DEBUG
+    ``level``
+        a logging level to set, default is logging.DEBUG
     
     """
     log = logging.getLogger(channel)
@@ -160,7 +158,7 @@ def start_debug(channel, stream=sys.stdout, handler=None, level=logging.DEBUG):
     log.setLevel(level)
 
 def stop_debug(channel):
-    """The reverse of start_debug()."""
+    """The reverse of :func:`start_debug`."""
     log = logging.getLogger(channel)
     # reset all handlers (are you going to kill me?)
     for h in log.handlers:
@@ -172,7 +170,8 @@ class _dummy_stream(object):
     def flush(self, *a, **kw): pass
 
 def _mklog(channel, default_level=logging.INFO, default_stream=None):
-    """returns a log object that does nothing until something adds a 
+    """
+    returns a log object that does nothing until something adds a 
     useful handler to it
     """
     log = logging.getLogger(channel)

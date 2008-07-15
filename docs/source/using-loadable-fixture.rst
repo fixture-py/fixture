@@ -6,7 +6,7 @@ Using LoadableFixture
 
 .. contents:: :local:
 
-A DataSet class is loaded via some storage medium, say, an object that implements a `Data Mapper`_ or `Active Record`_ pattern.  A Fixture is an environment that knows how to load data using the right objects.  Behind the scenes the rows and columns of the DataSet are simply passed to the storage medium so that it can save the data.
+A :class:`DataSet <fixture.dataset.DataSet>` class is loaded via some storage medium, say, an object that implements a `Data Mapper`_ or `Active Record`_ pattern.  A Fixture is an environment that knows how to load data using the right objects.  Behind the scenes the rows and columns of the :class:`DataSet <fixture.dataset.DataSet>` are simply passed to the storage medium so that it can save the data.
 
 .. _Data Mapper: http://www.martinfowler.com/eaaCatalog/dataMapper.html
 .. _Active Record: http://www.martinfowler.com/eaaCatalog/activeRecord.html
@@ -169,7 +169,7 @@ To load some data for a test, you define it first in DataSet classes::
     ...         title = "Dune"
     ...         author = AuthorData.frank_herbert
 
-As you recall, we passed a dictionary into the Fixture that associates DataSet names with storage objects.  Using this dict, a :class:`FixtureData <fixture.base.FixtureData>` instance now knows to use the sqlalchemy mapped class ``Book`` when saving a DataSet named ``BookData``.
+As you recall, we passed a dictionary into the Fixture that associates :class:`DataSet <fixture.dataset.DataSet>` names with storage objects.  Using this dict, a :class:`FixtureData <fixture.base.FixtureData>` instance now knows to use the sqlalchemy mapped class ``Book`` when saving a DataSet named ``BookData``.
 
 The ``Fixture.Data`` instance implements the ``setup()`` and ``teardown()`` methods typical to any test object.  At the beginning of a test the ``DataSet`` objects are loaded like so::
     
@@ -195,7 +195,7 @@ The ``Fixture.Data`` instance implements the ``setup()`` and ``teardown()`` meth
 Loading DataSet classes in a test
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now that you have a Fixture object to load DataSet classes and you know how setup / teardown works, you are ready to write some tests.  You can either write your own code that creates a data instance and calls setup / teardown manually (like in previous examples), or you can use one of several utilities.  
+Now that you have a Fixture object to load :class:`DataSet <fixture.dataset.DataSet>` classes and you know how setup / teardown works, you are ready to write some tests.  You can either write your own code that creates a data instance and calls setup / teardown manually (like in previous examples), or you can use one of several utilities.  
 
 Loading objects using DataTestCase
 ++++++++++++++++++++++++++++++++++
@@ -216,17 +216,15 @@ DataTestCase is a mixin class to use with Python's built-in ``unittest.TestCase`
     >>> unittest.TextTestRunner().run(suite)
     <unittest._TextTestResult run=1 errors=0 failures=0>
 
-Re-using what was created earlier, the ``fixture`` attribute is set to the Fixture instance and the ``datasets`` attribute is set to a list of DataSet classes.  When in the test method itself, as you can see, you can reference loaded data through ``self.data``, an instance of SuperSet.  Keep in mind that if you need to override either setUp() or tearDown() then you'll have to call the super methods.
+Re-using what was created earlier, the ``fixture`` attribute is set to the Fixture instance and the ``datasets`` attribute is set to a list of :class:`DataSet <fixture.dataset.DataSet>` classes.  When in the test method itself, as you can see, you can reference loaded data through ``self.data``, an instance of SuperSet.  Keep in mind that if you need to override either ``setUp()`` or ``tearDown()`` then you'll have to call the super methods.
 
-See the `DataTestCase API`_ for a full explanation of how it can be configured.
-
-.. _DataTestCase API: ../apidocs/fixture.util.DataTestCase.html
+See the :class:`fixture.util.DataTestCase` API for a full explanation of how it can be configured.
     
 
 Loading objects using @dbfixture.with_data
 ++++++++++++++++++++++++++++++++++++++++++
 
-If you use nose_, a test runner for Python, then you may be familiar with its `discovery of test functions`_.  Test functions provide a quick way to write procedural tests and often illustrate more concisely what features are being tested.  Fixture provides a decorator method called ``@with_data`` that wraps around a test function so that data is loaded before the test.  If you don't have nose_ installed, simply install fixture like so and the correct version will be installed for you::
+If you use nose_, a test runner for Python, then you may be familiar with its `discovery of test functions`_.  Test functions provide a quick way to write procedural tests and often illustrate more concisely what features are being tested.  Fixture provides a decorator method called :meth:`@fixture.with_data <fixture.base.Fixture.with_data>` that wraps around a test function so that data is loaded before the test.  If you don't have nose_ installed, simply install fixture like so and the correct version will be installed for you::
     
     easy_install fixture[decorators]
 
@@ -241,13 +239,12 @@ Load data for a test function like this::
     >>> unittest.TextTestRunner().run(case)
     <unittest._TextTestResult run=1 errors=0 failures=0>
 
-Like in the previous example, the ``data`` attribute is a SuperSet object you can use to reference loaded data.  This is passed to your decorated test method as its first argument.
+Like in the previous example, the ``data`` attribute is a :class:`SuperSet <fixture.dataset.SuperSet>` object you can use to reference loaded data.  This is passed to your decorated test method as its first argument.
 
-See the `Fixture.Data.with_data API`_ for more information.
+See the :meth:`Fixture.with_data <fixture.base.Fixture.with_data>` API for more information.
 
 .. _nose: http://somethingaboutorange.com/mrl/projects/nose/
 .. _discovery of test functions: http://code.google.com/p/python-nose/wiki/WritingTests
-.. _Fixture.Data.with_data API: ../apidocs/fixture.base.Fixture.html#with_data
 
 Loading objects using the with statement
 ++++++++++++++++++++++++++++++++++++++++
@@ -258,10 +255,12 @@ In Python 2.5 or later you can also load data for a test using the with statemen
     with dbfixture.data(AuthorData, BookData) as data:
         session.query(Book).filter_by(title=self.data.BookData.dune.title).one()
 
+.. _using-loadable-fixture-style:
+
 Discovering storable objects with Style
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you didn't want to create a strict mapping of DataSet class names to their storable object names you can use Style objects to translate DataSet class names.  For example, consider this Fixture :
+If you didn't want to create a strict mapping of :class:`DataSet <fixture.dataset.DataSet>` class names to their storable object names you can use :class:`Style <fixture.style.Style>` objects to translate DataSet class names.  For example, consider this Fixture :
 
     >>> from fixture import SQLAlchemyFixture, TrimmedNameStyle
     >>> dbfixture = SQLAlchemyFixture(
@@ -270,7 +269,7 @@ If you didn't want to create a strict mapping of DataSet class names to their st
     ...     engine=metadata.bind )
     ... 
 
-This would take the name ``AuthorData`` and trim off "Data" from its name to find ``Author``, its mapped SQLAlchemy class for storing data.  Since this is a logical convention to follow for naming DataSet classes, you can use a shortcut:
+This would take the name ``AuthorData`` and trim off "Data" from its name to find ``Author``, its mapped SQLAlchemy_ class for storing data.  Since this is a logical convention to follow for naming :class:`DataSet <fixture.dataset.DataSet>` classes, you can use a shortcut:
 
     >>> from fixture import NamedDataStyle
     >>> dbfixture = SQLAlchemyFixture(

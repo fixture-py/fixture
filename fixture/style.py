@@ -1,5 +1,8 @@
 
-"""Utilities for deriving new names from existing names."""
+"""Utilities for deriving new names from existing names.
+
+Style objects are used to customize how :ref:`storable objects are found for DataSet objects <using-loadable-fixture-style>`
+"""
 
 __all__ = [
     'CamelAndUndersStyle', 'TrimmedNameStyle', 'NamedDataStyle', 

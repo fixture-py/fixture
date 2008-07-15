@@ -1,4 +1,6 @@
 
+.. _using-dataset:
+
 -------------
 Using DataSet
 -------------
@@ -6,7 +8,7 @@ Using DataSet
 .. contents:: :local:
 
 Before loading data, you need to define it. A single subclass of
-DataSet represents a database relation in Python code. Think of the class as a
+:class:`DataSet <fixture.dataset.DataSet>` represents a database relation in Python code. Think of the class as a
 table, each inner class as a row, and each attribute per row as a column value.
 For example::
 
@@ -24,7 +26,7 @@ The main goal will be to load this data into something useful, like a database.
 But notice that the ``id`` values aren't defined in the DataSet. This is because
 the database will most likely create an ``id`` for you when you insert the row 
 (however, if you need to specify a specific ``id`` number, you are free to do 
-so).  How you create a DataSet will be influenced by how the underlying data object saves data.
+so).  How you create a :class:`DataSet <fixture.dataset.DataSet>` will be influenced by how the underlying data object saves data.
 
 Inheriting DataSet rows
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -38,8 +40,7 @@ Since a row is just a Python class, you can inherit from a row to morph its valu
     ...     class brian_herbert(frank_herbert):
     ...         first_name = "Brian"
 
-This is useful for adhering to the DRY principle (Don't Repeat Yourself) as well
-as for `testing edge cases`_.
+This is useful for keeping code simple and hand-coding foreign key dependencies.
 
 .. note::
     The primary key value will not be inherited from a row.  See 
@@ -49,7 +50,7 @@ as for `testing edge cases`_.
 Referencing foreign DataSet classes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When defining rows in a DataSet that reference foreign keys, you need to mimic how your data object wants to save such a reference.  If your data object wants to save foreign keys as objects (not ID numbers) then you can simply reference another row in a DataSet as if it were an object.::
+When defining rows in a :class:`DataSet <fixture.dataset.DataSet>` that reference foreign keys, you need to mimic how your data object wants to save such a reference.  If your data object wants to save foreign keys as objects (not ID numbers) then you can simply reference another row in a :class:`DataSet <fixture.dataset.DataSet>` as if it were an object.::
 
     >>> class Books(DataSet):
     ...     class dune:
@@ -66,7 +67,7 @@ During data loading, the reference to DataSet ``Authors.brian_herbert`` will be 
     ...         title = "Man of Two Worlds"
     ...         authors = [Authors.frank_herbert, Authors.brian_herbert]
 
-However, in some cases you may need to reference an attribute that does not have a value until it is loaded, like a serial ID column.  (Note that this is not supported by the `SQLAlchemy`_ data layer when using sessions.)  To facilitate this, each inner class of a DataSet gets decorated with a special method, ``ref()``,
+However, in some cases you may need to reference an attribute that does not have a value until it is loaded, like a serial ID column.  (Note that this is not supported by the `SQLAlchemy`_ data layer when using sessions.)  To facilitate this, each inner class of a :class:`DataSet <fixture.dataset.DataSet>` gets decorated with a special method, :class:`ref() <fixture.dataset.Ref>`,
 that can be used to reference a column value before it exists, i.e.::
 
     >>> class Books(DataSet):
@@ -87,8 +88,11 @@ on, its value is fetched from the actual row inserted.
 Customizing a Dataset
 ~~~~~~~~~~~~~~~~~~~~~
 
-A DataSet can be customized by defining a special inner class named ``Meta``.
-See the `DataSet.Meta`_ API for more info.
+A :class:`DataSet <fixture.dataset.DataSet>` can be customized by defining a special inner class named ``Meta``.
+See the :class:`DataSet.Meta <fixture.dataset.DataSetMeta>` API for more info.
 
-.. _DataSet.Meta: ../apidocs/fixture.dataset.DataSet.Meta.html
-.. _testing edge cases: http://brian.pontarelli.com/2006/12/04/the-importance-of-edge-case-testing/
+API Documentation
+~~~~~~~~~~~~~~~~~
+
+See the :mod:`fixture.dataset` module API.
+

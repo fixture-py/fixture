@@ -28,7 +28,8 @@ def is_generator(func):
         return False
 
 class FixtureData(object):
-    """loads one or more DataSet objects and provides an interface into that 
+    """
+    Loads one or more DataSet objects and provides an interface into that 
     data.
     
     Typically this is attached to a concrete Fixture class and constructed by ``data = fixture.data(...)``
