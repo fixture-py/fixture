@@ -1,6 +1,8 @@
 
 """Components for loading and unloading data using `SQLAlchemy`_.
 
+See :ref:`Using LoadableFixture<using-loadable-fixture>` for examples.
+
 .. _SQLAlchemy: http://www.sqlalchemy.org/
 
 """

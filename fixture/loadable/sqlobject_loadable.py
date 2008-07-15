@@ -1,6 +1,8 @@
 
 """Components for loading and unloading data using `SQLObject`_.
 
+See :ref:`Using LoadableFixture<using-loadable-fixture>` for examples.
+
 .. _SQLObject: http://www.sqlobject.org/
 
 """

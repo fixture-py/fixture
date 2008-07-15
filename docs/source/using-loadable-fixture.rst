@@ -363,3 +363,10 @@ Now let's load some data into the custom Fixture using a simple ``env`` mapping:
     >>> data.teardown()
     >>> loaded_items
     set([])
+
+API Documentation
+~~~~~~~~~~~~~~~~~
+
+- :mod:`fixture.loadable`
+- :mod:`fixture.loadable.sqlalchemy_loadable`
+- :mod:`fixture.loadable.sqlobject_loadable`

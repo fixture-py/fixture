@@ -1,6 +1,8 @@
 
 """Abstract classes for :class:`fixture.base.Fixture` descendants that load / unload data
 
+See :ref:`Using LoadableFixture<using-loadable-fixture>` for examples.
+
 """
 # from __future__ import with_statement
 __all__ = ['LoadableFixture', 'EnvLoadableFixture', 'DBLoadableFixture', 'DeferredStoredObject']

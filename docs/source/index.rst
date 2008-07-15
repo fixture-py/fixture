@@ -75,7 +75,7 @@ to do something interesting you will need one of several 3rd party libraries
 Loading and referencing test data
 ---------------------------------
 
-There are a couple ways to test a database-backed application.  You can create `mock objects`_ and concentrate entirely on `unit testing`_ individual components without testing the database layer itself, or you can simply load up sample data before you run a test.  Thanks to ``sqlite`` in-memory connections (a special DSN, ``sqlite:///:memory:``), the latter may be more efficient than you think.  
+There are a couple ways to test a database-backed application.  You can create `mock objects`_ and concentrate entirely on `unit testing`_ individual components without testing the database layer itself, or you can simply load up sample data before you run a test.  Thanks to ``sqlite`` in-memory connections, the latter may be more efficient than you think.  
 
 But it's easy enough to insert data line by line in code, right?  Or simply load a SQL file?  Yes, but this has two major downsides: you often have to worry about and manage complex chains of foreign keys manually; and when referencing data values later on, you either have to copy/paste the values or pass around lots of variables.
 
@@ -91,6 +91,9 @@ The fixture module simplifies this by breaking the process down to two independe
 .. _functional test: http://en.wikipedia.org/wiki/Functional_test
 .. _code coverage: http://en.wikipedia.org/wiki/Code_coverage
 
+-----------------
+Examples of Usage
+-----------------
 
 Now, on to the knitty gritty details ...
 
