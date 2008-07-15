@@ -21,9 +21,9 @@ For more info, this concept is explained in the wikipedia article, `Test Fixture
 
 .. _Test Fixture: http://en.wikipedia.org/wiki/Test_fixture
 
-*Database testing is easier than I had thought. Kumar's fixture helps provide a stable database to drive testing.* -- `Steven F. Lott summarizing PyCon 2007`_
+*Database testing is easier than I had thought. Kumar's fixture helps provide a stable database to drive testing.* -- `Steven F. Lott, summarizing PyCon 2007`_
 
-.. _Steven F. Lott summarizing PyCon 2007: http://homepage.mac.com/s_lott/iblog/architecture/C1597055042/E20070226153515/index.html
+.. _Steven F. Lott, summarizing PyCon 2007: http://homepage.mac.com/s_lott/iblog/architecture/C1597055042/E20070226153515/index.html
 
 ------------------
 Download / Install
