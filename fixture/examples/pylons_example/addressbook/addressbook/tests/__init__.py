@@ -39,7 +39,8 @@ from fixture.style import NamedDataStyle
 
 dbfixture = SQLAlchemyFixture(
     env=model,
-    engine=meta.engine,
+    ## see below in setup
+    # engine=meta.engine,
     style=NamedDataStyle()
 )
 
@@ -53,6 +54,7 @@ class TestController(TestCase):
     def setUp(self):
         meta.Session.remove()
         meta.metadata.create_all(meta.engine)
+        dbfixture.engine = meta.engine
     
     def tearDown(self):
         meta.metadata.drop_all(meta.engine)
