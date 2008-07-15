@@ -6,7 +6,7 @@ Using LoadableFixture
 
 .. contents:: :local:
 
-A DataSet class is loaded via some storage medium, say, an object that implements a `Data Mapper`_ or `Active Record`_ pattern.  A Fixture is an environment that knows how to load data using the right objects.  Behind the scenes, the rows and columns of the DataSet are simply passed off to the storage medium so that it can save the data.
+A DataSet class is loaded via some storage medium, say, an object that implements a `Data Mapper`_ or `Active Record`_ pattern.  A Fixture is an environment that knows how to load data using the right objects.  Behind the scenes the rows and columns of the DataSet are simply passed to the storage medium so that it can save the data.
 
 .. _Data Mapper: http://www.martinfowler.com/eaaCatalog/dataMapper.html
 .. _Active Record: http://www.martinfowler.com/eaaCatalog/activeRecord.html
@@ -14,7 +14,7 @@ A DataSet class is loaded via some storage medium, say, an object that implement
 Supported storage media
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The Fixture class is designed to support many different types of databases and other storage media by supporting modules that know how to work with that media.  There is also a section later about creating your own Fixture.  Here are the various modules supported by built-in Fixture subclasses:
+The Fixture class is designed to support many different types of databases and other storage media by hooking into 3rd party libraries that know how to work with that media.  There is also a section later about creating your own Fixture.  Here are the various modules supported by built-in Fixture subclasses:
 
 SQLAlchemy
 ++++++++++
@@ -25,11 +25,11 @@ To ensure you are working with a compatible version of SQLAlchemy you can run ::
 
 .. note::
     
-    as of 1.0, fixture no longer supports SQLAlchemy less than version 0.4.  To work with SQLAlchemy 0.3, you will need `fixture 0.9`_
+    As of 1.0, fixture no longer supports SQLAlchemy less than version 0.4.  To work with SQLAlchemy 0.3 or earlier you will need `fixture 0.9`_
     
 .. _fixture 0.9: http://farmdev.com/projects/fixture/0.9/docs/
 
-DataSet classes can be loaded into `Table`_ objects or `mapped classes`_ via the `sqlalchemy`_ module::
+DataSet classes can be loaded into `Table`_ objects or `mapped classes`_ via the `SQLAlchemy`_ module::
 
     >>> from fixture import SQLAlchemyFixture
     >>> from sqlalchemy import *
@@ -43,7 +43,7 @@ DataSet classes can be loaded into `Table`_ objects or `mapped classes`_ via the
     ...                 env=sqlalchemy_examples)
     ... 
 
-For more info see `SQLAlchemyFixture API`_
+Read on for a complete example or see :class:`SQLAlchemyFixture API <fixture.loadable.sqlalchemy_loadable.SQLAlchemyFixture>` for details.
 
 Elixir
 ++++++
@@ -81,15 +81,12 @@ DataSet classes can be loaded into `SQLObject classes`_ via the `sqlobject`_ mod
     ...     dsn="sqlite:/:memory:", env=sqlobject_examples)
     ... 
 
-For more info see `SQLObjectFixture API`_.
+See :class:`SQLObjectFixture API <fixture.loadable.sqlobject_loadable.SQLObjectFixture>` for details.
 
-.. _SQLAlchemyFixture API: ../apidocs/fixture.loadable.sqlalchemy_loadable.SQLAlchemyFixture.html
-.. _SQLObjectFixture API: ../apidocs/fixture.loadable.sqlobject_loadable.SQLObjectFixture.html
+An Example of Loading Data Using SQLAlchemy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-An Example Loading Data Using SQLAlchemy
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Fixture is designed for applications that already define a way of accessing its data; the LoadableFixture just "hooks in" to that interface.  To start this example, here is some `sqlalchemy`_ code to set up a database of books and authors::
+Fixture is designed for applications that already have a way to store data; the :class:`LoadableFixture <fixture.loadable.loadable.LoadableFixture>` just hooks in to that interface.  To start this example, here is some `SQLAlchemy`_ code to set up a database of books and authors::
 
     >>> from sqlalchemy import *
     >>> from sqlalchemy.orm import *
@@ -99,7 +96,7 @@ Fixture is designed for applications that already define a way of accessing its 
     >>> Session = scoped_session(sessionmaker(bind=metadata.bind, autoflush=True, transactional=True))
     >>> session = Session()
 
-Set up a place to store authors ...
+Set up the table and mapper for authors ...
 
     >>> authors = Table('authors', metadata,
     ...     Column('id', Integer, primary_key=True),
@@ -112,7 +109,7 @@ Set up a place to store authors ...
     >>> mapper(Author, authors) #doctest: +ELLIPSIS
     <sqlalchemy.orm.mapper.Mapper object at ...>
 
-Next set up a place to store books with each book having an author ...
+Next set up the table and mapper for books with each book having an author ...
 
     >>> books = Table('books', metadata, 
     ...     Column('id', Integer, primary_key=True),
@@ -131,9 +128,10 @@ Next set up a place to store books with each book having an author ...
 
     >>> metadata.create_all()
 
-Consult the `sqlalchemy`_ documentation for further examples of data mapping.
+Consult the `SQLAlchemy`_ documentation for further examples of data mapping.
 
 .. _sqlalchemy: http://www.sqlalchemy.org/
+.. _SQLAlchemy: http://www.sqlalchemy.org/
 .. _Table: http://www.sqlalchemy.org/docs/tutorial.myt#tutorial_schemasql_table_creating
 .. _mapped classes: http://www.sqlalchemy.org/docs/datamapping.myt
 .. _Elixir entities: http://elixir.ematia.de/
@@ -143,7 +141,7 @@ Consult the `sqlalchemy`_ documentation for further examples of data mapping.
 Defining a Fixture
 ~~~~~~~~~~~~~~~~~~
 
-This is a fixture with minimal configuration to support loading data into the Book or Author mapped classes::
+This is a fixture with minimal configuration to support loading data into the ``Book`` or ``Author`` mapped classes::
 
     >>> from fixture import SQLAlchemyFixture
     >>> dbfixture = SQLAlchemyFixture(
@@ -151,18 +149,15 @@ This is a fixture with minimal configuration to support loading data into the Bo
     ...     engine=metadata.bind )
     ... 
 
-- Any keyword attribute of a LoadableFixture can be set later on as an 
+- Any keyword attribute of a :class:`LoadableFixture <fixture.loadable.loadable.LoadableFixture>` can be set later on as an 
   attribute of the instance.
-- LoadableFixture instances can safely be module-level objects
+- :class:`LoadableFixture <fixture.loadable.loadable.LoadableFixture>` instances can safely be module-level objects
 - An ``env`` can be a dict or a module
-    
-.. _session_context keyword: ../apidocs/fixture.loadable.sqlalchemy_loadable.SQLAlchemyFixture.html
-.. _fixture.style.NamedDataStyle: ../apidocs/fixture.style.NamedDataStyle.html
 
 Loading DataSet objects
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-To load some data for a test, you define it first in ``DataSet`` classes::
+To load some data for a test, you define it first in DataSet classes::
 
     >>> from fixture import DataSet
     >>> class AuthorData(DataSet):
@@ -174,7 +169,7 @@ To load some data for a test, you define it first in ``DataSet`` classes::
     ...         title = "Dune"
     ...         author = AuthorData.frank_herbert
 
-As you recall, we passed a dictionary into the Fixture that associates DataSet names with storage objects.  Using this dict, a ``Fixture.Data`` instance now knows to use the sqlalchemy mapped class ``Book`` when saving a DataSet named ``BookData``.
+As you recall, we passed a dictionary into the Fixture that associates DataSet names with storage objects.  Using this dict, a :class:`FixtureData <fixture.base.FixtureData>` instance now knows to use the sqlalchemy mapped class ``Book`` when saving a DataSet named ``BookData``.
 
 The ``Fixture.Data`` instance implements the ``setup()`` and ``teardown()`` methods typical to any test object.  At the beginning of a test the ``DataSet`` objects are loaded like so::
     
@@ -200,7 +195,7 @@ The ``Fixture.Data`` instance implements the ``setup()`` and ``teardown()`` meth
 Loading DataSet classes in a test
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now that you have a Fixture object to load DataSet classes and you know how setup / teardown works, you are ready to write some tests.  You can either write your own code that creates a data instance and calls setup/teardown manually (like in previous examples), or you can use one of several utilities.  
+Now that you have a Fixture object to load DataSet classes and you know how setup / teardown works, you are ready to write some tests.  You can either write your own code that creates a data instance and calls setup / teardown manually (like in previous examples), or you can use one of several utilities.  
 
 Loading objects using DataTestCase
 ++++++++++++++++++++++++++++++++++
@@ -257,13 +252,11 @@ See the `Fixture.Data.with_data API`_ for more information.
 Loading objects using the with statement
 ++++++++++++++++++++++++++++++++++++++++
 
-In Python 2.5 or later you can also load data for a test using the `with statement`_.  Anywhere in your code, when you enter a with block using a Fixture.Data instance, the data is loaded and you have an instance with which to reference the data.  When you exit the block, the data is torn down for you, regardless of whether there was an exception or not.  For example::
+In Python 2.5 or later you can also load data for a test using the with statement (:pep:`343`).  Anywhere in your code, when you enter a with block using a :class:`FixtureData <fixture.base.FixtureData>` instance, the data is loaded and you have an instance with which to reference the data.  When you exit the block, the data is torn down for you, regardless of whether there was an exception or not.  For example::
 
     from __future__ import with_statement
     with dbfixture.data(AuthorData, BookData) as data:
         session.query(Book).filter_by(title=self.data.BookData.dune.title).one()
-
-.. _with statement: http://www.python.org/dev/peps/pep-0343/
 
 Discovering storable objects with Style
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -277,7 +270,7 @@ If you didn't want to create a strict mapping of DataSet class names to their st
     ...     engine=metadata.bind )
     ... 
 
-This would take the name ``AuthorData`` and trim off "Data" from its name to find ``Author``, its mapped sqlalchemy class for storing data.  Since this is a logical convention to follow for naming DataSet classes, you can use a shortcut:
+This would take the name ``AuthorData`` and trim off "Data" from its name to find ``Author``, its mapped SQLAlchemy class for storing data.  Since this is a logical convention to follow for naming DataSet classes, you can use a shortcut:
 
     >>> from fixture import NamedDataStyle
     >>> dbfixture = SQLAlchemyFixture(
@@ -288,14 +281,12 @@ This would take the name ``AuthorData`` and trim off "Data" from its name to fin
 
 See the `Style API`_ for all available Style objects.
 
-.. _Style API: ../apidocs/fixture.style.html
-
 Defining a custom LoadableFixture
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-It's possible to create your own LoadableFixture if you need to load data with something other than SQLAlchemy or SQLObject.
+It's possible to create your own :class:`LoadableFixture <fixture.loadable.loadable:LoadableFixture>` if you need to load data with something other than SQLAlchemy_ or SQLObject_.
 
-You'll need to subclass at least `fixture.loadable.loadable:LoadableFixture`_, possibly even `fixture.loadable.loadable:EnvLoadableFixture`_ or the more useful `fixture.loadable.loadable:DBLoadableFixture`_.  Here is a simple example for creating a fixture that hooks into some kind of database-centric loading mechanism::
+You'll need to subclass at least :class:`LoadableFixture <fixture.loadable.loadable:LoadableFixture>`, possibly even :class:`EnvLoadableFixture <fixture.loadable.loadable:EnvLoadableFixture>` or the more useful :class:`DBLoadableFixture <fixture.loadable.loadable:DBLoadableFixture>`.  Here is a simple example for creating a fixture that hooks into some kind of database-centric loading mechanism::
 
     >>> loaded_items = set()
     >>> class Author(object):
@@ -373,8 +364,3 @@ Now let's load some data into the custom Fixture using a simple ``env`` mapping:
     >>> data.teardown()
     >>> loaded_items
     set([])
-    
-
-.. _fixture.loadable.loadable:LoadableFixture: ../apidocs/fixture.loadable.loadable.LoadableFixture.html
-.. _fixture.loadable.loadable:EnvLoadableFixture: ../apidocs/fixture.loadable.loadable.EnvLoadableFixture.html
-.. _fixture.loadable.loadable:DBLoadableFixture: ../apidocs/fixture.loadable.loadable.DBLoadableFixture.html

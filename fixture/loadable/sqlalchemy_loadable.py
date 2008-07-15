@@ -30,41 +30,55 @@ class SQLAlchemyFixture(DBLoadableFixture):
     """
     A fixture that knows how to load DataSet objects into `SQLAlchemy`_ objects.
     
+    The recommended way to deal with connections is to either pass in your own engine object 
+    or let `implicit binding`_ govern how connections are made.  This is because 
+    ``SQLAlchemyFixture`` will use an internally scoped session to avoid conflicts 
+    with that of the Application Under Test.  If you need to bypass this behavior then 
+    pass in your own session or scoped_session.
+    
+    For examples of usage see :ref:`Using LoadableFixture <using-loadable-fixture>`
+    
+    .. _implicit binding: http://www.sqlalchemy.org/docs/04/dbengine.html#dbengine_implicit
+    
     Keyword Arguments:
     
-    style
+    ``style``
         A Style object to translate names with
     
-    scoped_session
-        An class-like Session created by sqlalchemy.orm.scoped_session() .  
-        Only declare a custom Session if you have to.  The preferred way 
-        is to let fixture use its own Session in a private scope.
-    
-    engine
-        A specific connectable/engine object to use when one is not bound.  
-        engine.connect() will be called.
-    
-    session
-        A session from sqlalchemy.create_session().  This will override the 
-        ScopedSession and SessionContext approaches.  Only declare a session if you have to.  
-        The preferred way is to let fixture use its own session in a private scope.
-    
-    connection
-        A specific connectable/engine object (must be connected) to use 
-        when one is not bound.
-    
-    dataclass
-        SuperSet to represent loaded data with
-    
-    env
+    ``env``
         A dict or module that contains either mapped classes or Table objects,
         or both.  This will be search when style translates DataSet names into
         storage media.
     
-    medium
-        A custom StorageMediumAdapter to instantiate when storing a DataSet.
+    ``engine``
+        A specific connectable/engine object to use when one is not bound.  
+        engine.connect() will be called.
+    
+    ``session``
+        A session from ``sqlalchemy.create_session()``.  See `Contextual/Thread-local Sessions`_
+        for more info.  This will override the 
+        ScopedSession and SessionContext approaches.  Only declare a session if you have to.  
+        The preferred way is to let fixture use its own session in a private scope.
+    
+    .. _Contextual/Thread-local Sessions: http://www.sqlalchemy.org/docs/04/session.html#unitofwork_contextual
+    
+    ``scoped_session``
+        A class-like ``Session`` object created by ``scoped_session(sessionmaker())``.  
+        Only declare a custom Session if you have to.  The preferred way 
+        is to let fixture use its own Session which defines a private scope to 
+        avoid conflicts with that of the Application Under Test.
+    
+    ``connection``
+        A specific connection / engine to use when one is not bound.
+    
+    ``dataclass``
+        SuperSet to represent loaded data with
+    
+    ``medium``
+        A custom :class:`StorageMediumAdapter <fixture.loadable.loadable.StorageMediumAdapter>` 
+        to instantiate when storing a DataSet.
         By default, a medium adapter will be negotiated based on the type of 
-        sqlalchemy object so you should only set this if you know what you 
+        SQLAlchemy object so you should only set this if you know what you 
         doing.
     
     """
@@ -81,7 +95,7 @@ class SQLAlchemyFixture(DBLoadableFixture):
         self.Session = scoped_session
     
     def begin(self, unloading=False):
-        """begin loading data
+        """Begin loading data
         
         - creates and stores a connection with engine.connect() if an engine was passed
           
@@ -110,7 +124,7 @@ class SQLAlchemyFixture(DBLoadableFixture):
         DBLoadableFixture.begin(self, unloading=unloading)
     
     def commit(self):
-        """commit the load transaction and flush the session
+        """Commit the load transaction and flush the session
         """
         if self.connection:
             # note that when not using a connection, calling session.commit() 
@@ -121,7 +135,7 @@ class SQLAlchemyFixture(DBLoadableFixture):
         DBLoadableFixture.commit(self)
     
     def create_transaction(self):
-        """create a session or connection transaction
+        """Create a session transaction or a connection transaction
         
         - if a custom connection was used, calls connection.begin
         - otherwise calls session.begin()
@@ -136,7 +150,7 @@ class SQLAlchemyFixture(DBLoadableFixture):
         return transaction
     
     def dispose(self):
-        """dispose of this fixture instance entirely
+        """Dispose of this fixture instance entirely
         
         Closes all connection, session, and transaction objects and calls engine.dispose()
         
@@ -158,7 +172,7 @@ class SQLAlchemyFixture(DBLoadableFixture):
             self.engine.dispose()
     
     def rollback(self):
-        """rollback load transaction"""
+        """Rollback load transaction"""
         DBLoadableFixture.rollback(self)
 
 ## this was used in an if branch of clear() ... but I think this is no longer necessary with scoped sessions
@@ -190,15 +204,15 @@ class MappedClassMedium(DBLoadableFixture.StorageMediumAdapter):
         DBLoadableFixture.StorageMediumAdapter.__init__(self, *a,**kw)
         
     def clear(self, obj):
-        """delete this object from the session"""
+        """Delete this object from the session"""
         self.session.delete(obj)
     
     def visit_loader(self, loader):
-        """visits the :class:`SQLAlchemyFixture` loader and stores a reference to its session"""
+        """Visits the :class:`SQLAlchemyFixture` loader and stores a reference to its session"""
         self.session = loader.session
         
     def save(self, row, column_vals):
-        """save a new object to the session if it doesn't already exist in the session."""
+        """Save a new object to the session if it doesn't already exist in the session."""
         obj = self.medium()
         for c, val in column_vals:
             setattr(obj, c, val)
@@ -252,7 +266,7 @@ class TableMedium(DBLoadableFixture.StorageMediumAdapter):
         self.conn = None
         
     def clear(self, obj):
-        """constructs a delete statement per each primary key and 
+        """Constructs a delete statement per each primary key and 
         executes it either explicitly or implicitly
         """
         i=0
@@ -266,14 +280,16 @@ class TableMedium(DBLoadableFixture.StorageMediumAdapter):
             i+=1
     
     def visit_loader(self, loader):
-        """visits the :class:`SQLAlchemyFixture` loader and stores a reference to its connection if there is one."""
+        """Visits the :class:`SQLAlchemyFixture` loader and stores a reference 
+        to its connection if there is one.
+        """
         if loader.connection:
             self.conn = loader.connection
         else:
             self.conn = None
         
     def save(self, row, column_vals):
-        """constructs an insert statement with the given values and 
+        """Constructs an insert statement with the given values and 
         executes it either explicitly or implicitly
         """
         from sqlalchemy.schema import Table
