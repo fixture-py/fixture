@@ -1,49 +1,7 @@
 
 """Working with temporary file systems.
 
-.. contents:: :local:
-
-This object is useful for tests that need to set up a directory structure 
-and work with files and paths.  Once you instantiate it, you have a temporary 
-directory that will self-destruct when it falls out of scope::
-
-    >>> from fixture import TempIO
-    >>> tmp = TempIO()
-    >>> tmp #doctest: +ELLIPSIS
-    '/.../tmp_fixture...'
-
-Add sub-directories by simply assigning an attribute the basename of the new 
-subdirectory, like so::
-
-    >>> tmp.incoming = "incoming"
-    >>> os.path.exists(tmp.incoming)
-    True
-
-The new attribute is now an absolute path to a subdirectory, "incoming", of 
-the tmp root, as well as an object itself.  Note that tmp and tmp.incoming are 
-just string objects, but with several os.path methods mixed in for convenience.  
-See the DirPath_ API for details.  However, you can pass it to other objects and 
-it will represent itself as its absolute path.
-
-You can also insert files to the directory with putfile()::
-
-    >>> foopath = tmp.incoming.putfile("foo.txt", "contents of foo")
-    >>> tmp.incoming.join("foo.txt").exists()
-    True
-
-The directory root will self-destruct when it goes out of scope or atexit. 
-You can explicitly delete the object at your test's teardown if you like::
-
-    >>> tmpdir = str(tmp) # making sure it's a copy
-    >>> del tmp
-    >>> os.path.exists(tmpdir)
-    False
-
-.. _DirPath: ../apidocs/fixture.io.DirPath.html
-
-.. api_only::
-   The fixture.io module
-   ---------------------
+See :ref:`Using TempIO <using-temp-io>` for examples.
    
 """
 __all__ = ['TempIO']
@@ -61,11 +19,12 @@ def TempIO(deferred=False, **kw):
     Takes the same keyword args as tempfile.mkdtemp with these additional 
     keywords:
     
-    - deferred
+    ``deferred``
+        If True, destruction will be put off until atexit.  Otherwise, 
+        it will be destructed when it falls out of scope
     
-        - if True, destruction will be put off until atexit.  Otherwise, 
-          it will be destructed when it falls out of scope
-              
+    Returns an instance of :class:`DeletableDirPath`
+    
     """
     # note that this can't be a subclass because str is silly and doesn't let 
     # you override its constructor (at least in 2.4)
@@ -135,12 +94,13 @@ def putfile(filename, contents, filelike=None, mode=None):
     filelike.close()
     
 class DirPath(str, object):
-    """a directory path.
+    """
+    A directory path.
     
     The instance will function exactly like a string but is enhanced with a few 
     common methods from os.path.  Note that path.split() is implemented as 
     self.splitpath() since otherwise paths may not work right in other 
-    applications.
+    applications (conflicts with ``str.split()``).
     
     """
     def __init__(self, path):
@@ -162,23 +122,23 @@ class DirPath(str, object):
         return DirPath(path)
         
     def abspath(self):
-        """os.path.abspath(self)"""
+        """``os.path.abspath(self)``"""
         return self._wrap(path.abspath(self))
     
     def basename(self):
-        """os.path.basename(self)"""
+        """``os.path.basename(self)``"""
         return self._wrap(path.basename(self))
     
     def dirname(self):
-        """os.path.dirname(self)"""
+        """``os.path.dirname(self)``"""
         return self._wrap(path.dirname(self))
         
     def exists(self):
-        """os.path.exists(self)"""
+        """``os.path.exists(self)``"""
         return path.exists(self)
     
     def join(self, *dirs):
-        """os.path.join(self, *dirs)"""
+        """``os.path.join(self, *dirs)``"""
         return self._wrap(path.join(self, *dirs))
     
     def mkdir(self, name):
@@ -197,15 +157,15 @@ class DirPath(str, object):
         return path
     
     def normpath(self):
-        """os.path.normpath(self)"""
+        """``os.path.normpath(self)``"""
         return self._wrap(path.normpath(self))
     
     def putfile(self, fname, contents, mode=None):
-        """puts new filename relative to your `TempIO` root.
+        """puts new filename relative to your :func:`TempIO` root.
         Makes all directories along the path to the final file.
         
         The fname argument can be a complete path, but must not start with a 
-        slash.  Any missing directories will be created relative to the `TempIO` 
+        slash.  Any missing directories will be created relative to the :func:`TempIO` 
         root
         
         returns absolute filename.
@@ -224,21 +184,30 @@ class DirPath(str, object):
         return f
     
     def realpath(self):
-        """os.path.realpath(self)"""
+        """``os.path.realpath(self)``"""
         return self._wrap(path.realpath(self))
     
     def splitext(self):
-        """os.path.splitext(self)"""
+        """``os.path.splitext(self)``"""
         return path.splitext(self)
     
     def splitpath(self):
-        """os.path.split(self)
+        """``os.path.split(self)``
         """
         return path.split(self)
 
 class DeletableDirPath(DirPath):
+    """
+    A temporary directory path.
+    
+    That is, one that can be deleted.
+    
+    .. note:: Use the :func:`TempIO` function to create an instance
+    
+    """
     def __del__(self):
-        """removes the root directory and everything under it.
+        """
+        removes the root directory and everything under it.
         """
         if hasattr(self, '_deferred') and self._deferred:
             # atexit will handle it ...
@@ -254,7 +223,7 @@ class DeletableDirPath(DirPath):
     def rmtree(self):
         """forcefully removes the root directory and everything under it.
         
-        This can be trusted more than del self because it is guaranteed to 
+        This can be trusted more than :meth:`del self <fixture.io.DeletableDirPath.__del__>` because it is guaranteed to 
         remove the directory tree.
         """
         _expunge(self)
