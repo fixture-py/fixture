@@ -10,12 +10,12 @@ Python programs.  Specifically, these utilities setup / teardown databases and
 work with temporary file systems.  This is useful for testing and came about to 
 fulfill stories like these:
 
-- Your test needs to load data into a database and you want to easily reference that data when making assertions.
-- You want data linked by foreign key to load automatically and delete without integrity error.
-- You want to reference linked rows by meaningful names, not hard-coded ID numbers.
-- You don't want to worry about auto-incrementing sequences.
-- You want to recreate an environment (say, for a bug) by querying a database for real data (see the `fixture` command).
-- You want to work easily with files in a temporary, transparent file system.
+- I want to load data into a test database and easily reference that data when making assertions.
+- I want data linked by foreign key to load automatically and delete without integrity error.
+- I want to reference linked rows by meaningful names, not hard-coded ID numbers.
+- I don't want to worry about auto-incrementing sequences.
+- I want to recreate an environment (say, for a bug) by querying a database for real data.
+- I want to test with files in a temporary, transparent file system.
 
 For more info, this concept is explained in the wikipedia article, `Test Fixture`_.
 
@@ -33,13 +33,13 @@ Using the easy_install_ command::
 
     easy_install fixture
 
-If you want to use decorators like ``@fixture.with_data()`` you need `nose`_ installed, so run::
+If you want to use decorators like :meth:`@fixture.with_data() <fixture.base.Fixture.with_data>` you need `nose`_ installed, so run::
     
     easy_install 'fixture[decorators]'
 
-For more variants on the easy_install command, such as installing database libraries, see :ref:`Using LoadableFixture <using-loadable-fixture>`.
+For more variants on the ``easy_install`` command, such as installing database libraries, see :ref:`Using LoadableFixture <using-loadable-fixture>`.
 
-The source is available from the `fixture package`_ or the `fixture subversion repository`_ and this works with or without setuptools_::
+The source is available from the `fixture package`_ or the `fixture subversion repository`_ and the following command works with or without setuptools_::
 
     cd /path/to/source
     python setup.py install
@@ -49,9 +49,6 @@ The source is available from the `fixture package`_ or the `fixture subversion r
     
 If you want to try out fixture before installing it globally, you may be interested in `virtualenv`_.
 
-
-.. _SQLAlchemy: http://www.sqlalchemy.org/
-.. _SQLObject: http://www.sqlobject.org/
 .. _nose: http://somethingaboutorange.com/mrl/projects/nose/
 .. _virtualenv: http://pypi.python.org/pypi/virtualenv
 .. _easy_install: http://peak.telecommunity.com/DevCenter/EasyInstall
@@ -64,10 +61,7 @@ Requirements
 ------------
 
 At the moment fixture is only tested on Python 2.4 and 2.5 so it may or may not 
-work with other versions.  If you submit a patch to support another 
-version, I will try my best to accommodate it.
-
-The module does not depend on external libraries for its core functionality but 
+work with other versions.  The module does not depend on external libraries for its core functionality but 
 to do something interesting you will need one of several 3rd party libraries 
 (explained later in the documentation).
 
@@ -77,7 +71,7 @@ Loading and referencing test data
 
 There are a couple ways to test a database-backed application.  You can create `mock objects`_ and concentrate entirely on `unit testing`_ individual components without testing the database layer itself, or you can simply load up sample data before you run a test.  Thanks to ``sqlite`` in-memory connections, the latter may be more efficient than you think.  
 
-But it's easy enough to insert data line by line in code, right?  Or simply load a SQL file?  Yes, but this has two major downsides: you often have to worry about and manage complex chains of foreign keys manually; and when referencing data values later on, you either have to copy/paste the values or pass around lots of variables.
+But it's easy enough to insert data line by line in code, right?  Or simply load a SQL file?  Yes, but this has two major downsides: you often have to worry about and manage complex chains of foreign keys manually; and when referencing data values later on, you either have to copy / paste the values or pass around lots of variables.
 
 The fixture module simplifies this by breaking the process down to two independent components:
 
@@ -95,6 +89,11 @@ The fixture module simplifies this by breaking the process down to two independe
 Examples of Usage
 -----------------
 
+Fixture can be used to load :class:`DataSet <fixture.dataset.DataSet>` objects into `SQLAlchemy`_ or `SQLObject`_ backends (:ref:`more on that <using-loadable-fixture>`).  For a complete end-to-end example see :ref:`Using Fixture To Test A Pylons + SQLAlchemy App <using-fixture-with-pylons>`.  This should help you understand how to fit ``fixture`` into a finished app.
+
+.. _SQLAlchemy: http://www.sqlalchemy.org/
+.. _SQLObject: http://www.sqlobject.org/
+
 Now, on to the knitty gritty details ...
 
 .. toctree::
@@ -102,6 +101,7 @@ Now, on to the knitty gritty details ...
    
    using-dataset
    using-loadable-fixture
+   using-fixture-with-pylons
    using-fixture-cmd
    using-temp-io
    
