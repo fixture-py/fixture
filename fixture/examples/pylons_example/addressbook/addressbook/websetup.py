@@ -29,8 +29,8 @@ def setup_config(command, filename, section, vars):
             env=model, style=NamedDataStyle(),
             engine=meta.engine)
     
-    # not sure why but we need to tell these logs
-    # to calm the f* down
+    # quiet down fixture's own debug output 
+	# (activated by Paste) 
     fl = logging.getLogger("fixture.loadable")
     fl.setLevel(logging.CRITICAL)
     fl = logging.getLogger("fixture.loadable.tree")
