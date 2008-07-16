@@ -19,17 +19,19 @@ def setup_config(command, filename, section, vars):
     conf = appconfig('config:' + filename)
     load_environment(conf.global_conf, conf.local_conf)
     
+    # initialize the DB :
+    
     log.info("Creating tables")
     meta.metadata.create_all(bind=meta.engine)
     log.info("Successfully setup")
     
-    # load some initial data during setup-app
+    # load some initial data during setup-app :
     
     db = SQLAlchemyFixture(
             env=model, style=NamedDataStyle(),
             engine=meta.engine)
     
-    # quiet down fixture's own debug output 
+    # suppress fixture's own debug output 
 	# (activated by Paste) 
     fl = logging.getLogger("fixture.loadable")
     fl.setLevel(logging.CRITICAL)

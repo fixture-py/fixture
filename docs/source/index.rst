@@ -122,6 +122,14 @@ fixture is a reimplementation of `testtools.fixtures`_ which was my first attemp
 
 .. _testtools.fixtures : http://testtools.python-hosting.com/
 
+.. _index-contact: 
+
+-------
+Contact
+-------
+
+Read on for info on submitting `issues`_.  For general discussion about fixture, how about the `Testing In Python`_ mailing list?  Otherwise, you can try me here: kumar.mcmillan @gmail.com
+
 -------------------------------------
 Where to submit issues, patches, bugs
 -------------------------------------
@@ -130,5 +138,7 @@ Please submit any issues, patches, failing tests, and/or bugs using the `Issue
 Tracker`_ on the `fixture project site`_.  If your code is used, your contribution will be
 documented.
 
+.. _Testing In Python: http://lists.idyll.org/listinfo/testing-in-python
+.. _issues: http://code.google.com/p/fixture/issues/list
 .. _Issue Tracker: http://code.google.com/p/fixture/issues/list
 .. _fixture project site: http://code.google.com/p/fixture/

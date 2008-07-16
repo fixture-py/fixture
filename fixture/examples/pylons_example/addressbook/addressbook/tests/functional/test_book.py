@@ -3,7 +3,6 @@ from addressbook.model import meta, Person
 from addressbook.datasets import PersonData, AddressData
 from addressbook.tests import dbfixture
 from addressbook.tests import *
-from fixture.util import start_debug
 
 class TestBookController(TestController):
     
