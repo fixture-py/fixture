@@ -39,16 +39,12 @@ from fixture.style import NamedDataStyle
 
 dbfixture = SQLAlchemyFixture(
     env=model,
-    # engine cannot be assigned here 
-    # because an in-memory db is being used
-    # (see below)
+    engine=meta.engine,
     style=NamedDataStyle()
 )
 
 def setup():
     meta.metadata.create_all(meta.engine)
-    # because it's an in-memory db, must use a connected engine:
-    dbfixture.engine = meta.engine
 
 def teardown():
     meta.metadata.drop_all(meta.engine)
