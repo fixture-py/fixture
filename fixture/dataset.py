@@ -384,8 +384,10 @@ class DataSet(DataContainer):
     """
     Defines data to be loaded
     
-    a loader will typically want to load a dataset into a 
-    single storage medium.  I.E. a table in a database.
+    A loader will typically want to load a dataset into a 
+    single storage medium.  I.E. a table in a database.  
+    
+    For a complete example see :ref:`Using DataSet <using-dataset>`.
     
     Note that rows are always classes until the dataset instance has been 
     loaded::

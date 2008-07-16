@@ -226,11 +226,29 @@ Before running any tests you need to configure the test suite to make a database
     # Add additional test specific configuration options as necessary.
     sqlalchemy.url = sqlite:///%(here)s/testdb.sqlite
 
-The `Pylons + SQLAlchemy documentation`_ suggests creating and dropping tables once per test but this doesn't scale very well and Fixture already tears down data automatically.  Instead, add ``setup`` and ``teardown`` methods to ``addressbook/tests/__init__.py``.  These methods will be called by nose_ *just once* per every run of your test suite.  Here is the code to add to ``addressbook/tests/__init__.py``::
+**IMPORTANT**: By default Pylons configures your test suite so that the same code run by ``paster setup-app test.ini`` is run before your tests start.  This can be confusing if you are creating tables and inserting data like in the previous section so replace it with this code in ``addressbook/tests/__init__.py``::
+
+    # additional imports ...
+    from paste.deploy import appconfig
+    from addressbook.config.environment import load_environment
     
-    # other imports and setup ...
+    # change this code ...
     
+    test_file = os.path.join(conf_dir, 'test.ini')
+    ## don't run setup-app
+    # cmd = paste.script.appinstall.SetupCommand('setup-app')
+    # cmd.run([test_file])
+    conf = appconfig('config:' + test_file)
+    load_environment(conf.global_conf, conf.local_conf)
+    
+    # ...
+
+Also, the `Pylons + SQLAlchemy documentation`_ suggests creating and dropping tables once per test but this doesn't scale very well and Fixture already tears down data automatically.  Instead, add ``setup`` and ``teardown`` methods to ``addressbook/tests/__init__.py``.  These methods will be called by nose_ *just once* per every run of your test suite.  Here is the code to add to ``addressbook/tests/__init__.py``::
+    
+    # additional imports ...
     from addressbook.model import meta
+    
+    # add this code ...
     
     def setup():
         meta.metadata.create_all(meta.engine)
@@ -238,22 +256,44 @@ The `Pylons + SQLAlchemy documentation`_ suggests creating and dropping tables o
     def teardown():
         meta.metadata.drop_all(meta.engine)
     
-    # other test definitions ...
+    # ...
 
-.. note:: Fixture deletes the rows *it* inserts.  If *your application* inserts rows of its own during a test then you will need to truncate the table or else use the strategy of creating / dropping tables once per test.
+.. note:: Fixture deletes the rows *it* inserts.  If *your application* inserts rows of its own during a test then you will need to truncate the table or else go back to the strategy of creating / dropping tables once per test.
 
-Similar to how the `Pylons + SQLAlchemy documentation`_ suggests, you still, however, need to remove the session once per test so that errors do not "leak" from test to test.  This is done by making the ``setUp`` method of ``TestController`` in ``__init__.py`` look like this::
-        
+Similar to how the `Pylons + SQLAlchemy documentation`_ suggests, you still, however, need to remove the session once *per test* so that objects do not "leak" from test to test.  This is done by making the ``setUp`` method of ``TestController`` in ``__init__.py`` look like this::
+
     class TestController(TestCase):
         # ...
     
         def setUp(self):
             meta.Session.remove() # clear any stragglers from last test
 
-Making Assertions Against Test Data
------------------------------------
+Defining A Fixture And Testing With Data
+----------------------------------------
 
-More astute readers will probably realize that the app already has some data in it since by default Pylons runs the ``setup-app`` hook at the top of ``addressbook/tests/__init__.py``.  Let's make some assertions to find out.  Add the following code to ``addressbook/tests/functional/test_book.py``::
+To start using data in your tests, first define a common fixture object to use throughout your test suite by adding this code to ``addressbook/tests/__init__.py``::
+
+    # additional imports ...
+    from addressbook import model
+    from addressbook.model import meta
+    from fixture import SQLAlchemyFixture
+    from fixture.style import NamedDataStyle
+    
+    # add this code ...
+    
+    dbfixture = SQLAlchemyFixture(
+        env=model,
+        engine=meta.engine,
+        style=NamedDataStyle()
+    )
+    
+    # ...
+
+.. note:: Beware that using an in-memory SQLite database would make this trickier and the above strategy won't work.  Instead you'd need to assign the engine in ``setup`` after ``metadata.create_all()`` since SQLite memory databases are only available to a single *connection*.
+
+See :ref:`Using LoadableFixture <using-loadable-fixture>` for a detailed explanation of fixture objects.  
+
+Now let's start working with the :class:`DataSet <fixture.dataset.DataSet>` objects.  Edit ``addressbook/tests/functional/test_book.py`` so that it looks like this::
     
     from addressbook.model import meta, Person
     from addressbook.datasets import PersonData, AddressData
@@ -261,6 +301,15 @@ More astute readers will probably realize that the app already has some data in 
 
     class TestBookController(TestController):
 
+        def setUp(self):
+            super(TestBookController, self).setUp()
+            self.data = dbfixture.data(PersonData) # AddressData loads implicitly
+            self.data.setup()
+    
+        def tearDown(self):
+            self.data.teardown()
+            super(TestBookController, self).tearDown()
+        
         def test_index(self):
             response = self.app.get(url_for(controller='book'))
             print response
@@ -269,7 +318,7 @@ More astute readers will probably realize that the app already has some data in 
             assert AddressData.joe_in_kingston.address in response
             assert AddressData.joe_in_ny.address in response
 
-Then run the tests::
+Then run the test, which should pass::
 
     $ cd /path/to/addressbook
     $ nosetests
@@ -279,35 +328,42 @@ Then run the tests::
 
     OK
 
-Defining A Fixture And Testing With Data
-----------------------------------------
+Woo!
 
-To start using data in your tests, define a common fixture object to use throughout your test suite.  You also need to connect your database engine, so add this code to ``addressbook/tests/__init__.py``::
+This code is asserting that the values from the :class:`DataSet <fixture.dataset.DataSet>` classes have been rendered on the page, i.e. ``<h4>joe@joegibbs.com</h4>``.  There is more info on using response objects in the `WebTest`_ docs (however at the time of this writing Pylons is still using ``paste.fixture``, an earlier form of ``WebTest``).  
 
-    # other imports and setup ...
-        
-    from addressbook import model
-    from addressbook.model import meta
-    from fixture import SQLAlchemyFixture
-    from fixture.style import NamedDataStyle
-        
-    dbfixture = SQLAlchemyFixture(
-        env=model,
-        engine=meta.engine,
-        style=NamedDataStyle()
-    )
+You'll notice there is a print statement showing the actual response.  By default nose hides stdout for convenience so if you want to see the response just trigger a failure by adding ``raise AssertionError`` in the test.
+
+::
     
-    def setup():
-        meta.metadata.create_all(meta.engine)
+    $ nosetests
+    F
+    ======================================================================
+    FAIL: test_index (addressbook.tests.functional.test_book.TestBookController)
+    ----------------------------------------------------------------------
+    Traceback (most recent call last):
+      File "/Users/kumar/.../addressbook/tests/functional/test_book.py", line 16, in test_index
+        raise AssertionError
+    AssertionError: 
+    -------------------- >> begin captured stdout << ---------------------
+    Response: 200
+    content-type: text/html; charset=utf-8
+    pragma: no-cache
+    cache-control: no-cache
+    <h2>
+    Address Book
+    </h2>
+        <h3>Joe Gibbs</h3>
+        <h4>joe@joegibbs.com</h4>
+        <h4>111 Maple Ave, Kingston, Jamaica</h4>
+        <h4>111 S. 2nd Ave, New York, NY</h4>
 
-    def teardown():
-        meta.metadata.drop_all(meta.engine)
-    
-    # other test definitions ...
+    --------------------- >> end captured stdout << ----------------------
 
-.. note:: Beware that using an in-memory SQLite database would make this trickier and the above strategy won't work.  Instead you'd need to assign the engine in ``setup`` after ``metadata.create_all()`` since SQLite memory databases are only available to a single *connection*.  Also, beware of ``setup-app``, described below.
+    ----------------------------------------------------------------------
+    Ran 1 test in 0.389s
 
-See :ref:`Using LoadableFixture <using-loadable-fixture>` for a detailed explanation of fixture objects.  
+    FAILED (failures=1)
 
 A Note About Session Mappers and Elixir
 ---------------------------------------
@@ -329,4 +385,4 @@ setup-app
 .. _Pylons: http://pylonshq.com/
 .. _SQLite: http://www.sqlite.org/
 .. _nose: http://somethingaboutorange.com/mrl/projects/nose/
-
+.. _WebTest: http://pythonpaste.org/webtest/

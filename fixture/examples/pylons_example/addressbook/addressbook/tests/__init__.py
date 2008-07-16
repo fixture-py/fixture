@@ -16,6 +16,8 @@ import pkg_resources
 import paste.fixture
 import paste.script.appinstall
 from paste.deploy import loadapp
+from paste.deploy import appconfig
+from addressbook.config.environment import load_environment
 from routes import url_for
 
 __all__ = ['url_for', 'TestController']
@@ -29,8 +31,11 @@ pkg_resources.require('Paste')
 pkg_resources.require('PasteScript')
 
 test_file = os.path.join(conf_dir, 'test.ini')
-cmd = paste.script.appinstall.SetupCommand('setup-app')
-cmd.run([test_file])
+## don't run setup-app
+# cmd = paste.script.appinstall.SetupCommand('setup-app')
+# cmd.run([test_file])
+conf = appconfig('config:' + test_file)
+load_environment(conf.global_conf, conf.local_conf)
 
 from addressbook import model
 from addressbook.model import meta
