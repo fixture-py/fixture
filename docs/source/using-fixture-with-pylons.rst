@@ -16,40 +16,10 @@ Creating An Address Book
 
 First, `install Pylons`_ and create a new app as described in `Getting Started`_.  This will be an Address Book application so run the command as ``paster create -t pylons addressbook`` if you want to follow along with the code below.  Next, configure your models to use ``SQLAlchemy`` as explained in `Using SQLAlchemy with Pylons`_.  You should have added the module ``addressbook/models/meta.py``, defined ``init_model(engine)`` in ``addressbook/models/__init__.py``, called ``init_model(engine)`` from ``environment.py``, and configured ``BaseController`` to call ``meta.Session.remove()``.
 
-To show a simple list of addresses create a ``book`` controller::
-
-	cd /path/to/addressbook
-	paster controller book
-
-This will create ``addressbook/controllers/book.py`` and addressbook/tests/functional/test_book.py``.  Then edit ``routing.py`` to make it the default page::
-
-    # CUSTOM ROUTES HERE
-    map.connect('', controller='book', action='index')
-
-Next, add a template file as ``addressbook/templates/book.mak`` to show some addresses::
-
-	<h2>
-	Address Book
-	</h2>
-	
-	% for person in c.persons:
-	    <h3>${person.name}</h3>
-	    <h4>${person.email}</h4>
-	    % for address in person.my_addresses:
-	    <h4>${address.address}</h4>
-	    % endfor
-	% endfor
-
-And edit ``BookController`` in ``book.py`` to return::
-
-	return render("/book.mak")
-
-instead of "Hello World."
-
 Defining The Model
 ------------------
 
-You could fire up the dev server with ``paster serve development.ini`` and browse the site but this won't show any addresses yet.  Place the following code just below the ``init_model`` code you added before to ``addressbook/model/__init__.py`` to define the `SQLAlchemy`_ tables and mappers to hold the Address Book data.  The complete module should look like::
+Next step is to define the data model.  Place the following code just below the ``init_model`` code you added before to ``addressbook/model/__init__.py`` to define the `SQLAlchemy`_ tables and mappers to hold the Address Book data.  The complete module should look like::
 
 	import sqlalchemy as sa
 	from sqlalchemy import orm
@@ -97,11 +67,58 @@ Per the `Pylons + SQLAlchemy documentation`_, you should have this line in your 
 	[app:main]
 	# ...
 	sqlalchemy.url = sqlite:///%(here)s/db.sqlite
+
+Creating A Simple Controller
+----------------------------
 	
+To show a simple list of addresses create a ``book`` controller::
+
+	cd /path/to/addressbook
+	paster controller book
+
+This will create ``addressbook/controllers/book.py`` and addressbook/tests/functional/test_book.py``.  Then edit ``routing.py`` to make it the default page::
+
+    # CUSTOM ROUTES HERE
+    map.connect('', controller='book', action='index')
+
+And edit ``addressbook/controllers/book.py`` to select some addressed from the database and render a template instead of returning "Hello World"::
+
+    import logging
+
+    from addressbook.lib.base import *
+    from addressbook.model import meta
+    from addressbook.model import Person
+
+    log = logging.getLogger(__name__)
+
+    class BookController(BaseController):
+
+        def index(self):
+            # c, defined in addressbook/lib/base.py, is automatically 
+            # available in your template
+            c.persons = meta.Session.query(Person).join('my_addresses')
+            return render("/book.mak")
+
+Add the template file as ``addressbook/templates/book.mak`` and write some Python code (via `Mako`_) to show some addresses::
+
+	<h2>
+	Address Book
+	</h2>
+	
+	% for person in c.persons:
+	    <h3>${person.name}</h3>
+	    <h4>${person.email}</h4>
+	    % for address in person.my_addresses:
+	    <h4>${address.address}</h4>
+	    % endfor
+	% endfor
+
+.. _Mako: http://www.makotemplates.org/
+
 Adding Some Data Sets
 ---------------------
 
-Fixture provides an easy way to add some data to your models.  Using a naming scheme where each :class:`DataSet <fixture.dataset.DataSet>` subclass is camel case named after a mapped classe in the model but ending in ``Data`` (more on :ref:`styles <using-loadable-fixture-style>`), define the following code in a new module at ``addressbook/datasets/__init__.py``::
+Fixture provides an easy way to add some data to your models for automated or exploratory testing.  Using a naming scheme where each :class:`DataSet <fixture.dataset.DataSet>` subclass is camel case named after a mapped classe in the model but ending in ``Data`` (more on :ref:`styles <using-loadable-fixture-style>`), define the following code in a new module at ``addressbook/datasets/__init__.py``::
 	
 	from fixture import DataSet
 
@@ -124,7 +141,7 @@ See :ref:`Using DataSet <using-dataset>` for more info but in summary this sets 
 Loading Initial Data
 --------------------
 
-So how can I fire up my dev server and see this data?  There is a way to do this by placing a few lines of code in ``addressbook/websetup.py`` to hook into the ``paster setup-app devlopment.ini`` command.
+How do you fire up the dev server and see this data?  There is a way to do this by placing a few lines of code in ``addressbook/websetup.py`` to hook into the ``paster setup-app devlopment.ini`` command.
 
 If you haven't already done so per the `Pylons + SQLAlchemy documentation`_ you will also need the initialization code here that creates the tables in your database.  The full code for creating tables and inserting the data defined above looks like this in ``addressbook/websetup.py``::
 
@@ -160,7 +177,7 @@ If you haven't already done so per the `Pylons + SQLAlchemy documentation`_ you 
 	            engine=meta.engine)
     
 	    # quiet down fixture's own debug output 
-		# (activated by Paste) 
+	    # (activated by Paste) 
 	    fl = logging.getLogger("fixture.loadable")
 	    fl.setLevel(logging.CRITICAL)
 	    fl = logging.getLogger("fixture.loadable.tree")
@@ -180,7 +197,16 @@ Thus, creating all tables in the ``db.sqlite`` file and loading the data defined
 
 	paster serve --reload development.ini
 
-And load up `http://127.0.0.1:5000 <http://127.0.0.1:5000>` in your browser.  You should see:
+And load up `http://127.0.0.1:5000 <http://127.0.0.1:5000>`_ in your browser.  You should see a rendering of::
+
+    <h2>
+    Address Book
+    </h2>
+
+        <h3>Joe Gibbs</h3>
+        <h4>joe@joegibbs.com</h4>
+        <h4>111 Maple Ave, Kingston, Jamaica</h4>
+        <h4>111 S. 2nd Ave, New York, NY</h4>
 
 Defining A Fixture In The Test Suite
 ------------------------------------
