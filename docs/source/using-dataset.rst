@@ -10,7 +10,9 @@ Using DataSet
 Before loading data, you need to define it. A single subclass of
 :class:`DataSet <fixture.dataset.DataSet>` represents a database relation in Python code. Think of the class as a
 table, each inner class as a row, and each attribute per row as a column value.
-For example::
+For example:
+
+.. doctest::
 
     >>> from fixture import DataSet
     >>> class Authors(DataSet):
@@ -31,7 +33,9 @@ so).  How you create a :class:`DataSet <fixture.dataset.DataSet>` will be influe
 Inheriting DataSet rows
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Since a row is just a Python class, you can inherit from a row to morph its values, i.e.::
+Since a row is just a Python class, you can inherit from a row to morph its values, i.e.:
+
+.. doctest::
 
     >>> class Authors(DataSet):
     ...     class frank_herbert:
@@ -50,7 +54,9 @@ This is useful for keeping code simple and hand-coding foreign key dependencies.
 Referencing foreign DataSet classes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When defining rows in a :class:`DataSet <fixture.dataset.DataSet>` that reference foreign keys, you need to mimic how your data object wants to save such a reference.  If your data object wants to save foreign keys as objects (not ID numbers) then you can simply reference another row in a :class:`DataSet <fixture.dataset.DataSet>` as if it were an object.::
+When defining rows in a :class:`DataSet <fixture.dataset.DataSet>` that reference foreign keys, you need to mimic how your data object wants to save such a reference.  If your data object wants to save foreign keys as objects (not ID numbers) then you can simply reference another row in a :class:`DataSet <fixture.dataset.DataSet>` as if it were an object.:
+
+.. doctest::
 
     >>> class Books(DataSet):
     ...     class dune:
@@ -60,7 +66,9 @@ When defining rows in a :class:`DataSet <fixture.dataset.DataSet>` that referenc
     ...         title = "Sudanna Sudanna"
     ...         author = Authors.brian_herbert
 
-During data loading, the reference to DataSet ``Authors.brian_herbert`` will be replaced with the actual stored object used to load that row into the database.  This will work as expected for one-to-many relationships, i.e.::
+During data loading, the reference to DataSet ``Authors.brian_herbert`` will be replaced with the actual stored object used to load that row into the database.  This will work as expected for one-to-many relationships, i.e.:
+
+.. doctest::
 
     >>> class Books(DataSet):
     ...     class two_worlds:
@@ -68,7 +76,9 @@ During data loading, the reference to DataSet ``Authors.brian_herbert`` will be 
     ...         authors = [Authors.frank_herbert, Authors.brian_herbert]
 
 However, in some cases you may need to reference an attribute that does not have a value until it is loaded, like a serial ID column.  (Note that this is not supported by the `SQLAlchemy`_ data layer when using sessions.)  To facilitate this, each inner class of a :class:`DataSet <fixture.dataset.DataSet>` gets decorated with a special method, :class:`ref() <fixture.dataset.Ref>`,
-that can be used to reference a column value before it exists, i.e.::
+that can be used to reference a column value before it exists, i.e.:
+
+.. doctest::
 
     >>> class Books(DataSet):
     ...     class dune:

@@ -29,14 +29,22 @@ To ensure you are working with a compatible version of SQLAlchemy you can run ::
     
 .. _fixture 0.9: http://farmdev.com/projects/fixture/0.9/docs/
 
-DataSet classes can be loaded into `Table`_ objects or `mapped classes`_ via the `SQLAlchemy`_ module::
+DataSet classes can be loaded into `Table`_ objects or `mapped classes`_ via the `SQLAlchemy`_ module:
+
+.. testsetup:: loading
+
+    import os
+    if os.path.exists('/tmp/fixture_example.db'):
+        os.unlink('/tmp/fixture_example.db')
+
+.. doctest:: loading
 
     >>> from fixture import SQLAlchemyFixture
     >>> from sqlalchemy import *
     >>> from sqlalchemy.orm import *
     >>> from fixture.examples.db import sqlalchemy_examples
     >>> from fixture.examples.db.sqlalchemy_examples import metadata
-    >>> metadata.bind = create_engine("sqlite:///:memory:")
+    >>> metadata.bind = create_engine("sqlite:////tmp/fixture_example.db")
     >>> metadata.create_all()
     >>> dbfixture = SQLAlchemyFixture(
     ...                 engine=metadata.bind, 
@@ -51,13 +59,15 @@ Elixir
 DataSet class can be loaded into `Elixir entities`_ by using the SQLAlchemyFixture (see previous example).
 
 **WARNING**: fixture uses its own scoped session to load data so that objects are separate from the application under test.  
-This means you will need to configure all Elixir entities (and any classes mapped with ``Session.mapper()``) like so::
+This means you will need to configure all Elixir entities (and any classes mapped with `Session.mapper() <http://www.sqlalchemy.org/docs/04/session.html#unitofwork_contextual_associating>`_) like so::
 
     class MyElixirEntity(Entity):
         # ...
         using_mapper_options(save_on_init=False)
 
-Without this, fixture has no way of saving objects to its own session.  To use Elixir entities without specifiying ``save_on_init=False`` you would have to share the fixture session in Elixir.  You can get the fixture session like this::
+Without this, fixture has no way of saving objects to its own session.  To use Elixir entities without specifiying ``save_on_init=False`` you would have to share the fixture session in Elixir.  You can get the fixture session like this:
+
+.. doctest:: loading
 
     >>> from fixture.loadable.sqlalchemy_loadable import Session
     >>> app_session = Session()
@@ -73,7 +83,9 @@ To ensure you are working with a compatible version of SQLObject you can run ::
 
     easy_install 'fixture[sqlobject]'
     
-DataSet classes can be loaded into `SQLObject classes`_ via the `sqlobject`_ module::
+DataSet classes can be loaded into `SQLObject classes`_ via the `sqlobject`_ module:
+
+.. doctest:: loading
 
     >>> from fixture import SQLObjectFixture
     >>> from fixture.examples.db import sqlobject_examples
@@ -86,7 +98,9 @@ See :class:`SQLObjectFixture API <fixture.loadable.sqlobject_loadable.SQLObjectF
 An Example of Loading Data Using SQLAlchemy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Fixture is designed for applications that already have a way to store data; the :class:`LoadableFixture <fixture.loadable.loadable.LoadableFixture>` just hooks in to that interface.  To start this example, here is some `SQLAlchemy`_ code to set up a database of books and authors::
+Fixture is designed for applications that already have a way to store data; the :class:`LoadableFixture <fixture.loadable.loadable.LoadableFixture>` just hooks in to that interface.  To start this example, here is some `SQLAlchemy`_ code to set up a database of books and authors:
+
+.. doctest:: loading
 
     >>> from sqlalchemy import *
     >>> from sqlalchemy.orm import *
@@ -97,6 +111,8 @@ Fixture is designed for applications that already have a way to store data; the 
     >>> session = Session()
 
 Set up the table and mapper for authors ...
+
+.. doctest:: loading
 
     >>> authors = Table('authors', metadata,
     ...     Column('id', Integer, primary_key=True),
@@ -111,6 +127,8 @@ Set up the table and mapper for authors ...
 
 Next set up the table and mapper for books with each book having an author ...
 
+.. doctest:: loading
+
     >>> books = Table('books', metadata, 
     ...     Column('id', Integer, primary_key=True),
     ...     Column('title', String(30)),
@@ -124,7 +142,7 @@ Next set up the table and mapper for books with each book having an author ...
     ... }) #doctest: +ELLIPSIS
     <sqlalchemy.orm.mapper.Mapper object at ...>
 
-::
+.. doctest:: loading
 
     >>> metadata.create_all()
 
@@ -141,7 +159,9 @@ Consult the `SQLAlchemy`_ documentation for further examples of data mapping.
 Defining a Fixture
 ~~~~~~~~~~~~~~~~~~
 
-This is a fixture with minimal configuration to support loading data into the ``Book`` or ``Author`` mapped classes::
+This is a fixture with minimal configuration to support loading data into the ``Book`` or ``Author`` mapped classes:
+
+.. doctest:: loading
 
     >>> from fixture import SQLAlchemyFixture
     >>> dbfixture = SQLAlchemyFixture(
@@ -157,7 +177,9 @@ This is a fixture with minimal configuration to support loading data into the ``
 Loading DataSet objects
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-To load some data for a test, you define it first in DataSet classes::
+To load some data for a test, you define it first in DataSet classes:
+
+.. doctest:: loading
 
     >>> from fixture import DataSet
     >>> class AuthorData(DataSet):
@@ -171,12 +193,14 @@ To load some data for a test, you define it first in DataSet classes::
 
 As you recall, we passed a dictionary into the Fixture that associates :class:`DataSet <fixture.dataset.DataSet>` names with storage objects.  Using this dict, a :class:`FixtureData <fixture.base.FixtureData>` instance now knows to use the sqlalchemy mapped class ``Book`` when saving a DataSet named ``BookData``.
 
-The ``Fixture.Data`` instance implements the ``setup()`` and ``teardown()`` methods typical to any test object.  At the beginning of a test the ``DataSet`` objects are loaded like so::
+The ``Fixture.Data`` instance implements the ``setup()`` and ``teardown()`` methods typical to any test object.  At the beginning of a test the ``DataSet`` objects are loaded like so:
     
+.. doctest:: loading
+
     >>> data = dbfixture.data(AuthorData, BookData)
     >>> data.setup() 
 
-::
+.. doctest:: loading
 
     >>> session.query(Book).all() #doctest: +ELLIPSIS
     [<...Book object at ...>]
@@ -186,7 +210,9 @@ The ``Fixture.Data`` instance implements the ``setup()`` and ``teardown()`` meth
     >>> all_books[0].author.first_name
     u'Frank'
 
-... And are removed like this::
+and are removed like this:
+
+.. doctest:: loading
 
     >>> data.teardown()
     >>> session.query(Book).all()
@@ -200,7 +226,9 @@ Now that you have a Fixture object to load :class:`DataSet <fixture.dataset.Data
 Loading objects using DataTestCase
 ++++++++++++++++++++++++++++++++++
 
-DataTestCase is a mixin class to use with Python's built-in ``unittest.TestCase``::
+DataTestCase is a mixin class to use with Python's built-in ``unittest.TestCase``:
+
+.. doctest:: loading
 
     >>> import unittest
     >>> from fixture import DataTestCase
@@ -228,7 +256,9 @@ If you use nose_, a test runner for Python, then you may be familiar with its `d
     
     easy_install fixture[decorators]
 
-Load data for a test function like this::
+Load data for a test function like this:
+
+.. doctest:: loading
 
     >>> @dbfixture.with_data(AuthorData, BookData)
     ... def test_books_are_in_stock(data):
@@ -262,6 +292,8 @@ Discovering storable objects with Style
 
 If you didn't want to create a strict mapping of :class:`DataSet <fixture.dataset.DataSet>` class names to their storable object names you can use :class:`Style <fixture.style.Style>` objects to translate DataSet class names.  For example, consider this Fixture :
 
+.. doctest:: loading
+
     >>> from fixture import SQLAlchemyFixture, TrimmedNameStyle
     >>> dbfixture = SQLAlchemyFixture(
     ...     env=globals(),
@@ -270,6 +302,8 @@ If you didn't want to create a strict mapping of :class:`DataSet <fixture.datase
     ... 
 
 This would take the name ``AuthorData`` and trim off "Data" from its name to find ``Author``, its mapped SQLAlchemy_ class for storing data.  Since this is a logical convention to follow for naming :class:`DataSet <fixture.dataset.DataSet>` classes, you can use a shortcut:
+
+.. doctest:: loading
 
     >>> from fixture import NamedDataStyle
     >>> dbfixture = SQLAlchemyFixture(
@@ -285,7 +319,9 @@ Defining a custom LoadableFixture
 
 It's possible to create your own :class:`LoadableFixture <fixture.loadable.loadable:LoadableFixture>` if you need to load data with something other than SQLAlchemy_ or SQLObject_.
 
-You'll need to subclass at least :class:`LoadableFixture <fixture.loadable.loadable:LoadableFixture>`, possibly even :class:`EnvLoadableFixture <fixture.loadable.loadable:EnvLoadableFixture>` or the more useful :class:`DBLoadableFixture <fixture.loadable.loadable:DBLoadableFixture>`.  Here is a simple example for creating a fixture that hooks into some kind of database-centric loading mechanism::
+You'll need to subclass at least :class:`LoadableFixture <fixture.loadable.loadable:LoadableFixture>`, possibly even :class:`EnvLoadableFixture <fixture.loadable.loadable:EnvLoadableFixture>` or the more useful :class:`DBLoadableFixture <fixture.loadable.loadable:DBLoadableFixture>`.  Here is a simple example for creating a fixture that hooks into some kind of database-centric loading mechanism:
+
+.. doctest:: loading
 
     >>> loaded_items = set()
     >>> class Author(object):
@@ -347,8 +383,11 @@ You'll need to subclass at least :class:`LoadableFixture <fixture.loadable.loada
     ...         t = DummyTransaction()
     ...         t.begin() # you must call begin yourself, if necessary
     ...         return t
+    >>> 
 
-Now let's load some data into the custom Fixture using a simple ``env`` mapping::
+Now let's load some data into the custom Fixture using a simple ``env`` mapping:
+
+.. doctest:: loading
 
     >>> from fixture import DataSet
     >>> class AuthorData(DataSet):

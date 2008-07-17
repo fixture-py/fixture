@@ -17,12 +17,19 @@ There are several issues you may run into while working with fixtures:
 An Example With SQLAlchemy 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Here is a data model defined in `SQLAlchemy <http://www.sqlalchemy.org/>`_ code::
+.. testsetup:: command
+    
+    import os
+    if os.path.exists('/tmp/fixture_example.db'):
+        os.unlink('/tmp/fixture_example.db')
+
+Here is a data model defined in `SQLAlchemy <http://www.sqlalchemy.org/>`_ code:
+
+.. doctest:: command
 
     >>> from sqlalchemy import *
     >>> from sqlalchemy.orm import *
     >>> metadata = MetaData()
-    
     >>> authors = Table('authors', metadata,
     ...     Column('id', Integer, primary_key=True),
     ...     Column('first_name', String(100)),
@@ -39,8 +46,8 @@ Here is a data model defined in `SQLAlchemy <http://www.sqlalchemy.org/>`_ code:
     >>> class Book(object):
     ...     pass
     ...     
-    >>> mapper(Author, authors)
-    >>> mapper(Book, books, properties={
+    >>> m = mapper(Author, authors) # doctest:+ELLIPSIS
+    >>> m = mapper(Book, books, properties={
     ...     'author': relation(Author)
     ... })
     >>> 
