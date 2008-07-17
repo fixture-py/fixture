@@ -124,9 +124,9 @@ class TestFixture:
                 yield generated_test, step
         
         loader = nose.loader.TestLoader()
-        cases = loader.generateTests(some_generator)
-        for case in cases:
-            SilentTestRunner().run(nose.case.FunctionTestCase(case))
+        # 0.10 only ....
+        suite = loader.loadTestsFromGenerator(some_generator, None)
+        SilentTestRunner().run(suite)
         
         eq_(mock_call_log[0], (MockLoader, 'load', StubSuperSet))
         eq_(mock_call_log[1], ('some_generator', Fixture.Data, 0))
@@ -152,9 +152,9 @@ class TestFixture:
                 yield generated_test, step
                 
         loader = nose.loader.TestLoader()
-        cases = loader.generateTests(some_generator)
-        for case in cases:
-            SilentTestRunner().run(nose.case.FunctionTestCase(case))
+        # 0.10 only ....
+        suite = loader.loadTestsFromGenerator(some_generator, None)
+        SilentTestRunner().run(suite)
             
         eq_(mock_call_log[0], (MockLoader, 'load', StubSuperSet))
         eq_(mock_call_log[1], ('some_generator', Fixture.Data, 0))
@@ -174,11 +174,11 @@ class TestFixture:
                 yield generated_test, step
                 
         loader = nose.loader.TestLoader()
-        cases = loader.generateTests(some_generator)
+        # 0.10 only ....
+        suite = loader.loadTestsFromGenerator(some_generator, None)
         @raises(Exception)
         def run_tests():
-            for case in cases:
-                SilentTestRunner().run(nose.case.FunctionTestCase(case))
+            SilentTestRunner().run(suite)
         run_tests()
             
         eq_(mock_call_log[0], (AbusiveMockLoader, 'load', StubSuperSet))
@@ -196,11 +196,12 @@ class TestFixture:
                 yield generated_test, step
                 
         loader = nose.loader.TestLoader()
-        cases = loader.generateTests(some_generator)
+        loader = nose.loader.TestLoader()
+        # 0.10 only ....
+        suite = loader.loadTestsFromGenerator(some_generator, None)
         @raises(RuntimeError)
         def run_tests():
-            for case in cases:
-                SilentTestRunner().run(nose.case.FunctionTestCase(case))
+            SilentTestRunner().run(suite)
                 
         err = StringIO()
         sys.stderr = err
