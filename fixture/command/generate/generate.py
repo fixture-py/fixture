@@ -337,8 +337,14 @@ def dataset_generator(argv):
     """%prog [options] OBJECT_PATH
     
     Using the object specified in the path, generate DataSet classes (code) to 
-    reproduce its data.  An object_path can be a python path or a file path
+    reproduce its data.  An OBJECT_PATH can be a python path or a file path
     or anything else that a handler can recognize.
+    
+    When targetting Python objects the OBJECT_PATH is dot separated.  
+    For example, targetting the Employee class in models.py would look like:
+    
+        directory_app.models.Employee
+    
     """
     parser = optparse.OptionParser(
         usage=(inspect.getdoc(dataset_generator)))
