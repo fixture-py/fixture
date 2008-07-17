@@ -63,7 +63,7 @@ setup(
     license = 'GNU Lesser General Public License (LGPL)',
     keywords = ('test testing tools unittest fixtures setup teardown '
                 'database stubs IO tempfile'),
-    url = 'http://code.google.com/p/fixture/',
+    url = 'http://farmdev.com/projects/fixture/',
     
     packages = find_packages(),
     
