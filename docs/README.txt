@@ -1,7 +1,5 @@
-to build docs run:
 
-python setup.py userdocs apidocs
+To build docs, install http://sphinx.pocoo.org/ and type `make html doctest`
 
-or you can view them online at:
+Docs are available online at http://farmdev.com/projects/fixture/docs/
 
-http://farmdev.com/projects/fixture/
