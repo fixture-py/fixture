@@ -7,6 +7,8 @@ Using Fixture To Test A Pylons + SQLAlchemy App
 
 This explains how to use ``fixture`` in the test suite of a simple Address Book application written in `Pylons`_ powered by two tables in a `SQLite`_ database via `SQLAlchemy`_.  If you're not already familiar with :ref:`Using DataSet <using-dataset>` and :ref:`Using LoadableFixture <using-loadable-fixture>` then you'll be OK but it wouldn't hurt to read those docs first.  The concepts here will probably also work with similar Python frameworks backed by `SQLAlchemy`_.  If you've got something working in another framework, please :ref:`let me know <index-contact>`.
 
+(This tutorial was written with Python 2.5.2, fixture 1.0, Pylons 0.9.6.2, and SQLAlchemy 0.4.6 but may work with other versions.)
+
 Creating An Address Book
 ------------------------
 
@@ -14,12 +16,12 @@ First, `install Pylons`_ and create a new app as described in `Getting Started`_
 
     $ paster create -t pylons addressbook
 
-if you want to follow along with the code below.  Next, configure your models to use ``SQLAlchemy`` as explained in `Using SQLAlchemy with Pylons`_.  You should have added the module ``addressbook/models/meta.py``, defined ``init_model(engine)`` in ``addressbook/models/__init__.py``, called ``init_model(engine)`` from ``environment.py``, and configured ``BaseController`` to call ``meta.Session.remove()``.
+Next, configure your models to use ``SQLAlchemy`` as explained in `Using SQLAlchemy with Pylons`_.  You should have added the module ``addressbook/models/meta.py``, defined ``init_model(engine)`` in ``addressbook/models/__init__.py``, set ``init_model(engine)`` to be called from ``environment.py``, and configured ``BaseController`` to call ``meta.Session.remove()``.
 
 Defining The Model
 ------------------
 
-Next step is to define the data model.  Place the following code just below the ``init_model`` code you added before to ``addressbook/model/__init__.py`` to define the `SQLAlchemy`_ tables and mappers to hold the Address Book data.  The complete module should look like::
+To work with the database you need to define a data model.  Place the following code just below the ``init_model()`` def you added before to ``addressbook/model/__init__.py``.  This defines the `SQLAlchemy`_ tables and mappers to hold the Address Book data.  The complete module should look like::
 
     import sqlalchemy as sa
     from sqlalchemy import orm
@@ -62,7 +64,7 @@ Next step is to define the data model.  Place the following code just below the 
         'my_addresses' : orm.relation(Address, secondary = t_addresses_people),
         })
 
-Per the `Pylons + SQLAlchemy documentation`_, you should also have this line in your ``development.ini`` file which configures your model to use a local SQLite database in the file ``db.sqlite`` in the ``addressbook`` project dir::
+Per the `Pylons + SQLAlchemy documentation`_, you should also have this line in your ``development.ini`` file which configures your model to use a local SQLite database (when you start things up the database gets saved to ``db.sqlite`` in the ``addressbook`` project dir)::
 
     [app:main]
     # ...
@@ -71,17 +73,17 @@ Per the `Pylons + SQLAlchemy documentation`_, you should also have this line in 
 Creating A Simple Controller
 ----------------------------
     
-To show a simple list of addresses create a ``book`` controller::
+Create a ``book`` controller to show a simple list of addresses::
 
     $ cd /path/to/addressbook
     $ paster controller book
 
-This will create ``addressbook/controllers/book.py`` and ``addressbook/tests/functional/test_book.py``.  Edit ``routing.py`` to make it the default page::
+This makes the files ``addressbook/controllers/book.py`` and ``addressbook/tests/functional/test_book.py``.  Edit ``routing.py`` to set it as the default page::
 
     # CUSTOM ROUTES HERE
     map.connect('', controller='book', action='index')
 
-(To avoid conflicts with the default page be sure to remove ``addressbook/public/index.html``.)
+(To avoid conflicts with the default page also be sure to remove ``addressbook/public/index.html``.)
 
 Edit ``addressbook/controllers/book.py`` to select some addressed from the database and render a template instead of returning "Hello World"::
 
@@ -99,8 +101,6 @@ Edit ``addressbook/controllers/book.py`` to select some addressed from the datab
             # available in your template
             c.persons = meta.Session.query(Person).join('my_addresses')
             return render("/book.mak")
-
-(For more info see `passing variables to templates <http://wiki.pylonshq.com/display/pylonsdocs/Getting+Started#passing-variables-to-templates>`_.)
 
 Add the template file as ``addressbook/templates/book.mak`` and write some Python code (via `Mako`_) to show some addresses::
 
@@ -121,13 +121,13 @@ Add the template file as ``addressbook/templates/book.mak`` and write some Pytho
 Adding Some Data Sets
 ---------------------
 
-Now you have a page that lists addresses but you don't have any address data.  Fixture provides an easy way to add data to your models for automated or exploratory testing.  Define the following code in a new module at ``addressbook/datasets/__init__.py`` using a naming scheme where each :class:`DataSet <fixture.dataset.DataSet>` subclass is camel case, named after a mapped class in the model but ending in ``Data`` (:ref:`more on styles <using-loadable-fixture-style>`)::
+You now have a page that lists addresses but you don't have any address data.  Fixture provides an easy way to add data to your models for automated or exploratory testing.  Define the following code in a new module at ``addressbook/datasets/__init__.py`` using a naming scheme where each :class:`DataSet <fixture.dataset.DataSet>` subclass is camel case, named after a mapped class in the model but ending in ``Data`` (:ref:`more on styles <using-loadable-fixture-style>`)::
     
     from fixture import DataSet
 
     class AddressData(DataSet):
-        class joe_in_kingston:
-            address = "111 Maple Ave, Kingston, Jamaica"
+        class joe_in_montego:
+            address = "111 St. James St, Montego Bay, Jamaica"
         class joe_in_ny:
             address = "111 S. 2nd Ave, New York, NY"
 
@@ -136,17 +136,19 @@ Now you have a page that lists addresses but you don't have any address data.  F
             name = "Joe Gibbs"
             email = "joe@joegibbs.com"
             my_addresses = [
-                AddressData.joe_in_kingston, 
+                AddressData.joe_in_montego, 
                 AddressData.joe_in_ny]
 
-This sets up one row to be inserted into the ``people`` table and two rows to be inserted into the ``addresses`` table -- the two addresses for our man Joe Gibbs.  See :ref:`Using DataSet <using-dataset>` for details.  Notice that the :ref:`Using DataSet <using-dataset>` classes mirror the properties we set up above in mappers.  This is because Fixture applies the DataSets to mapped classes ``Address`` and ``Person`` respectively to save the data.
+This sets up one row to be inserted into the ``people`` table and two rows to be inserted into the ``addresses`` / ``addresses_people`` tables, declaring two addresses for our man Joe Gibbs.  See :ref:`Using DataSet <using-dataset>` for more details.  
+
+Notice that the :class:`DataSet <fixture.dataset.DataSet>` classes mirror the properties we defined above for the mappers.  This is because Fixture applies the DataSets to the mapped classes ``Address`` and ``Person`` respectively to save the data.
 
 Loading Initial Data
 --------------------
 
-How do you fire up the dev server and see this data?  There is a way to do this by placing a few lines of code in ``addressbook/websetup.py``, a Pylons convention to hook into the ``paster setup-app devlopment.ini`` command.
+If you want to fire up the dev server and start using this data, you just need to place a few lines of code in ``addressbook/websetup.py``, a Pylons convention for hooking into the ``paster setup-app devlopment.ini`` command.
 
-If you haven't already done so per the `Pylons + SQLAlchemy documentation`_ you will also need some code here to create the tables in your database.  The full code for creating tables and inserting data looks like this in ``addressbook/websetup.py``::
+If you haven't already done so per the `Pylons + SQLAlchemy documentation`_ you will first need some code here to create the tables in your database.  The full code for creating tables and inserting data looks like this in ``addressbook/websetup.py``::
 
     """Setup the addressbook application"""
     import logging
@@ -210,13 +212,13 @@ And load up `http://127.0.0.1:5000 <http://127.0.0.1:5000>`_ in your browser.  Y
 
         <h3>Joe Gibbs</h3>
         <h4>joe@joegibbs.com</h4>
-        <h4>111 Maple Ave, Kingston, Jamaica</h4>
+        <h4>111 St. James St, Montego Bay, Jamaica</h4>
         <h4>111 S. 2nd Ave, New York, NY</h4>
+
+Cool!  But what you really wanted was to write some automated tests, right?  Fixture makes that just as easy.  You can read more about `Unit Testing Pylons Apps <http://wiki.pylonshq.com/display/pylonsdocs/Unit+Testing>`_ but as of right now you should already have the file ``addressbook/tests/functional/test_book.py``, ready and waiting for some test code.  
 
 Setting Up The Test Suite
 -------------------------
-
-Cool!  But what you really wanted was to write some automated tests, right?  Fixture makes that just as easy.  You can read more about `Unit Testing Pylons Apps <http://wiki.pylonshq.com/display/pylonsdocs/Unit+Testing>`_ but as of right now you should already have the file ``addressbook/tests/functional/test_book.py``, ready and waiting for some test code.  
 
 Before running any tests you need to configure the test suite to make a database connection and create tables when the tests start.  First, edit ``test.ini`` to tell your app to use a different database file so as not to disturb your development environment::
     
@@ -243,7 +245,7 @@ Before running any tests you need to configure the test suite to make a database
     
     # ...
 
-Also, the `Pylons + SQLAlchemy documentation`_ suggests creating and dropping tables once per test but this doesn't scale very well and Fixture already tears down data automatically.  Instead, add ``setup`` and ``teardown`` methods to ``addressbook/tests/__init__.py``.  These methods will be called by nose_ *just once* per every run of your test suite.  Here is the code to add to ``addressbook/tests/__init__.py``::
+Also, the `Pylons + SQLAlchemy documentation`_ suggests creating and dropping tables once per test but this doesn't scale very well and Fixture already tears down data automatically.  Instead, add ``setup`` and ``teardown`` methods to ``addressbook/tests/__init__.py``.  These methods will be called by nose_ just once per every run of your test suite.  Here is the code to add to ``addressbook/tests/__init__.py``::
     
     # additional imports ...
     from addressbook.model import meta
@@ -258,9 +260,9 @@ Also, the `Pylons + SQLAlchemy documentation`_ suggests creating and dropping ta
     
     # ...
 
-.. note:: Fixture deletes the rows *it* inserts.  If *your application* inserts rows of its own during a test then you will need to truncate the table or else go back to the strategy of creating / dropping tables once per test.
+.. note:: Fixture deletes the rows *it* inserts.  If *your application* inserts rows during a test then you will need to truncate the table or else go back to the strategy of creating / dropping tables per every test.
 
-Similar to how the `Pylons + SQLAlchemy documentation`_ suggests, you still, however, need to remove the session once *per test* so that objects do not "leak" from test to test.  This is done by making the ``setUp`` method of ``TestController`` in ``__init__.py`` look like this::
+Similar to how the `Pylons + SQLAlchemy documentation`_ suggests, you still, however, need to remove the session once *per test* so that objects do not "leak" from test to test.  This is done by making the ``setUp`` method of ``TestController`` in ``tests/__init__.py`` look like this::
 
     class TestController(TestCase):
         # ...
@@ -268,8 +270,8 @@ Similar to how the `Pylons + SQLAlchemy documentation`_ suggests, you still, how
         def setUp(self):
             meta.Session.remove() # clear any stragglers from last test
 
-Defining A Fixture And Testing With Data
-----------------------------------------
+Defining A Fixture
+------------------
 
 To start using data in your tests, first define a common fixture object to use throughout your test suite by adding this code to ``addressbook/tests/__init__.py``::
 
@@ -293,6 +295,9 @@ To start using data in your tests, first define a common fixture object to use t
 
 See :ref:`Using LoadableFixture <using-loadable-fixture>` for a detailed explanation of fixture objects.  
 
+Testing With Data
+-----------------
+
 Now let's start working with the :class:`DataSet <fixture.dataset.DataSet>` objects.  Edit ``addressbook/tests/functional/test_book.py`` so that it looks like this::
     
     from addressbook.model import meta, Person
@@ -315,7 +320,7 @@ Now let's start working with the :class:`DataSet <fixture.dataset.DataSet>` obje
             print response
             assert PersonData.joe_gibbs.name in response
             assert PersonData.joe_gibbs.email in response
-            assert AddressData.joe_in_kingston.address in response
+            assert AddressData.joe_in_montego.address in response
             assert AddressData.joe_in_ny.address in response
 
 Then run the test, which should pass::
@@ -355,7 +360,7 @@ You'll notice there is a print statement showing the actual response.  By defaul
     </h2>
         <h3>Joe Gibbs</h3>
         <h4>joe@joegibbs.com</h4>
-        <h4>111 Maple Ave, Kingston, Jamaica</h4>
+        <h4>111 St. James St, Montego Bay, Jamaica</h4>
         <h4>111 S. 2nd Ave, New York, NY</h4>
 
     --------------------- >> end captured stdout << ----------------------
@@ -368,20 +373,47 @@ You'll notice there is a print statement showing the actual response.  By defaul
 A Note About Session Mappers and Elixir
 ---------------------------------------
 
-warning about elixir
+If you are using `Session.mapper(TheClass, the_table) <http://www.sqlalchemy.org/docs/04/session.html#unitofwork_contextual_associating>`_ instead of just plain ol' ``mapper(...)`` then you are introducing a potential problem in that your objects will save themselves to the wrong session.  You'll need to fix it by setting ``save_on_init=False`` like this::
 
-.. 
+    meta.Session.mapper(Address, t_addresses, save_on_init=False)
+    meta.Session.mapper(Person, t_people, properties = {...}, save_on_init=False)
 
-    UnloadError: InvalidRequestError: Instance 'Person@0x227d130' is with key (<class 'addressbook.model.Person'>, (1,), None) already persisted with a different identity (with <addressbook.model.Person object at 0x227d130> in <PersonData at 0x2272450 with keys ['joe_gibbs']>)
+For convenience, this is the **default** behavior in `Elixir`_.  If working with `Elixir Entities <http://elixir.ematia.de/trac/wiki/TutorialDivingIn#a2.Averysimplemodel>`_ then construct your entities like this::
 
-setup-app
+    class Person(Entity):
+        name = Field(String(100))
+        email = Field(String(100))
+        has_many('addresses', of_kind='Address')
+        # :
+        using_mapper_options(save_on_init=False)
 
+The side effect is that your app will always have to call ``person.save_or_update()`` whenever it wants to write data.
+
+Why Do I Keep Getting InvalidRequestError?
+------------------------------------------
+
+If you've seen an error during unload like::
+    
+    UnloadError: InvalidRequestError: Instance 'Person@0x227d130' with key 
+    (<class 'addressbook.model.Person'>, (1,), None) is already persisted with a different identity 
+    (with <addressbook.model.Person object at 0x227d130> in 
+    <PersonData at 0x2272450 with keys ['joe_gibbs']>)
+
+then it probably means you have either called ``data.setup()`` twice without calling ``data.teardown()`` in between or else you somehow saved the same ``Person()`` object to two different sessions.  If using an in-memory database be sure you have commented out the code that runs ``setup-app`` in ``tests/__init__.py`` (see above).  You also might see this if you forget to set ``save_on_init=False`` to your mapped classes (also see above).
+
+Example Source
+--------------
+
+That's it!  Have fun.
+
+This code is available from the `fixture code repository <http://code.google.com/p/fixture/source/browse>`_ in ``fixture/examples/pylons_example/addressbook``.
 
 .. _install Pylons: http://wiki.pylonshq.com/display/pylonsdocs/Installing+Pylons
 .. _Getting Started: http://wiki.pylonshq.com/display/pylonsdocs/Getting+Started
 .. _Pylons + SQLAlchemy documentation: http://wiki.pylonshq.com/display/pylonsdocs/Using+SQLAlchemy+with+Pylons
 .. _Using SQLAlchemy with Pylons: http://wiki.pylonshq.com/display/pylonsdocs/Using+SQLAlchemy+with+Pylons
 .. _SQLAlchemy: http://www.sqlalchemy.org/
+.. _Elixir: http://elixir.ematia.de/
 .. _Pylons: http://pylonshq.com/
 .. _SQLite: http://www.sqlite.org/
 .. _nose: http://somethingaboutorange.com/mrl/projects/nose/

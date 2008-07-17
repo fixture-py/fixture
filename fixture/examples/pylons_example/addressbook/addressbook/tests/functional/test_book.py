@@ -4,8 +4,8 @@ from addressbook.datasets import PersonData, AddressData
 from addressbook.tests import dbfixture
 from addressbook.tests import *
 
-class TestBookController(TestController):
-    
+class TestBookController(TestController):        
+
     def setUp(self):
         super(TestBookController, self).setUp()
         self.data = dbfixture.data(PersonData) # AddressData loads implicitly
@@ -20,6 +20,5 @@ class TestBookController(TestController):
         print response
         assert PersonData.joe_gibbs.name in response
         assert PersonData.joe_gibbs.email in response
-        assert AddressData.joe_in_kingston.address in response
+        assert AddressData.joe_in_montego.address in response
         assert AddressData.joe_in_ny.address in response
-        
