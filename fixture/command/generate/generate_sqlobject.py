@@ -89,7 +89,10 @@ class SQLObjectFixtureSet(FixtureSet):
         cols = [self.meta.style.idForTable(self.meta.table)]
         cols.extend([self.attr_to_db_col(c) for c in self.meta.columnList])
     
-        vals = [getattr(self.data, self.meta.idName)]
+        # even though self.meta.idName tells us the real col name, when 
+        # accessing object properties sqlobject wants you to say object.id,
+        # for which it proxies the real id column name
+        vals = [getattr(self.data, 'id')]
         vals.extend([self.get_col_value(c.name) for c in self.meta.columnList])
     
         self.data_dict = dict(zip(cols, vals))
@@ -131,7 +134,7 @@ class SQLObjectFixtureSet(FixtureSet):
     
     def set_id(self):
         """returns id of this set (the primary key value)."""
-        return getattr(self.data, self.meta.idName)
+        return getattr(self.data, 'id') # id is a magic property in sqlobject, see __init__
     
     def understand_columns(self):
         """get an understanding of what columns are what, foreign keys, etc."""
