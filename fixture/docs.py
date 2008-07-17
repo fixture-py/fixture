@@ -7,6 +7,7 @@ import os, sys
 from os import path
 import optparse
 import subprocess
+import re
 import inspect, pydoc, doctest
 from docutils import statemachine
 from docutils.parsers.rst import directives
@@ -60,21 +61,22 @@ def shell(
         content_offset, block_text, state, state_machine):
     """insert a shell command's raw output in a pre block, like::
         
-        | .. shell:: mycmd --arg 1
+        | .. shell:: 
         |    :run_on_method: some.module.main
+        | 
+        |    mycmd --arg 1
     
     Also:
     
-        | .. shell:: mycmd --arg 1
+        | .. shell::
         |    :setup: some.module.setup
         |    :teardown: some.module.teardown
+        | 
+        |    mycmd --arg 1
     
     """
-    cmd = arguments[0]
-    # if options.get('doctest_module_first'):
-    #     obj = get_object_from_path(options['doctest_module_first'])
-    #     import doctest
-    #     doctest.testmod(obj, globs=globals())
+    printable_cmd_parts = content
+    cmd = ' '.join([c.replace("\\", "") for c in content])
     
     if options.get('setup'):
         setup = get_object_from_path(options['setup'])
@@ -92,7 +94,8 @@ def shell(
                 s = s[1:-1]
             return s
         cmdlist = []
-        for part in cmd.split(' '):
+        # get args with whitespace normalized:
+        for part in re.split(r'\s*', cmd.strip()):
             part = decode(part)
             part = unquot(part)
             e = part.find('=')
@@ -138,7 +141,7 @@ def shell(
     # just create a pre block and fill it with command output...
     pad = "  "
     output = ["\n::\n\n"]
-    output.append(pad + "$ " + cmd + "\n")
+    output.append(pad + "$ " + ("%s\n" % pad).join(printable_cmd_parts) + "\n")
     while 1:
         line = stdout.readline()
         if not line:
@@ -152,13 +155,13 @@ def shell(
     state_machine.insert_input(include_lines, None)
     return []
 
-shell.arguments = (1, 0, 1)
+shell.arguments = (0, 0, 1)
 shell.options = {
     # 'doctest_module_first': str, 
     'setup': str,
     'teardown': str,
     'run_on_method': str}
-shell.content = 0
+shell.content = 1
 
 directives.register_directive('shell', shell)
 

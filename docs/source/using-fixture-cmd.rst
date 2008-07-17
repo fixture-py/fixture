@@ -14,16 +14,18 @@ There are several issues you may run into while working with fixtures:
 
 ``fixture`` is a shell command to address these and other issues.  It gets installed along with this module.  Specifically, the ``fixture`` command accepts a path to a single object and queries that object using the command options.  The output is python code that you can use in a test to reload the data retrieved by the query.  
 
+Usage
+~~~~~
+
+.. shell:: 
+   :run_on_method: fixture.command.generate.main
+   
+   fixture --help
+
 An Example With SQLAlchemy 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. testsetup:: command
-    
-    import os
-    if os.path.exists('/tmp/fixture_example.db'):
-        os.unlink('/tmp/fixture_example.db')
-
-Here is a data model defined in `SQLAlchemy <http://www.sqlalchemy.org/>`_ code:
+Here is a data model defined in `SQLAlchemy <http://www.sqlalchemy.org/>`_ code.  (For complete code see ``fixture/examples/db/sqlalchemy_examples.py``.)
 
 .. doctest:: command
 
@@ -46,25 +48,32 @@ Here is a data model defined in `SQLAlchemy <http://www.sqlalchemy.org/>`_ code:
     >>> class Book(object):
     ...     pass
     ...     
-    >>> m = mapper(Author, authors) # doctest:+ELLIPSIS
-    >>> m = mapper(Book, books, properties={
-    ...     'author': relation(Author)
-    ... })
+    >>> def setup_mappers():
+    ...     mapper(Author, authors)
+    ...     mapper(Book, books, properties={
+    ...         'author': relation(Author)
+    ...     })
+    ... 
+    >>> def connect(dsn):
+    ...     metadata.bind = create_engine(dsn)
+    ... 
     >>> 
 
-After inserting some data, it would be possible to run a command that points at the ``Book`` object, sends it a SQL query with a custom where clause, and turns the record sets into ``DataSet`` classes:
+After inserting some data, it would be possible to run a command that points at the ``Book`` object.  The above command uses ``Book`` to send a select query with a where clause ``WHERE title='Dune'``, and turns the record sets into ``DataSet`` classes:
 
-.. shell:: fixture --dsn=sqlite:////tmp/fixture_example.db --where="title='Dune'" fixture.examples.db.sqlalchemy_examples.Book
-   :run_on_method: fixture.command.generate.main
+.. shell:: 
    :setup:         fixture.docs.setup_command_data
+   :teardown:      fixture.test.teardown_examples
+   
+   fixture fixture.examples.db.sqlalchemy_examples.Book \
+           --dsn=sqlite:////tmp/fixture_example.db \
+           --where="title='Dune'" \
+           --connect=fixture.examples.db.sqlalchemy_examples:connect \
+           --setup=fixture.examples.db.sqlalchemy_examples:setup_mappers
 
-Notice that we only queried the ``books`` table but we got back all the necessary foreign keys that were needed to reproduce the data (in this case, the ``authors`` data).
+Notice that we queried the ``Book`` object but got back Table objects.  Also notice that all foreign keys were followed to reproduce the complete chain of data (in this case, the ``authors`` table data).
 
-Usage
-~~~~~
-
-.. shell:: fixture --help
-   :run_on_method: fixture.command.generate.main
+Also notice that several hooks were used, one to connect the ``metadata`` object by DSN and another to setup the mappers.  See *Usage* above for more information on the ``--connect`` and ``--setup`` options.
    
 Creating a custom data handler
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
