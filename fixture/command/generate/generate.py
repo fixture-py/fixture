@@ -2,74 +2,7 @@
 
 """generate DataSet classes from real data.
 
-.. contents:: :local:
-
-There are several issues you may run into while working with fixtures:  
-
-1. The data model of a program is usually an implementation detail.  It's bad practice to "know" about implementation details in tests because it means you have to update your tests when those details change; you should only have to update your tests when an interface changes.  
-2. Data accumulates very fast and there is already a useful tool for slicing and dicing data: the database!  Hand-coding DataSet classes is not always the way to go.
-3. When regression testing or when trying to reproduce a bug, you may want to grab a "snapshot" of the existing data.
-
-``fixture`` is a shell command to address these and other issues.  It gets installed along with this module.  Specifically, the ``fixture`` command accepts a path to a single object and queries that object using the command options.  The output is python code that you can use in a test to reload the data retrieved by the query.  
-
-Usage
-~~~~~
-
-.. shell:: fixture --help
-   :run_on_method: fixture.command.generate.main
-
-An example
-~~~~~~~~~~
-
-Let's set up a database and insert some data (using `sqlalchemy code`_) so we can run the fixture command::
-
-    >>> from sqlalchemy import *
-    >>> from sqlalchemy.orm import *
-    >>> from fixture.examples.db.sqlalchemy_examples import (
-    ...                                 Author, authors, Book, books, metadata)
-    >>> metadata.bind = create_engine('sqlite:////tmp/fixture_generate.db')
-    >>> metadata.create_all()
-    >>> mapper(Book, books) # doctest:+ELLIPSIS
-    <sqlalchemy.orm.mapper.Mapper object at ...>
-    >>> mapper(Author, authors, properties={'books': relation(Book, backref='author')}) # doctest:+ELLIPSIS
-    <sqlalchemy.orm.mapper.Mapper object at ...>
-    >>> Session = sessionmaker(bind=metadata.bind, autoflush=True, transactional=True)
-    >>> session = Session()
-
-::
-
-    >>> frank = Author()
-    >>> frank.first_name = "Frank"
-    >>> frank.last_name = "Herbert"
-    >>> session.save(frank)
-
-::
-
-    >>> dune = Book()
-    >>> dune.title = "Dune"
-    >>> dune.author = frank
-    >>> session.save(dune)
-    
-    >>> session.commit()
-
-
-It's now possible to run a command that points at our ``Book`` object, sends it a SQL query with a custom where clause, and turns the record sets into ``DataSet`` classes:
-
-.. shell:: fixture --dsn=sqlite:////tmp/fixture_example.db --where="title='Dune'" fixture.examples.db.sqlalchemy_examples.Book
-   :run_on_method: fixture.command.generate.main
-
-Notice that we only queried the ``Book`` object but we got back all the necessary foreign keys that were needed to reproduce the data (in this case, the ``Author`` data).
-
-Creating a custom data handler
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-No documentation yet
-
-.. api_only::
-   The fixture.command.generate module
-   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. _sqlalchemy code: http://sqlalchemy.org
+See :ref:`Using the fixture command <using-fixture-command>` for examples.
 
 """
 

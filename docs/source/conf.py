@@ -14,68 +14,8 @@
 import sys, os
 
 # register some docutils directives
+# (there's probably a better way to do this)
 import fixture.docs
-
-# hmmm, needs some data to execute some of the documentation:
-def setup_doc_data():
-    import os
-    from fixture import SQLObjectFixture
-    from fixture.examples.db import sqlobject_examples
-    from sqlalchemy import (
-        MetaData, create_engine, Table, Integer, String, ForeignKey, Column)
-    from sqlalchemy.orm import (scoped_session, sessionmaker, mapper, relation)
-    from fixture import DataSet
-    from fixture import SQLAlchemyFixture
-    
-    if os.path.exists('/tmp/fixture_example.db'):
-        os.unlink('/tmp/fixture_example.db')
-    if os.path.exists('/tmp/fixture_generate.db'):
-        os.unlink('/tmp/fixture_generate.db')
-    dbfixture = SQLObjectFixture(
-        dsn="sqlite:/:memory:", env=sqlobject_examples)
-    
-    engine = create_engine('sqlite:////tmp/fixture_example.db')
-    metadata = MetaData()
-    metadata.bind = engine
-    Session = scoped_session(sessionmaker(bind=metadata.bind, autoflush=True, transactional=True))
-    session = Session()
-    authors = Table('authors', metadata,
-        Column('id', Integer, primary_key=True),
-        Column('first_name', String(60)),
-        Column('last_name', String(60)))
-    
-    class Author(object):
-        pass
-    
-    mapper(Author, authors) 
-    books = Table('books', metadata, 
-        Column('id', Integer, primary_key=True),
-        Column('title', String(30)),
-        Column('author_id', Integer, ForeignKey('authors.id')))
-    
-    class Book(object):
-        pass
-    
-    mapper(Book, books, properties={
-        'author': relation(Author, backref='books')
-    })
-    metadata.create_all()
-    dbfixture = SQLAlchemyFixture(
-        env={'BookData': Book, 'AuthorData': Author},
-        engine=metadata.bind )
-    
-    class AuthorData(DataSet):
-        class frank_herbert:
-            first_name = "Frank"
-            last_name = "Herbert"
-    class BookData(DataSet):
-        class dune:
-            title = "Dune"
-            author = AuthorData.frank_herbert
-    data = dbfixture.data(AuthorData, BookData)
-    data.setup()
-    
-setup_doc_data()
 
 # If your extensions are in another directory, add it here. If the directory
 # is relative to the documentation root, use os.path.abspath to make it

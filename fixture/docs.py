@@ -21,9 +21,6 @@ try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
-    
-state_is_api = False
-
 
 heredir = path.dirname(__file__)
 srcdir = path.join(heredir, '..', 'docs')
@@ -58,65 +55,19 @@ def get_object_from_path(rawpath):
         obj = mod
     return obj
 
-def include_docstring(  
-        name, arguments, options, content, lineno,
-        content_offset, block_text, state, state_machine):
-    """include reStructuredText from a docstring.  use the directive like:
-        
-        | .. include_docstring:: path.to.module
-        | .. include_docstring:: path.to.module:SomeClass
-        | .. include_docstring:: path.to.module:SomeClass.method
-    
-    """
-    rawpath = arguments[0]
-    obj = get_object_from_path(rawpath)
-    source = inspect.getdoc(obj)
-    if hasattr(obj, '__module__'):
-        mod = obj.__module__
-    else:
-        mod = obj # big assumption :/
-    
-    ## grrr, this needs to run so that the shell documentation passes
-    doctest.run_docstring_examples(source, mod.__dict__)
-    
-    if source is None:
-        raise ValueError("cannot find docstring for %s" % obj)
-    summary, body = pydoc.splitdoc(source)
-    
-    # nabbed from docutils.parsers.rst.directives.misc.include
-    include_lines = statemachine.string2lines(body, convert_whitespace=1)
-    state_machine.insert_input(include_lines, None)
-    return []
-    # return [publish_doctree(body)]
-
-include_docstring.arguments = (1, 0, 0)
-include_docstring.options = {}
-include_docstring.content = 0
-
-directives.register_directive('include_docstring', include_docstring)
-
-def api_only(
-        name, arguments, options, content, lineno,
-        content_offset, block_text, state, state_machine):
-    """only include a block of rst if generating API documentation."""
-    if state_is_api:
-        include_lines = statemachine.string2lines("\n".join(content),
-                                            convert_whitespace=1)
-        state_machine.insert_input(include_lines, None)
-    return []
-
-api_only.arguments = (0, 0, 0)
-api_only.options = {}
-api_only.content = 1
-directives.register_directive('api_only', api_only)
-
-
 def shell(  
         name, arguments, options, content, lineno,
         content_offset, block_text, state, state_machine):
     """insert a shell command's raw output in a pre block, like::
         
         | .. shell:: mycmd --arg 1
+        |    :run_on_method: some.module.main
+    
+    Also:
+    
+        | .. shell:: mycmd --arg 1
+        |    :setup: some.module.setup
+        |    :teardown: some.module.teardown
     
     """
     cmd = arguments[0]
@@ -124,6 +75,11 @@ def shell(
     #     obj = get_object_from_path(options['doctest_module_first'])
     #     import doctest
     #     doctest.testmod(obj, globs=globals())
+    
+    if options.get('setup'):
+        setup = get_object_from_path(options['setup'])
+        setup()
+        
     if options.get('run_on_method'):
         main = get_object_from_path(options['run_on_method'])
         
@@ -175,6 +131,10 @@ def shell(
         raise RuntimeError("%s\n%s (exit: %s)" % (
                             stderr.read(), cmd, returncode))
     
+    if options.get('teardown'):
+        setup = get_object_from_path(options['teardown'])
+        setup()
+        
     # just create a pre block and fill it with command output...
     pad = "  "
     output = ["\n::\n\n"]
@@ -195,8 +155,49 @@ def shell(
 shell.arguments = (1, 0, 1)
 shell.options = {
     # 'doctest_module_first': str, 
+    'setup': str,
+    'teardown': str,
     'run_on_method': str}
 shell.content = 0
 
 directives.register_directive('shell', shell)
+
+def setup_command_data():
+    import os
+    from fixture import SQLObjectFixture
+    from fixture.examples.db import sqlobject_examples
+    from sqlalchemy import (
+        MetaData, create_engine, Table, Integer, String, ForeignKey, Column)
+    from sqlalchemy.orm import (scoped_session, sessionmaker, mapper, relation)
+    from fixture import DataSet
+    from fixture import SQLAlchemyFixture
+    
+    if os.path.exists('/tmp/fixture_example.db'):
+        os.unlink('/tmp/fixture_example.db')
+    if os.path.exists('/tmp/fixture_generate.db'):
+        os.unlink('/tmp/fixture_generate.db')
+    
+    import sqlalchemy as sa
+    from sqlalchemy import orm
+    from fixture.examples.db.sqlalchemy_examples import (
+                                    Author, authors, Book, books, metadata)
+    metadata.bind = sa.create_engine('sqlite:////tmp/fixture_example.db')
+    metadata.create_all()
+    orm.mapper(Book, books)
+    orm.mapper(Author, authors, properties={'books': orm.relation(Book, backref='author')})
+    Session = orm.sessionmaker(bind=metadata.bind, autoflush=True, transactional=True)
+    session = Session()
+
+    frank = Author()
+    frank.first_name = "Frank"
+    frank.last_name = "Herbert"
+    session.save(frank)
+
+    dune = Book()
+    dune.title = "Dune"
+    dune.author = frank
+    session.save(dune)
+
+    session.commit()
+    
     
