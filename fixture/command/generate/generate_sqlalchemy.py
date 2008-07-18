@@ -255,12 +255,16 @@ class SQLAlchemySessionMapperHandler(SQLAlchemyMappedClassBase):
     def recognizes(object_path, obj=None):
         if not SQLAlchemyHandler.recognizes(object_path, obj=obj):
             return False
-            
-        from sqlalchemy.orm.mapper import Mapper
         
-        if hasattr(obj, 'query'): 
-            if hasattr(obj.query, 'mapper') and isinstance(obj.query.mapper, Mapper):
-                return True
+        if not SQLAlchemyMappedClassHandler.recognizes(object_path, obj=obj):
+            return False
+        
+        # OK, so it is a mapped class
+        if (hasattr(obj, 'query') and 
+                getattr(obj.query, '__module__', '').startswith('sqlalchemy')): 
+            # sort of hoky but 0.5 proxies query and 
+            # query.mapper so we can't check types
+            return True
         
         return False
         
@@ -305,11 +309,15 @@ class SQLAlchemyMappedClassHandler(SQLAlchemyMappedClassBase):
     def recognizes(object_path, obj=None):
         if not SQLAlchemyHandler.recognizes(object_path, obj=obj):
             return False
-        if hasattr(obj, 'c'):
-            if hasattr(obj.c, '__module__') and \
-                    obj.c.__module__.startswith('sqlalchemy'):
-                # eeesh
-                return True
+        
+        from sqlalchemy.orm import class_mapper
+        try:
+            class_mapper(obj)
+        except:
+            # could raise InvalidRequestError or AttributeError or who knows what else
+            return False
+        else:
+            return True
         
         return False
         
