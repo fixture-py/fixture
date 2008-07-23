@@ -14,7 +14,11 @@ import logging
 
 log = logging.getLogger('fixture.loadable.sqlalchemy_loadable')
 
+# try:
 from sqlalchemy.orm import sessionmaker, scoped_session
+# except ImportError:
+#     Session = None
+# else:
 Session = scoped_session(sessionmaker(autoflush=False, transactional=True), scopefunc=lambda:__name__)
 
 def negotiated_medium(obj, dataset):
@@ -89,7 +93,9 @@ class SQLAlchemyFixture(DBLoadableFixture):
     Medium = staticmethod(negotiated_medium)
     
     def __init__(self, engine=None, connection=None, session=None, scoped_session=None, **kw):
-        from sqlalchemy.orm import sessionmaker # ensure import error
+        # ensure import error by simulating what would happen in the global module :
+        from sqlalchemy.orm import sessionmaker, scoped_session as sa_scoped_session 
+        
         DBLoadableFixture.__init__(self, **kw)
         self.engine = engine
         self.connection = connection

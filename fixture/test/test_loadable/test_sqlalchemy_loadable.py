@@ -333,17 +333,20 @@ class TestElixir(unittest.TestCase):
     
     @attr(functional=1)
     def test_setup_then_teardown(self):
-        from elixir import objectstore
+        try:
+            from elixir import session as elixir_session
+        except ImportError:
+            from elixir import objectstore as elixir_session
         
-        eq_(len(objectstore.query(self.CategoryEntity).all()), 0)
+        eq_(len(elixir_session.query(self.CategoryEntity).all()), 0)
         
         data = self.fixture.data(self.CategoryData)
         data.setup()
         
-        eq_(len(objectstore.query(self.CategoryEntity).all()), 2)
+        eq_(len(elixir_session.query(self.CategoryEntity).all()), 2)
         
         data.teardown()
-        eq_(objectstore.query(self.CategoryEntity).all(), [])
+        eq_(elixir_session.query(self.CategoryEntity).all(), [])
 
 class TestTableObjects(unittest.TestCase):
     class CategoryData(DataSet):
