@@ -30,13 +30,6 @@ def setup_config(command, filename, section, vars):
     db = SQLAlchemyFixture(
             env=model, style=NamedDataStyle(),
             engine=meta.engine)
-    
-    # suppress fixture's own debug output 
-	# (activated by Paste) 
-    fl = logging.getLogger("fixture.loadable")
-    fl.setLevel(logging.CRITICAL)
-    fl = logging.getLogger("fixture.loadable.tree")
-    fl.setLevel(logging.CRITICAL)
             
     data = db.data(PersonData)
     log.info("Inserting initial data")
