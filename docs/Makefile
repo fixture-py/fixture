@@ -15,6 +15,11 @@ ALLSPHINXOPTS   = -d build/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 
 test:
 	cd ..; nosetests 
+	
+docs_live:
+	tar -czf ./build/fixture-docs.tgz build/html 
+	scp ./build/fixture-docs.tgz fisk.rcache.com:~/www/farmdev/projects/fixture/
+	@echo "uploaded docs"
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
