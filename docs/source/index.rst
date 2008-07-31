@@ -141,6 +141,25 @@ Please submit any issues, patches, failing tests, and/or bugs using the `Issue
 Tracker`_ on the `fixture project site`_.  If your code is used, your contribution will be
 documented.
 
+---------
+Changelog
+---------
+
+- 1.1
+
+  - Added support for loading data into the :mod:`Google App Engine Datastore <fixture.loadable.google_datastore_loadable>`
+  - Added :func:`fixture.util.reset_log_level`
+  - CHANGED the default log level to CRITICAL for all internal fixture logs so that they don't output gobs of debug code when some other module adds a handler to the root logger.
+  - A couple bugs fixed
+
+- 1.0
+  
+  - First release where :mod:`SQLAlchemy components <fixture.loadable.sqlalchemy_loadable>` worked well for 0.4, everything else was pretty stable
+
+- 0.9 
+  
+  - First release where everything "kinda worked"
+
 .. _Testing In Python: http://lists.idyll.org/listinfo/testing-in-python
 .. _issues: http://code.google.com/p/fixture/issues/list
 .. _Issue Tracker: http://code.google.com/p/fixture/issues/list
