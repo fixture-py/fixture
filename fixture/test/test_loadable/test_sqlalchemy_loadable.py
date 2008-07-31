@@ -11,7 +11,6 @@ from fixture.test import conf, env_supports, attr
 from fixture.test.test_loadable import *
 from fixture.examples.db.sqlalchemy_examples import *
 from fixture.loadable.sqlalchemy_loadable import *
-from sqlalchemy.exceptions import InvalidRequestError
 
 def setup():
     if not env_supports.sqlalchemy: raise SkipTest
@@ -446,6 +445,7 @@ class TestTableObjectsExplicitConn(object):
 
 
 def test_fixture_can_be_disposed():
+    from sqlalchemy.exceptions import InvalidRequestError
     engine = create_engine(conf.LITE_DSN)
     metadata.bind = engine
     metadata.create_all()

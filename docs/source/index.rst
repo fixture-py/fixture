@@ -25,6 +25,8 @@ For more info, this concept is explained in the wikipedia article, `Test Fixture
 
 .. _Steven F. Lott, summarizing PyCon 2007: http://homepage.mac.com/s_lott/iblog/architecture/C1597055042/E20070226153515/index.html
 
+.. _download-fixture:
+
 ------------------
 Download / Install
 ------------------
@@ -102,6 +104,7 @@ Now, on to the knitty gritty details ...
    using-dataset
    using-loadable-fixture
    using-fixture-with-pylons
+   using-fixture-with-appengine
    using-fixture-cmd
    using-temp-io
    

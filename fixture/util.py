@@ -112,6 +112,23 @@ def with_debug(*channels, **kw):
             stop_debug(ch)
     return with_setup(setup=setup, teardown=teardown)
 
+def reset_log_level(level=logging.CRITICAL, channels=(
+                                            "fixture.loadable",
+                                            "fixture.loadable.tree")):
+    """
+    Resets the level on all fixture logs.
+    
+    You may need to call this when other applications 
+    reset the root logger's log level.
+    
+    Calling this with no args sets all logs to logging.CRITICAL
+    which should keep them quiet
+    
+    Added in version 1.1
+    """
+    for ch in channels:
+        logging.getLogger(ch).setLevel(level)
+
 def start_debug(channel, stream=sys.stdout, handler=None, level=logging.DEBUG):
     """
     A shortcut to start logging a channel to a stream.
@@ -140,7 +157,7 @@ def start_debug(channel, stream=sys.stdout, handler=None, level=logging.DEBUG):
     Keyword Arguments:
     
     ``stream``
-        stream to create a loggin.StreamHandler with.  defaults to stdout
+        stream to create a loggin.StreamHandler with.  defaults to stdout.
     
     ``handler``
         a preconfigured handler to add to the log
@@ -148,31 +165,35 @@ def start_debug(channel, stream=sys.stdout, handler=None, level=logging.DEBUG):
     ``level``
         a logging level to set, default is logging.DEBUG
     
+    
+    .. note:: 
+        Other applications might add a handler to the root logger, 
+        in which case you can't turn off debug output without messing 
+        with the root logger.
+    
+    
     """
     log = logging.getLogger(channel)
-    stop_debug(channel)
     if not handler:
         handler = logging.StreamHandler(stream)
     handler.setFormatter(logging.Formatter('%(name)s: %(message)s'))
+    for h in log.handlers:
+        log.removeHandler(h)
     log.addHandler(handler)
     log.setLevel(level)
 
-def stop_debug(channel):
+def stop_debug(channel=None):
     """The reverse of :func:`start_debug`."""
-    log = logging.getLogger(channel)
-    # reset all handlers (are you going to kill me?)
-    for h in log.handlers:
-        if not issubclass(h.stream.__class__, _dummy_stream):
-            log.removeHandler(h)
+    reset_log_level(channels=[channel])
 
 class _dummy_stream(object):
     def write(self, *a,**kw): pass
     def flush(self, *a, **kw): pass
 
-def _mklog(channel, default_level=logging.INFO, default_stream=None):
+def _mklog(channel, default_level=logging.CRITICAL, default_stream=None):
     """
-    returns a log object that does nothing until something adds a 
-    useful handler to it
+    returns a log object that does nothing until something 
+    calls start_debug()
     """
     log = logging.getLogger(channel)
     log.setLevel(default_level)

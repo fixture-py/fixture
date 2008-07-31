@@ -95,6 +95,15 @@ DataSet classes can be loaded into `SQLObject classes`_ via the `sqlobject`_ mod
 
 See :class:`SQLObjectFixture API <fixture.loadable.sqlobject_loadable.SQLObjectFixture>` for details.
 
+Google Datastore
+++++++++++++++++
+
+To load data for testing a `Google App Engine`_ site you'll need the `SDK <http://code.google.com/appengine/downloads.html>`_ installed locally.
+
+For a complete example, see :ref:`Using Fixture With Google App Engine <using-fixture-with-appengine>`.
+
+For reference, also see :class:`GoogleDatastoreFixture API <fixture.loadable.google_datastore_loadable.GoogleDatastoreFixture>`.
+
 An Example of Loading Data Using SQLAlchemy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -148,6 +157,7 @@ Next set up the table and mapper for books with each book having an author ...
 
 Consult the `SQLAlchemy`_ documentation for further examples of data mapping.
 
+.. _Google App Engine: http://code.google.com/appengine/
 .. _sqlalchemy: http://www.sqlalchemy.org/
 .. _SQLAlchemy: http://www.sqlalchemy.org/
 .. _Table: http://www.sqlalchemy.org/docs/tutorial.myt#tutorial_schemasql_table_creating

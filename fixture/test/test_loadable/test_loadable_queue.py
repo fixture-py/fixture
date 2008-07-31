@@ -14,7 +14,7 @@ class TestComplexLoadQueue(unittest.TestCase):
         stop_debug("fixture.loadable.tree")
         pass
     def test_circular_dependencies(self):
-        """test_nested_dependencies
+        """TestComplexLoadQueue.test_circular_dependencies
         
         ensures the order for unloading objects is correct when objects depend 
         other objects in circular ways.  this long chain was causing a strange 

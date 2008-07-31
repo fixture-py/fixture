@@ -1,5 +1,8 @@
 
 """each attribute indicates a supported module or feature."""
+
+import os
+import sys
     
 def module_exists(mod):
     try:
