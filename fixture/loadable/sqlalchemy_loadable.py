@@ -14,12 +14,12 @@ import logging
 
 log = logging.getLogger('fixture.loadable.sqlalchemy_loadable')
 
-# try:
-from sqlalchemy.orm import sessionmaker, scoped_session
-# except ImportError:
-#     Session = None
-# else:
-Session = scoped_session(sessionmaker(autoflush=False, transactional=True), scopefunc=lambda:__name__)
+try:
+    from sqlalchemy.orm import sessionmaker, scoped_session
+except ImportError:
+    Session = None
+else:
+    Session = scoped_session(sessionmaker(autoflush=False, transactional=True), scopefunc=lambda:__name__)
 
 def negotiated_medium(obj, dataset):
     if is_table(obj):
