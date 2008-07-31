@@ -100,9 +100,18 @@ Google Datastore
 
 To load data for testing a `Google App Engine`_ site you'll need the `SDK <http://code.google.com/appengine/downloads.html>`_ installed locally.
 
+DataSet classes can be loaded into `Datastore Entities`_ directly.
+
+.. doctest:: loading
+
+    >>> from fixture import GoogleDatastoreFixture
+    >>> datafixture = GoogleDatastoreFixture(env=globals())
+    
 For a complete example, see :ref:`Using Fixture With Google App Engine <using-fixture-with-appengine>`.
 
 For reference, also see :class:`GoogleDatastoreFixture API <fixture.loadable.google_datastore_loadable.GoogleDatastoreFixture>`.
+
+.. _Datastore Entities: http://code.google.com/appengine/docs/datastore/entitiesandmodels.html
 
 An Example of Loading Data Using SQLAlchemy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
