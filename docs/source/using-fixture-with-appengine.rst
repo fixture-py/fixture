@@ -62,7 +62,7 @@ However, the result won't be very exciting because there aren't any blog entries
 Load Some Initial Data
 ----------------------
 
-The ``fixture`` module lets you define :class:`DataSet <fixture.dataset.DataSet>` classes and load them into a local datastore for automated or experimental testing.  Some sample data is defined in ``gblog/tests/datasets.py``::
+The ``fixture`` module lets you define :class:`DataSet <fixture.dataset.DataSet>` classes and load them into a local datastore for automated or exploratory testing.  Some sample data is defined in ``gblog/tests/datasets.py``::
 
     from fixture import DataSet
 
@@ -93,7 +93,7 @@ The ``fixture`` module lets you define :class:`DataSet <fixture.dataset.DataSet>
 
 Using :class:`fixture.style.NamedDataStyle` these DataSet classes will map directly to the models defined above, ``Entry`` and ``Comment``, thus creating one new entry entitled "Monday Was Great" with two comments.
 
-To load this up so you can see it in the dev site, the example code includes a script named ``load_data_locally.py``.  The script sets up the App Engine sandbox (code not shown) then loads data with an instance of :class:`GoogleDatastoreFixture <fixture.loadable.google_datastore_loadable.GoogleDatastoreFixture>`::
+To load this up so you can see it in the dev site, you can run a script named ``load_data_locally.py`` which is part of the example code.  The script sets up the App Engine sandbox (code not shown) then loads data with an instance of :class:`GoogleDatastoreFixture <fixture.loadable.google_datastore_loadable.GoogleDatastoreFixture>`::
     
     from gblog import models
     from tests import datasets
@@ -120,7 +120,7 @@ Open http://localhost:8080/ in your browser and you should see a rendering of th
 Testing A Google App Engine Site
 --------------------------------
 
-That's great but you probably are more interested in loading sample data for testing.  To test an App Engine site I'm going to suggest first installing some 3rd party tools to make life easier:
+That's nice but you probably are more interested in loading sample data in a test suite.  To test an App Engine site I'm going to suggest first installing some 3rd party tools to make life easier:
 
 - `WebTest`_
    
@@ -176,6 +176,6 @@ Here's what ``tests/test_list_entries.py`` looks like::
             assert CommentData.monday_liked_it.comment in response
             assert CommentData.monday_sucked.comment in response
 
-A :class:`GoogleDatastoreFixture <fixture.loadable.google_datastore_loadable.GoogleDatastoreFixture>` is created with an ``env`` containing the Datastore Entities defined above (``gblog/models.py``).  The ``TestApp`` is the `WebTest`_ wrapper that allows you to call methods on your app object just like a browser would make requests.  It also facilities making assertions on the HTTP response returned by the app, among other things.  Here, the assert statements check that the data loaded during ``TestListEntries.setUp()`` was rendered in HTML.  By default nose hides stdout so the ``print response`` statement will only show on your screen if there is a failure in the test code.
+A :class:`GoogleDatastoreFixture <fixture.loadable.google_datastore_loadable.GoogleDatastoreFixture>` is created with an ``env`` containing the Datastore Entities defined above (``gblog/models.py``).  The ``TestApp`` is the `WebTest`_ wrapper that allows you to call methods on your app object just like a browser would make requests.  It also facilities making assertions on the HTTP response returned by the app, among other things.  Here, the assert statements check that the data loaded during ``TestListEntries.setUp()`` was rendered in HTML.  By default nose hides stdout so the ``print response`` statement will only print to your shell if the test fails.
 
 And there you have it.  Once again, you can download the :ref:`fixture source code <download-fixture>` and view this complete example app in ``fixture/examples/google_appengine_example/``.
