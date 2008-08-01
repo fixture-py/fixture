@@ -91,10 +91,11 @@ The fixture module simplifies this by breaking the process down to two independe
 Examples of Usage
 -----------------
 
-Fixture can be used to load :class:`DataSet <fixture.dataset.DataSet>` objects into `SQLAlchemy`_ or `SQLObject`_ backends (:ref:`more on that <using-loadable-fixture>`).  For a complete end-to-end example see :ref:`Using Fixture To Test A Pylons + SQLAlchemy App <using-fixture-with-pylons>`.  This should help you understand how to fit ``fixture`` into a finished app.
+Fixture can be used to load :class:`DataSet <fixture.dataset.DataSet>` objects into `SQLAlchemy`_, `SQLObject`_, or `Google Datastore`_ backends (:ref:`more on that <using-loadable-fixture>`).  For a complete end-to-end example see :ref:`Using Fixture To Test A Pylons + SQLAlchemy App <using-fixture-with-pylons>` or :ref:`Using Fixture To Test A Google App Engine Site <using-fixture-with-appengine>`.  This should help you understand how to fit ``fixture`` into a finished app.
 
 .. _SQLAlchemy: http://www.sqlalchemy.org/
 .. _SQLObject: http://www.sqlobject.org/
+.. _Google Datastore: http://code.google.com/appengine/docs/datastore/
 
 Now, on to the knitty gritty details ...
 
