@@ -4,3 +4,4 @@ CONTRIBUTORS
 Allen Bierbaum
 Jeff Cousens
 Manuel Aristarán
+Alex Marandon

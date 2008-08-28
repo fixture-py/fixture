@@ -12,6 +12,12 @@ from fixture.test.test_loadable import *
 from fixture.examples.db.sqlalchemy_examples import *
 from fixture.loadable.sqlalchemy_loadable import *
 
+def get_transactional_session():
+    if sa_major < 0.5:
+        return scoped_session(sessionmaker(autoflush=False, transactional=True), scopefunc=lambda:__name__)
+    else:
+        return scoped_session(sessionmaker(autoflush=False, autocommit=False), scopefunc=lambda:__name__)
+
 def setup():
     if not env_supports.sqlalchemy: raise SkipTest
 
@@ -29,7 +35,7 @@ class TestSetupTeardown(unittest.TestCase):
         engine = create_engine(conf.LITE_DSN)
         metadata.bind = engine
         metadata.create_all()
-        Session = sessionmaker(bind=metadata.bind, autoflush=True, transactional=True)
+        Session = get_transactional_session()
         self.session = Session()
         self.fixture = SQLAlchemyFixture(
             env={'CategoryData':Category},
@@ -72,7 +78,7 @@ class TestImplicitSABinding(unittest.TestCase):
         # metadata.bind.echo = True
         metadata.create_all()
         
-        Session = sessionmaker(bind=metadata.bind, autoflush=True, transactional=True)
+        Session = get_transactional_session()
         self.session = Session()
         
         # note the lack of explicit binding :
@@ -138,7 +144,7 @@ class TestCascadingReferences(unittest.TestCase):
         engine = create_engine(conf.HEAVY_DSN)
         metadata.bind = engine
         metadata.create_all()
-        Session = sessionmaker(bind=metadata.bind, autoflush=True, transactional=True)
+        Session = get_transactional_session()
         self.session = Session()
         
         self.fixture = SQLAlchemyFixture(
@@ -217,7 +223,7 @@ class TestCollidingSessions(unittest.TestCase):
         # metadata.bind.echo = True
         metadata.create_all()
         # metadata.bind.echo = False
-        self.ScopedSession = scoped_session(sessionmaker(bind=metadata.bind, autoflush=False, transactional=True))
+        self.ScopedSession = scoped_session(get_transactional_session())
         self.session = self.ScopedSession()
         self.fixture = SQLAlchemyFixture(
             env={'CategoryData':Category},
@@ -267,7 +273,7 @@ class TestScopedSessions(unittest.TestCase):
         self.engine = create_engine(conf.LITE_DSN)
         metadata.bind = self.engine
         metadata.create_all()
-        ScopedSession = scoped_session(sessionmaker(bind=metadata.bind, autoflush=True, transactional=True))
+        ScopedSession = scoped_session(get_transactional_session())
         self.session = ScopedSession()
         self.fixture = SQLAlchemyFixture(
             env={'CategoryData':Category},
@@ -358,7 +364,7 @@ class TestTableObjects(unittest.TestCase):
         self.engine = create_engine(conf.LITE_DSN)
         metadata.bind = self.engine
         metadata.create_all()
-        Session = sessionmaker(bind=metadata.bind, autoflush=True, transactional=True)
+        Session = get_transactional_session()
         self.session = Session()
         self.fixture = SQLAlchemyFixture(
             # maps to a table object :
@@ -449,7 +455,7 @@ def test_fixture_can_be_disposed():
     engine = create_engine(conf.LITE_DSN)
     metadata.bind = engine
     metadata.create_all()
-    Session = sessionmaker(bind=metadata.bind, autoflush=True, transactional=True)
+    Session = get_transactional_session()
     session = Session()
     fixture = SQLAlchemyFixture(
         env={'CategoryData':Category},
