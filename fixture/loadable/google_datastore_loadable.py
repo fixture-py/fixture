@@ -13,15 +13,26 @@ class EntityMedium(EnvLoadableFixture.StorageMediumAdapter):
     """
     Adapts google.appengine.api.datastore.Entity objects and any 
     other object that is an instance of Entity
-    """
+    """        
+    def _entities_to_keys(self, mylist):
+        """Converts an array of datastore objects to an array of keys.
+        
+        if the value passed in is not a list, this passes it through as is
+        """
+        if type(mylist)==type([]):
+            return [ent.key() for ent in mylist]
+        else:
+            return mylist
+            
     def clear(self, obj):
         """Delete this entity from the Datastore"""
         obj.delete()
         
     def save(self, row, column_vals):
         """Save this entity to the Datastore"""
+        gen=[(k,self._entities_to_keys(v)) for k,v in column_vals]
         entity = self.medium(
-            **dict([(k,v) for k,v in column_vals])
+            **dict(gen)
         )
         entity.put()
         return entity

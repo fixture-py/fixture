@@ -131,4 +131,62 @@ class TestRelationships(unittest.TestCase):
         
         eq_(list(self.Category.all()), [])
         eq_(list(self.Product.all()), [])
+
+class TestListOfRelationships(unittest.TestCase):
+            
+    def setUp(self):
+        from google.appengine.ext import db
         
+        class Author(db.Model):
+            name = db.StringProperty()
+        self.Author = Author
+        
+        class Book(db.Model):
+            title = db.StringProperty()
+            authors = db.ListProperty(db.Key)
+        self.Book = Book
+        
+        class AuthorData(DataSet):
+            class frank_herbert:
+                name = "Frank Herbert"
+            class brian_herbert:
+                name = "Brian Herbert"
+                
+        class BookData(DataSet):
+             class two_worlds:
+                 title = "Man of Two Worlds"
+                 authors = [AuthorData.frank_herbert, AuthorData.brian_herbert]
+        self.BookData = BookData
+              
+        self.fixture = GoogleDatastoreFixture(env={
+            'BookData': self.Book,
+            'AuthorData': self.Author
+        })
+    
+    def tearDown(self):
+        clear_datastore()
+    
+    @attr(functional=1)
+    def test_setup_then_teardown(self):
+        
+        eq_(list(self.Author.all()), [])
+        eq_(list(self.Book.all()), [])
+        
+        data = self.fixture.data(self.BookData)
+        data.setup()
+        
+        books = self.Book.all()
+        
+        eq_(books[0].title, "Man of Two Worlds")
+        authors = [self.Author.get(k) for k in books[0].authors]
+        print authors
+        eq_(len(authors), 2)
+        authors.sort(key=lambda a:a.name )
+        eq_(authors[0].name, "Brian Herbert")
+        eq_(authors[1].name, "Frank Herbert")
+        
+        data.teardown()
+        
+        eq_(list(self.Author.all()), [])
+        eq_(list(self.Book.all()), [])
+            
