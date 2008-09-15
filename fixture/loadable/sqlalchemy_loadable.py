@@ -133,10 +133,9 @@ class SQLAlchemyFixture(DBLoadableFixture):
         
         if self.session is None:
             if self.connection:
-                self.Session.configure(bind=self.connection)
+                self.session = self.Session(bind=self.connection)
             else:
-                self.Session.configure(bind=None)
-            self.session = self.Session()
+                self.session = self.Session(bind=None)
             
         DBLoadableFixture.begin(self, unloading=unloading)
     
