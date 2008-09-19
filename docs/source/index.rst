@@ -146,6 +146,13 @@ documented.
 Changelog
 ---------
 
+- 1.1.1
+
+  - Fixed bugs in :mod:`Google App Engine Datastore <fixture.loadable.google_datastore_loadable>` thanks to reports and patches by Tomas Holas
+  - Fixed installation bug thanks to report by bslesinsky
+  - Made progress on SQLAlchemy 0.5 support (not yet complete) thanks to reports and patches from Alex Marandon
+  - Improved scoped session handling for :mod:`SQLAlchemy <fixture.loadable.sqlalchemy_loadable>`
+  
 - 1.1
 
   - Added support for loading data into the :mod:`Google App Engine Datastore <fixture.loadable.google_datastore_loadable>`
