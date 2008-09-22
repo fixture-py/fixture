@@ -20,7 +20,7 @@ from paste.deploy import appconfig
 from addressbook.config.environment import load_environment
 from routes import url_for
 
-__all__ = ['url_for', 'TestController']
+__all__ = ['url_for', 'TestController', 'dbfixture']
 
 here_dir = os.path.dirname(os.path.abspath(__file__))
 conf_dir = os.path.dirname(os.path.dirname(here_dir))

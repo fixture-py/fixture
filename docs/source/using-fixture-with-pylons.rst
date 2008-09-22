@@ -9,6 +9,10 @@ This explains how to use ``fixture`` in the test suite of a simple Address Book 
 
 (This tutorial was written with Python 2.5.2, fixture 1.0, Pylons 0.9.6.2, and SQLAlchemy 0.4.6 but may work with other versions.)
 
+.. note:: 
+
+    SQLAlchemy 0.5 is not yet supported by fixture.  To ensure you are using the correct version for this tutorial, run ``easy_install 'SQLAlchemy>=0.4,<0.5'``
+
 Creating An Address Book
 ------------------------
 
@@ -69,6 +73,11 @@ Per the `Pylons + SQLAlchemy documentation`_, you should also have this line in 
     [app:main]
     # ...
     sqlalchemy.url = sqlite:///%(here)s/db.sqlite
+
+
+.. note::
+    
+    For reference, all code shown here is available from the `fixture code repository <http://code.google.com/p/fixture/source/browse>`_ in ``fixture/examples/pylons_example/addressbook``.
 
 Creating A Simple Controller
 ----------------------------
@@ -221,7 +230,12 @@ Before running any tests you need to configure the test suite to make a database
     # Add additional test specific configuration options as necessary.
     sqlalchemy.url = sqlite:///%(here)s/testdb.sqlite
 
-**IMPORTANT**: By default Pylons configures your test suite so that the same code run by ``paster setup-app test.ini`` is run before your tests start.  This can be confusing if you are creating tables and inserting data like in the previous section so replace it with this code in ``addressbook/tests/__init__.py``::
+
+.. note::
+
+    By default Pylons configures your test suite so that the same code run by ``paster setup-app test.ini`` is run before your tests start.  This can be confusing if you are creating tables and inserting data like in the previous section so replace it with this code in ``addressbook/tests/__init__.py`` :
+
+::
 
     # additional imports ...
     from paste.deploy import appconfig
@@ -267,14 +281,17 @@ Defining A Fixture
 ------------------
 
 To start using data in your tests, first define a common fixture object to use throughout your test suite by adding this code to ``addressbook/tests/__init__.py``::
+    
+    # be sure to export dbfixture :
+    __all__ = ['url_for', 'TestController', 'dbfixture']
+    
+    # add this code *AFTER* load_environment(...) :
 
     # additional imports ...
     from addressbook import model
     from addressbook.model import meta
     from fixture import SQLAlchemyFixture
     from fixture.style import NamedDataStyle
-    
-    # add this code ...
     
     dbfixture = SQLAlchemyFixture(
         env=model,

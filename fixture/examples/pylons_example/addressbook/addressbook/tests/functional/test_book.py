@@ -1,7 +1,6 @@
 
 from addressbook.model import meta, Person
 from addressbook.datasets import PersonData, AddressData
-from addressbook.tests import dbfixture
 from addressbook.tests import *
 
 class TestBookController(TestController):        
