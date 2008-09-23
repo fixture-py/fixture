@@ -18,6 +18,7 @@ try:
     from sqlalchemy.orm import sessionmaker, scoped_session
 except ImportError:
     Session = None
+    sa_major = None
 else:
     import sqlalchemy
     sa_major = float(sqlalchemy.__version__[:3]) # i.e. 0.4 or 0.5
@@ -333,14 +334,21 @@ class TableMedium(DBLoadableFixture.StorageMediumAdapter):
         return LoadedTableRow(self.medium, primary_key, self.conn)
 
 def is_assigned_mapper(obj):
-    from sqlalchemy.orm.mapper import Mapper
-    if hasattr(obj, 'is_assigned'):
-        # 0.4 :
-        is_assigned = obj.is_assigned
-    else:
+    import sqlalchemy
+    if sa_major <= 0.3:
+        from sqlalchemy.orm.mapper import Mapper
         def is_assigned(obj):
-            # 0.3 :
-           return hasattr(obj, 'mapper') and isinstance(obj.mapper, Mapper)
+            return hasattr(obj, 'mapper') and isinstance(obj.mapper, Mapper)
+    else:
+        # 0.4 and 0.5 +
+        from sqlalchemy.orm.mapper import class_mapper
+        def is_assigned(obj):
+            try:
+                cm = class_mapper(obj)
+            except sqlalchemy.exceptions.InvalidRequestError:
+                return False
+            return True
+            
     return is_assigned(obj)
 
 def is_mapped_class(obj):

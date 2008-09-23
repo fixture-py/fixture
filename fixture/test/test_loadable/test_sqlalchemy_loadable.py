@@ -24,6 +24,35 @@ def setup():
 def teardown():
     pass
 
+@attr(unit=1)
+def test_negotiated_medium():
+    class CategoryData(DataSet):
+        class cars:
+            name = 'cars'
+            
+    engine = create_engine(conf.LITE_DSN)
+    metadata.bind = engine
+    metadata.create_all()
+    
+    eq_(type(negotiated_medium(categories, CategoryData)), TableMedium)
+    eq_(is_table(categories), True)
+    
+    clear_mappers()
+    mapper(Category, categories)
+    
+    eq_(type(negotiated_medium(Category, CategoryData)), MappedClassMedium)
+    eq_(is_mapped_class(Category), True)
+    # hmmm
+    # eq_(is_assigned_mapper(Category), False)
+    
+    clear_mappers()
+    ScopedSession = scoped_session(get_transactional_session())
+    ScopedSession.mapper(Category, categories)
+    
+    eq_(type(negotiated_medium(Category, CategoryData)), MappedClassMedium)
+    eq_(is_mapped_class(Category), True)
+    eq_(is_assigned_mapper(Category), True)
+
 class TestSetupTeardown(unittest.TestCase):
     class CategoryData(DataSet):
         class cars:
