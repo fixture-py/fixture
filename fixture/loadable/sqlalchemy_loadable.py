@@ -352,8 +352,13 @@ def is_assigned_mapper(obj):
     return is_assigned(obj)
 
 def is_mapped_class(obj):
-    from sqlalchemy import util
-    return hasattr(obj, 'c') and isinstance(obj.c, util.OrderedProperties)
+    # hrrmmm, really?
+    if sa_major < 0.5:
+        from sqlalchemy import util
+        return hasattr(obj, 'c') and isinstance(obj.c, util.OrderedProperties)
+    else:
+        # 0.5 :
+        return hasattr(obj, '_sa_class_manager')
 
 def is_table(obj):
     from sqlalchemy.schema import Table
