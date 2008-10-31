@@ -146,6 +146,10 @@ documented.
 Changelog
 ---------
 
+- 1.1.2
+  
+  - Fixed bugs relating to SQLAlchemy 0.5 support (still not fully complete)
+  
 - 1.1.1
 
   - Fixed bugs in :mod:`Google App Engine Datastore <fixture.loadable.google_datastore_loadable>` thanks to reports and patches by Tomas Holas

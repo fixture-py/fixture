@@ -5,10 +5,6 @@
 TempIO: A Temporary File System
 -------------------------------
 
-.. testsetup:: 
-
-    import os
-
 This object is useful for tests that need to set up a directory structure 
 and work with files and paths.  Once you instantiate it, you have a temporary 
 directory that will self-destruct when it falls out of scope:
@@ -26,6 +22,7 @@ subdirectory, like so:
 .. doctest::
 
     >>> tmp.incoming = "incoming"
+    >>> import os
     >>> os.path.exists(tmp.incoming)
     True
 
