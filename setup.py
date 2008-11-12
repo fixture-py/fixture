@@ -73,7 +73,7 @@ setup(
         },
     tests_require=[
         'testtools', 'psycopg2', 'SQLObject>=0.8', 'Elixir>=0.5', 
-        'nose>=0.10.3', 'SQLAlchemy>=0.4,<0.5', 'Sphinx>=0.4'],
+        'nose>=0.10.3', 'SQLAlchemy>=0.4,<0.5', 'Sphinx>=0.4', 'Pylons==0.9.6.2'],
     extras_require = {
         'decorators': ['nose>=0.9.2'],
         'sqlalchemy': ['SQLAlchemy>=0.4'],
