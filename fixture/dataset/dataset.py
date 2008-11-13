@@ -9,8 +9,6 @@ few variations on it: :class:`SuperSet` and :class:`MergedSuperSet`
 import sys, types
 from fixture.util import ObjRegistry
 
-__all__ = ['DataSet']
-
 class DataContainer(object):
     """
     Contains data accessible by attribute and/or key.
