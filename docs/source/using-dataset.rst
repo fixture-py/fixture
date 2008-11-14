@@ -95,6 +95,56 @@ were a foreign key. But notice that the ``id`` attribute wasn't explicitly
 defined by the ``Authors`` data set. When the ``id`` attribute is accessed later
 on, its value is fetched from the actual row inserted.
 
+.. _using-dataset-to-json:
+
+Converting a DataSet to JSON
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can dump a `JSON <http://www.json.org/>`_ (JavaScript Object Notation) encoded representation of the data in a DataSet class with the method :func:`fixture.dataset.converter.dataset_to_json`.  This feature was added to test AJAX user interface components.  The JSON formatted string can be used as a stub response that a server might return to the UI component.
+
+If you're on Python less than 2.6, you'll need to install `simplejson <http://code.google.com/p/simplejson>`_::
+    
+    easy_install simplejson
+
+Given the following DataSet:
+
+.. doctest::
+
+    >>> from fixture import DataSet
+    >>> class ArtistData(DataSet):
+    ...     class joan_jett:
+    ...         name = "Joan Jett and the Black Hearts"
+    ...     class ramones:
+    ...         name = "The Ramones"
+    ... 
+
+Convert it to a JSON string with :func:`dataset_to_json <fixture.dataset.converter.dataset_to_json>`:
+
+.. doctest::
+    
+    >>> from fixture.dataset.converter import dataset_to_json
+    >>> dataset_to_json(ArtistData)
+    '[{"name": "Joan Jett and the Black Hearts"}, {"name": "The Ramones"}]'
+
+The DataSet is converted to a list of dictionaries appearing in 
+alphabetical order of inner class name.  Only the inner class 
+attributes / values are used to create each dictionary.  
+The inner class names -- ``joan_jett``, etc -- are ignored.
+
+To customize the JSON you can also define the ``wrap`` keyword: a callable 
+that takes one argument, the list of dictionaries, and returns a new JSON 
+serializable object.  For example:
+
+.. doctest::
+    
+    >>> def wrap_in_dict(objects):
+    ...     return {'data': objects}
+    ... 
+    >>> dataset_to_json(ArtistData, wrap=wrap_in_dict) # doctest:+ELLIPSIS
+    '{"data": [{"name": "Joan Jett and the Black Hearts"}, ...]}'
+
+For all available keyword arguments, see API docs for :func:`dataset_to_json <fixture.dataset.converter.dataset_to_json>`.
+
 Customizing a Dataset
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -104,5 +154,5 @@ See the :class:`DataSet.Meta <fixture.dataset.DataSetMeta>` API for more info.
 API Documentation
 ~~~~~~~~~~~~~~~~~
 
-See the :mod:`fixture.dataset` module API.
+See the :mod:`fixture.dataset` and :mod:`fixture.dataset.converter` module APIs.
 

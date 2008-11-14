@@ -62,7 +62,7 @@ If you want to try out fixture before installing it globally, you may be interes
 Requirements
 ------------
 
-At the moment fixture is only tested on Python 2.4 and 2.5 so it may or may not 
+At the moment fixture is only tested on Python 2.4, 2.5, and 2.6 so it may or may not 
 work with other versions.  The module does not depend on external libraries for its core functionality but 
 to do something interesting you will need one of several 3rd party libraries 
 (explained later in the documentation).
@@ -146,6 +146,10 @@ documented.
 Changelog
 ---------
 
+- 1.2
+  
+  - Added support for DataSet to JSON conversion
+  
 - 1.1.2
   
   - Fixed bugs relating to SQLAlchemy 0.5 support (still not fully complete)
