@@ -145,6 +145,11 @@ serializable object.  For example:
 
 For all available keyword arguments, see API docs for :func:`dataset_to_json <fixture.dataset.converter.dataset_to_json>`.
 
+.. note::
+    
+    Converting a dataset to JSON does not load the data into a database.  This means that any 
+    attributes your tests might lazily access (like automatically incremented ID numbers) would not be available.
+
 Customizing a Dataset
 ~~~~~~~~~~~~~~~~~~~~~
 
