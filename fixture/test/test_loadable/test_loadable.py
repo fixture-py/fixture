@@ -23,7 +23,6 @@ def exec_if_supported(code, globals={}, locals={}):
     finally:
         del tmp
 
-
 class LoadableTest(object):
     """tests the behavior of fixture.loadable.LoadableFixture object.
     

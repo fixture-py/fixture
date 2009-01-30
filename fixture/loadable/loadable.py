@@ -11,7 +11,7 @@ from fixture.base import Fixture
 from fixture.util import ObjRegistry, _mklog
 from fixture.style import OriginalStyle
 from fixture.dataset import Ref, dataset_registry, DataRow, is_rowlike
-from fixture.exc import LoadError, UnloadError, StorageMediaNotFound
+from fixture.exc import UninitializedError, LoadError, UnloadError, StorageMediaNotFound
 import logging
 
 log     = _mklog("fixture.loadable")
@@ -165,6 +165,7 @@ class LoadableFixture(Fixture):
             self.style = style
         if medium:
             self.Medium = medium
+        self.loaded = None
     
     StorageMediumAdapter = StorageMediumAdapter
     Medium = StorageMediumAdapter
@@ -286,6 +287,10 @@ class LoadableFixture(Fixture):
     
     def unload(self):
         """unload data"""
+        if self.loaded is None:
+            raise UninitializedError(
+                "Cannot unload data because it has not yet been loaded in this "
+                "process.  Call data.setup() before data.teardown()")
         def unloader():
             for dataset in self.loaded.to_unload():
                 self.unload_dataset(dataset)

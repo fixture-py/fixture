@@ -24,6 +24,22 @@ def setup():
 def teardown():
     pass
 
+@raises(UninitializedError)
+def test_cannot_teardown_unloaded_fixture():
+    class CategoryData(DataSet):
+        class cars:
+            name = 'cars'
+            
+    engine = create_engine(conf.LITE_DSN)
+    metadata.bind = engine
+    
+    db = SQLAlchemyFixture(
+        env=globals(),
+        engine=metadata.bind
+    )
+    data = db.data(CategoryData)
+    data.teardown()
+
 @attr(unit=1)
 def test_negotiated_medium():
     class CategoryData(DataSet):
