@@ -336,7 +336,7 @@ class EnvLoadableFixture(LoadableFixture):
         Once a name is found (typically the name of a DataSet class, say, EmployeeData) then it is looked up 
         in the ``env`` which is expected to be a dict or module like object.
         
-        The method first tries ``env.get('EmployeedData')`` then ``getattr(env, 'EmployeeData')``.
+        The method first tries ``env.get('EmployeeData')`` then ``getattr(env, 'EmployeeData')``.
         
         The return value is the storage medium (i.e. a data mapper for the Employees table)
         
