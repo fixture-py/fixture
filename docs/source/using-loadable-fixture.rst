@@ -113,6 +113,11 @@ For reference, also see :class:`GoogleDatastoreFixture API <fixture.loadable.goo
 
 .. _Datastore Entities: http://code.google.com/appengine/docs/datastore/entitiesandmodels.html
 
+Django
+++++++
+
+(Describe how to load data into Django then include link to :ref:`using-fixture-with-django`)
+
 An Example of Loading Data Using SQLAlchemy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
