@@ -106,6 +106,7 @@ Now, on to the knitty gritty details ...
    using-loadable-fixture
    using-fixture-with-pylons
    using-fixture-with-appengine
+   using-fixture-with-django
    using-fixture-cmd
    using-temp-io
    
