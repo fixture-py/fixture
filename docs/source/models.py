@@ -1,0 +1,1 @@
+../../fixture/test/test_loadable/test_django/project/app/models.py
