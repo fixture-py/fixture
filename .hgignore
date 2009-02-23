@@ -2,6 +2,10 @@ syntax: glob
 *.pyc
 *.pyo
 build
+eggs
+bin
+.installed.cfg
+develop-eggs
 _build
 _env
 .DS_Store
