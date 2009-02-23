@@ -36,6 +36,7 @@ DataSet classes can be loaded into `Table`_ objects or `mapped classes`_ via the
     import os
     if os.path.exists('/tmp/fixture_example.db'):
         os.unlink('/tmp/fixture_example.db')
+    from fixture.test.test_loading.test_django.project.app import models
 
 .. doctest:: loading
 
@@ -116,7 +117,19 @@ For reference, also see :class:`GoogleDatastoreFixture API <fixture.loadable.goo
 Django
 ++++++
 
-(Describe how to load data into Django then include link to :ref:`using-fixture-with-django`)
+Django support for loading datasets work with `django version 1.0.2 <http://www.djangoproject.com/download/>`_. Here's a quick example of how you use it:
+
+.. currentmodule:: fixture.loadable.django_loadable
+
+.. doctest:: loading
+
+    >>> from fixture import DjangoFixture
+    >>> from fixture.style import NamedDataStyle
+    >>> django_fixture = DjangoFixture()
+    
+By default :class:`~DjangoFixture` uses a special class for it's env (:class:`~DjangoEnv`). If as above you don't pass in an env keyword arguement :class:`~DjangoFixture` will use this class to resolve fixtures to models. You can of course still pass an env and style if you want to change this, see :ref:`using-loadable-fixture-style` for more details
+
+For more info see :mod:`~fixture.loadable.django_loadable` especially :class:`~DjangoFixture` and the more extended guide: :ref:`using-fixture-with-django`
 
 An Example of Loading Data Using SQLAlchemy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
