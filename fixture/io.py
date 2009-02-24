@@ -93,7 +93,7 @@ def putfile(filename, contents, filelike=None, mode=None):
     filelike.write(contents)
     filelike.close()
     
-class DirPath(str, object):
+class DirPath(str):
     """
     A directory path.
     
