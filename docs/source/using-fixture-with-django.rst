@@ -13,7 +13,7 @@ We'll be using a simple django project and application (found in fixture/test/te
 
 .. _django-models:
 
-    .. literalinclude:: models.py
+    .. literalinclude:: ../../fixture/test/test_loadable/test_django/project/app/models.py
         :language: python
         :linenos:
 
