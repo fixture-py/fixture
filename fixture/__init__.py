@@ -36,4 +36,5 @@ from fixture.style import *
 def setup_test_not_supported():
     """hook for setup for the test command."""
     raise NotImplementedError("use: `python setup.py nosetests` instead")
+setup_test_not_supported.__test__ = False
     
