@@ -23,7 +23,6 @@ def exec_if_supported(code, globals={}, locals={}):
     finally:
         del tmp
 
-
 class LoadableTest(object):
     """tests the behavior of fixture.loadable.LoadableFixture object.
     
@@ -70,7 +69,6 @@ class LoadableTest(object):
         inspector.assert_data_torndown()
     
     def test_with_data(self):
-        """test @fixture.with_data"""
         import nose, unittest
         
         class ns:
@@ -99,10 +97,6 @@ class LoadableTest(object):
         self.assert_data_torndown()
     
     def test_with_data_as_d(self):
-        """test with: fixture.data() as d"""
-        # if not env_supports.with_statement:
-        #     raise SkipTest
-        
         c = """
 from __future__ import with_statement
 with self.fixture.data(*self.datasets()) as d:
@@ -273,7 +267,6 @@ class LoaderPartialRecoveryTest(HavingOfferProductData):
         return d
     
     def test_with_data_iterruption(self):
-        """test @fixture.with_data interruption"""
         @raises(LoadableFixture.StorageMediaNotFound)
         @self.fixture.with_data(*self.partial_datasets())
         def test_partial_datasets(fxt):

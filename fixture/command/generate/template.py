@@ -138,8 +138,7 @@ class %(fxt_class)s(DataSet):
     
     def begin(self):
         self.add_import('import datetime')
-        self.add_import("from fixture import DataSet, NamedDataStyle")
-        self.add_import("from fixture.dataset import MergedSuperSet")
+        self.add_import("from fixture import DataSet")
     
     class data(object):
         def __init__(self, elements):
@@ -153,17 +152,7 @@ class %(fxt_class)s(DataSet):
             return "\n".join(o)
     
     def header(self, handler):
-        loadable_fxt_class = handler.loadable_fxt_class
-        self.add_import("from fixture import %s" % (
-                                        loadable_fxt_class.__name__))
-        return "\n".join([
-            """
-fixture = %s(  
-            env = globals(),
-            style = NamedDataStyle(),
-            dataclass = MergedSuperSet)""" % (
-                                loadable_fxt_class.__name__),
-            Template.header(self, handler)])
+        return "\n".join(Template.header(self, handler))
 
 templates.register(fixture(), default=True)
 

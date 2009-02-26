@@ -2,7 +2,10 @@
 import os
 from nose.tools import eq_
 from nose.exc import SkipTest
+from fixture import SQLObjectFixture
 from fixture.command.generate import DataSetGenerator, dataset_generator
+from fixture.dataset import MergedSuperSet
+from fixture.style import NamedDataStyle
 from fixture.test.test_command.test_generate import (
         compile_, GenerateTest, UsingTesttoolsTemplate, UsingFixtureTemplate)
 from fixture.test import env_supports, conf
@@ -69,6 +72,13 @@ class SQLObjectGenerateTest(GenerateTest):
         Offer.clearTable(connection=realconn)
         Product.clearTable(connection=realconn)
         Category.clearTable(connection=realconn)
+    
+    def create_fixture(self):
+        return SQLObjectFixture(
+            env = self.env,
+            style = NamedDataStyle(),
+            dataclass = MergedSuperSet,
+        )
     
     def load_datasets(self, module, conn, datasets):
         raise NotImplementedError

@@ -2,70 +2,7 @@
 
 """generate DataSet classes from real data.
 
-.. contents:: :local:
-
-There are several issues you may run into while working with fixtures:  
-
-1. The data model of a program is usually an implementation detail.  It's bad practice to "know" about implementation details in tests because it means you have to update your tests when those details change; you should only have to update your tests when an interface changes.  
-2. Data accumulates very fast and there is already a useful tool for slicing and dicing data: the database!  Hand-coding DataSet classes is not always the way to go.
-3. When regression testing or when trying to reproduce a bug, you may want to grab a "snapshot" of the existing data.
-
-``fixture`` is a shell command to address these and other issues.  It gets installed along with this module.  Specifically, the ``fixture`` command accepts a path to a single object and queries that object using the command options.  The output is python code that you can use in a test to reload the data retrieved by the query.  
-
-Usage
-~~~~~
-
-.. shell:: fixture --help
-   :run_on_method: fixture.command.generate.main
-
-An example
-~~~~~~~~~~
-
-Let's set up a database and insert some data (using `sqlalchemy code`_) so we can run the fixture command::
-
-    >>> from sqlalchemy import *
-    >>> DSN = 'sqlite:////tmp/fixture_example.db'
-    >>> from fixture.examples.db.sqlalchemy_examples import (
-    ...                                 Author, Book, dynamic_meta)
-    >>> dynamic_meta.connect(DSN)
-    >>> dynamic_meta.create_all()
-    >>> session = create_session()
-
-::
-
-    >>> frank = Author()
-    >>> frank.first_name = "Frank"
-    >>> frank.last_name = "Herbert"
-    >>> session.save(frank)
-
-::
-
-    >>> dune = Book()
-    >>> dune.title = "Dune"
-    >>> dune.author = frank
-    >>> session.save(dune)
-
-::
-
-    >>> session.flush()
-
-It's now possible to run a command that points at our ``Book`` object, sends it a SQL query with a custom where clause, and turns the record sets into ``DataSet`` classes:
-
-.. shell:: fixture --dsn=sqlite:////tmp/fixture_example.db --where="title='Dune'" fixture.examples.db.sqlalchemy_examples.Book
-   :run_on_method: fixture.command.generate.main
-
-Notice that we only queried the ``Book`` object but we got back all the necessary foreign keys that were needed to reproduce the data (in this case, the ``Author`` data).
-
-Creating a custom data handler
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-No documentation yet
-
-.. api_only::
-   The fixture.command.generate module
-   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. _sqlalchemy code: http://sqlalchemy.org
+See :ref:`Using the fixture command <using-fixture-command>` for examples.
 
 """
 
@@ -142,26 +79,11 @@ class DataSetGenerator(object):
         if template:
             self.template = template
     
-    def get_handler(self, object_path, **kw):
+    def get_handler(self, object_path, obj=None, importable=True, **kw):
         """find and return a handler for object_path.
         
         any additional keywords will be passed into the handler's constructor
-        """
-        importable = 'YES'
-        
-        path, object_name = os.path.splitext(object_path)
-        try:
-            if not object_name:
-                obj = __import__(path, globals(), locals(), [])
-            else:
-                if object_name.startswith('.'):
-                    object_name = object_name[1:]
-                obj = __import__(path, globals(), locals(), [object_name]) 
-                obj = getattr(obj, object_name)
-        except (ImportError, AttributeError):
-            importable = 'NO'            
-            obj = None
-            
+        """            
         handler = None
         for h in handler_registry:
             try:
@@ -177,9 +99,31 @@ class DataSetGenerator(object):
             raise UnrecognizedObject, (
                     "no handler recognizes object %s at %s (importable? %s); "
                     "tried handlers %s" %
-                        (obj, object_path, importable, 
+                        (obj, object_path, (importable and "YES" or "NO"), 
                             ", ".join([str(h) for h in handler_registry])))
         return handler
+    
+    def resolve_object_path(self, object_path):
+        """resolves an object path
+        
+        if an object path is importable, returns (True, <object>)
+        otherwise, returns (False, None)
+        """
+        importable = True
+        
+        path, object_name = os.path.splitext(object_path)
+        try:
+            if not object_name:
+                obj = __import__(path, globals(), locals(), [])
+            else:
+                if object_name.startswith('.'):
+                    object_name = object_name[1:]
+                obj = __import__(path, globals(), locals(), [object_name]) 
+                obj = getattr(obj, object_name)
+        except (ImportError, AttributeError):
+            importable = False
+            obj = None
+        return importable, obj
     
     def code(self):
         """builds and returns code string.
@@ -208,13 +152,18 @@ class DataSetGenerator(object):
         code = "\n".join(self.template.import_header + code)
         return code
     
-    def __call__(self, object_path):
+    def __call__(self, object_path, setup_callbacks=None):
         """uses data obj to generate code for a fixture.
     
         returns code string.
         """
-        self.handler = self.get_handler(object_path)
-        
+        importable, obj = self.resolve_object_path(object_path)
+        # perform setup callbacks here after the object has been imported (above)
+        # this is mainly designed for elixir
+        if setup_callbacks:
+            for setup in setup_callbacks:
+                setup()
+        self.handler = self.get_handler(object_path, obj=obj, importable=importable)
         self.handler.begin()
         try:
             self.handler.findall(self.options.where)
@@ -385,48 +334,68 @@ class DataHandler(object):
         raise NotImplementedError
 
 def dataset_generator(argv):
-    """%prog [options] object_path
+    """%prog [options] OBJECT_PATH
     
     Using the object specified in the path, generate DataSet classes (code) to 
-    reproduce its data.  An object_path can be a python path or a file path
+    reproduce its data.  An OBJECT_PATH can be a python path or a file path
     or anything else that a handler can recognize.
+    
+    When targetting Python objects the OBJECT_PATH is dot separated.  
+    For example, targetting the Employee class in models.py would look like:
+    
+        directory_app.models.Employee
+    
     """
     parser = optparse.OptionParser(
         usage=(inspect.getdoc(dataset_generator)))
     parser.add_option('--dsn',
-                help="sets db connection for a handler that uses a db")
+                help="Sets db connection for a handler that uses a db")
     parser.add_option('-w','--where',
                 help="SQL where clause, i.e. \"id = 1705\" ")
         
     d = "Data"
     parser.add_option('--suffix',
         help = (  
-            "string suffix for all dataset class names "
+            "String suffix for all dataset class names "
             "(default: %s; i.e. an Employee object becomes EmployeeData)" % d),
         default=d)
     parser.add_option('--prefix',
-        help="string prefix for all dataset class names (default: None)",
+        help="String prefix for all dataset class names (default: None)",
         default="")
     
     parser.add_option('--env',
         help = (
-            "module path to use as an environment for finding objects.  "
+            "Module path to use as an environment for finding objects.  "
             "declaring multiple --env values will be recognized"),
         action='append', default=[])
         
     parser.add_option('--require-egg',
         dest='required_eggs',
         help = (
-            "a requirement string to enable importing from a module that was "
+            "A requirement string to enable importing from a module that was "
             "installed in multi-version mode by setuptools.  I.E. foo==1.0.  "
             "You can repeat this option as many times as necessary."),
         action='append', default=[])
     
     default_tpl = templates.default()
     parser.add_option('--template',
-        help="template to use; choices: %s, default: %s" % (
+        help="Template to use; choices: %s, default: %s" % (
                         tuple([t for t in templates]), default_tpl),
         default=default_tpl)
+    
+    parser.add_option("-c", "--connect",
+        metavar="FUNCTION_PATH", action="append", default=[],
+        help=(  "Path to a function that performs a custom connection, accepting a single "
+                "parameter, DSN.  I.E. 'some_module.submod:connect' will be called as connect(DSN).  "
+                "Called *after* OBJECT_PATH is imported but *before* any queries are made. "
+                "This option can be declared multiple times."))
+    parser.add_option("-s", "--setup",
+        metavar="FUNCTION_PATH", action="append", default=[],
+        help=(  "Path to a function that sets up data objects, accepting no parameters. "
+                "I.E. 'some_module.submod:setup_all' will be called as setup_all().  "
+                "Called *after* OBJECT_PATH is imported but *before* any queries are made "
+                "and *before* connect(DSN) is called. "
+                "This option can be declared multiple times."))
         
     # parser.add_option('--show_query_only', action='store_true',
     #             help="prints out query generated by sqlobject and exits")
@@ -442,13 +411,46 @@ def dataset_generator(argv):
         object_path = args[0]
     except IndexError:
         parser.error('incorrect arguments')
+    
+    curr_opt, curr_path, setup_callbacks = None, None, None
     try:
-        return get_object_data(object_path, options)   
+        curr_opt = '--connect'
+        for path in options.connect:
+            curr_path = path
+            connect = resolve_function_path(path)
+            connect(options.dsn)
+        curr_opt = '--setup'
+        setup_callbacks = []
+        for path in options.setup:
+            curr_path = path
+            setup_callbacks.append(resolve_function_path(path))
+    except ImportError:
+        etype, val, tb = sys.exc_info()
+        parser.error("%s=%s %s: %s" % (curr_opt, curr_path, etype.__name__, val))
+        
+    try:
+        return get_object_data(object_path, options, setup_callbacks=setup_callbacks)   
     except (MisconfiguredHandler, NoData, UnrecognizedObject):
         etype, val, tb = sys.exc_info()
         parser.error("%s: %s" % (etype.__name__, val))
 
-def get_object_data(object_path, options):
+def resolve_function_path(path):
+    if ':' in path:
+        mod, obj = path.split(':')
+    else:
+        mod, obj = path, None
+    fn = __import__(mod, globals(),globals(), [obj])
+    if obj is not None:
+        parts = obj.split('.')
+        last_attr = fn
+        for p in parts:
+            if not hasattr(last_attr, p):
+                raise ImportError("attribute %s does not exist in module %s" % (obj, mod))
+            last_attr = getattr(last_attr, p)
+        fn = last_attr
+    return fn
+
+def get_object_data(object_path, options, setup_callbacks=None):
     """query object at object_path and return generated code 
     representing its data
     """
@@ -460,7 +462,7 @@ def get_object_data(object_path, options):
         generate.template = options.template
     else:
         generate.template = templates.find(options.template)
-    return generate(object_path)
+    return generate(object_path, setup_callbacks=setup_callbacks)
 
 def main(argv=sys.argv[1:]):
     if '__testmod__' in argv:

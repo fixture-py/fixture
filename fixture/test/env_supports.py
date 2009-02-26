@@ -1,7 +1,10 @@
 
 """each attribute indicates a supported module or feature."""
+
+import os
+import sys
     
-def supported(mod):
+def module_exists(mod):
     try:
         __import__(mod)
     except ImportError:
@@ -9,5 +12,6 @@ def supported(mod):
     else:
         return True
 
-sqlobject = supported('sqlobject')
-sqlalchemy = supported('sqlalchemy')
+sqlobject = module_exists('sqlobject')
+sqlalchemy = module_exists('sqlalchemy')
+elixir = module_exists('elixir')

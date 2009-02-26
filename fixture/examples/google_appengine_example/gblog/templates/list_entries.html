@@ -1,0 +1,18 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>Welcome To My Blog</title>
+</head>
+<body>
+{% for entry_comments in entries_comments %}
+    <h1>{{ entry_comments.0.title }}</h1>
+    <p><em>Posted {{ entry_comments.0.added_on|date:"D N jS \a\t P" }}</em></p>
+    <p>{{ entry_comments.0.body }}</p>
+    <h3>Comments</h3>
+    {% for comment in entry_comments.1 %}
+    <p>{{ comment.comment }}</p>
+    <p><em>Posted {{ comment.added_on|date:"D N jS \a\t P" }}</em></p>
+    {% endfor %}
+{% endfor %}
+</body>
+</html>

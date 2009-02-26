@@ -61,4 +61,29 @@ def test_requires_option():
         pkg_resources.require = orig_require    
         sys.stderr = sys.__stderr__
     eq_(required_idents, ['foo==1.0', 'baz>=2.0b'])
+
+def some_function():
+    pass
+
+class SomeClass(object):
+    def some_method(self):
+        pass
+
+@attr(unit=1)
+def test_resolve_path_to_function():
+    eq_(resolve_function_path("%s:some_function" % __name__), some_function)
+    
+@attr(unit=1)
+def test_resolve_path_to_method():
+    eq_(resolve_function_path("%s:SomeClass.some_method" % __name__), SomeClass.some_method)
+    
+@attr(unit=1)
+def test_resolve_path_to_module():
+    # Note that this is not realistic.  I think we'd always want a callable
+    eq_(resolve_function_path("%s" % __name__), sys.modules[__name__])
+
+@attr(unit=1)
+@raises(ImportError)
+def test_resolve_bad_path():
+    resolve_function_path("nomoduleshouldbenamedthis.nowhere:Babu")
     

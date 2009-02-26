@@ -1,5 +1,14 @@
+Author / Maintainer
+-------------------
+
 Kumar McMillan
 
-CONTRIBUTORS
-Allen Bierbaum
-Jeff Cousens
+Contributors
+------------
+
+- Allen Bierbaum
+- Jeffrey Cousens
+- Manuel Aristarán
+- Alex Marandon
+- Tomas Holas
+- Ben Ford

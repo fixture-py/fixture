@@ -191,7 +191,7 @@ class TestFixture:
         def some_generator():
             def generated_test(data, step):
                 mock_call_log.append(('some_generator', data.__class__, step))
-                raise RuntimeError
+                raise RuntimeError("error raised from some_generator")
             for step in range(2):
                 yield generated_test, step
                 
@@ -199,6 +199,7 @@ class TestFixture:
         loader = nose.loader.TestLoader()
         # 0.10 only ....
         suite = loader.loadTestsFromGenerator(some_generator, None)
+
         @raises(RuntimeError)
         def run_tests():
             SilentTestRunner().run(suite)
@@ -209,8 +210,9 @@ class TestFixture:
             try:
                 run_tests()
             except Exception, e:
-                assert "exceptions.RuntimeError:" in str(e), (
-                    "An unexpected exception was raised: %s" % e)
+                etype, val, tb = sys.exc_info()
+                assert 'error raised from some_generator' in str(val), (
+                    "Unexpected: %s" % val)
             else:
                 assert False, "expected an exception to be raised"
         finally:

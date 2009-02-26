@@ -1,0 +1,16 @@
+syntax: glob
+*.pyc
+*.pyo
+build
+eggs
+bin
+.installed.cfg
+develop-eggs
+_build
+_env
+env-*
+.DS_Store
+*.egg-info
+_tmp_src
+dist
+fixture/test/test_loadable/test_django/project/project.db
