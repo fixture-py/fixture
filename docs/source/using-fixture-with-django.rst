@@ -5,8 +5,6 @@
 Using Fixture To Test Django Models
 -----------------------------------
 
-A more extended example of a simple Django app and show how to write a test to load data into its database with fixture.
-
 :ref:`Back to the loadable fixture documentation <using-loadable-fixture>`
 
 We'll be using a simple django project and application (found in fixture/test/test_loadable/test_django/project/). The models.py is included here for reference:
@@ -20,6 +18,8 @@ We'll be using a simple django project and application (found in fixture/test/te
 .. currentmodule:: fixture.loadable.django_loadable
 
 Given the above models and the following fixtures:
+
+.. doctest::
 
     >>> from fixture import DataSet
     >>> class app__Author(DataSet):
@@ -46,6 +46,8 @@ Given the above models and the following fixtures:
     
 We can do the following:
 
+.. doctest::
+
     >>> from fixture import DjangoFixture
     >>> from django.db.models.loading import get_model, get_app
     >>> from fixture.test.test_loadable.test_django.util import assert_empty
@@ -58,25 +60,36 @@ We can do the following:
     
     All the books are here:
     
+.. doctest::
+
     >>> Book.objects.all()
     [<Book: Dune, Frank Herbert>, <Book: Python, Guido Van rossum>]
     
     And fixture has pulled in all the Authors too:
     
+.. doctest::
+
     >>> Author = get_model('app', 'Author')
     >>> Author.objects.all()
     [<Author: Frank Herbert>, <Author: Guido Van rossum>]
     
     But not the Reviewers:
     
+.. doctest::
+
     >>> get_model('app', 'Reviewer').objects.count()
     0
     
     If we load the app__Reviewers DataSet, all of the others will be pulled in:
+    
+.. doctest::
+
     >>> data.teardown() # Get rid of the old data
     >>> assert_empty(app)
     
     
+.. doctest::
+
     >>> data = django_fixture.data(app__Reviewer)
     >>> data.setup()
     >>> get_model('app', 'Reviewer').objects.count()
