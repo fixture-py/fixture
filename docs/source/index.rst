@@ -147,6 +147,10 @@ documented.
 Changelog
 ---------
 
+- 1.3
+  
+  - Django support added by Ben Ford.  See :ref:`using-fixture-with-django`
+
 - 1.2
   
   - Added support for DataSet to JSON conversion
