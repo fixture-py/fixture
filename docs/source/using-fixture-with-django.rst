@@ -1,1 +1,0 @@
-../../fixture/test/test_loadable/test_django/test_using-fixture-with-django.rst
