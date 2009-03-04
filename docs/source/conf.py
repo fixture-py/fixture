@@ -16,6 +16,8 @@ import sys, os
 # register some docutils directives
 # (there's probably a better way to do this)
 import fixture.docs
+# for version number:
+import fixture
 
 # If your extensions are in another directory, add it here. If the directory
 # is relative to the documentation root, use os.path.abspath to make it
@@ -46,9 +48,9 @@ copyright = '2008, Kumar McMillan'
 # other places throughout the built documents.
 #
 # The short X.Y version.
-version = '1.1'
+version = fixture.__version__
 # The full version, including alpha/beta/rc tags.
-release = '1.1'
+release = fixture.__version__
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
