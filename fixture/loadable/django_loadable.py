@@ -14,6 +14,23 @@ DJANGO_ENV_SPLIT = '__'
 pretty_mod_name = lambda model: '.'.join([model._meta.app_label,
                                           model._meta.object_name])
 
+def field_is_required(field):
+    """Is this field reuired to have a value
+    
+    This is not the same as null=False, it needs to take account of
+    auto_add, auto_now_add
+    If any of the conditions not nullable, and not auto_now or auto_now_add are
+    met then this should be true
+    """
+    from django.db.models.fields import NOT_PROVIDED
+    if field.primary_key:
+        return False
+    fields = [field.null,
+              field.default != NOT_PROVIDED,
+              getattr(field, 'auto_now', False),
+              getattr(field, 'auto_now_add', False)]
+    return not any(fields)
+
 class DjangoMedium(DBLoadableFixture.StorageMediumAdapter):
     """Adapter for storing data using django models
     """
@@ -41,13 +58,13 @@ class DjangoMedium(DBLoadableFixture.StorageMediumAdapter):
         own_field_names = set([f.name for f in model._meta.fields])
         # All locally defined fields which are required and not auto fields (id)
         required_field_names = set([f.name for f in model._meta.fields
-                                    if not f.null
-                                    and not f.primary_key])
+                                    if field_is_required(f)])
         m2m_field_names = set([f.name for f in model._meta.many_to_many])
         related_field_names =  set([ro.field.related_query_name() for ro in
                                 model._meta.get_all_related_many_to_many_objects() \
                                 + model._meta.get_all_related_objects()])
         
+        processed_column_values = []
         for key, val in column_vals:
             # Valid field?
             if not key in own_field_names.union(m2m_field_names):
@@ -74,7 +91,7 @@ class DjangoMedium(DBLoadableFixture.StorageMediumAdapter):
                                  fld_name))
                         msg += info
                 except:
-                    raise#pass
+                    pass
                 raise ValueError(msg)
                 
             # Keep a track of required fields
@@ -85,8 +102,8 @@ class DjangoMedium(DBLoadableFixture.StorageMediumAdapter):
             
             # If the field is a relation check the related type
             field = model._meta.get_field(key)
-            from django.db.models.fields.related import RelatedField
-            if isinstance(field, RelatedField):
+            from django.db.models.fields.related import ManyToManyField
+            if isinstance(field, ManyToManyField):
                 try:
                     len(val)
                 except TypeError:
@@ -98,17 +115,19 @@ class DjangoMedium(DBLoadableFixture.StorageMediumAdapter):
                                      (key,
                                       pretty_mod_name(field.rel.to),
                                       val))
+            processed_column_values.append((key, val))
         if len(required_field_names):
             raise ValueError("Requred fields %s not found" % required_field_names)
-        return m2m_field_names
+        return m2m_field_names, processed_column_values
     
     def save(self, row, column_vals):
         """Save this row to the DB"""
         model = self.medium
         manager = self.medium._default_manager
         field_names = [f.name for f in model._meta.fields]
-        column_vals = list(column_vals)
-        m2m_field_names = self._check_schema(column_vals[:])
+        #column_vals = list(column_vals)
+        m2m_field_names, column_vals = self._check_schema(column_vals)
+        #from nose.tools import set_trace; set_trace()
         # This will take care of foreignkeys too
         dbvals = {}
         for key, val in column_vals:
