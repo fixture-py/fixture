@@ -1,7 +1,9 @@
+from datetime import datetime
 from fixture import DjangoFixture
+from fixture.style import NamedDataStyle
+from fixture.loadable.django_loadable import field_is_required
 from fixtures import *
 from util import *
-from fixture.style import NamedDataStyle
 from nose.tools import raises
 from project.app import models
 
@@ -25,5 +27,42 @@ def test_schema_conformance():
             callable.description = "schema.conformance: %s %s in %s" % (row[0], row[1],
                                                     dataset.__class__.__name__)
             yield callable, djm, row[1]
-            
+
+def test_is_field_required():
+    from django.db import models
+    class TestMod(models.Model):
+        pk = models.CharField(primary_key=True)
+        req = models.CharField()
+        default_char = models.CharField(default='default_val')
+        null = models.CharField(null=True)
+        date = models.DateTimeField(auto_now=True)
+        req_date = models.DateTimeField()
+        nullable_date = models.DateTimeField(null=True, auto_now_add=True)
+        default_date = models.DateTimeField(default=datetime.now)
+
+        
+    required_matrix = dict(
+        pk=False,
+        req=True,
+        default_char=False,
+        null=False,
+        date=False,
+        req_date=True,
+        nullable_date=False,
+        default_date=False,
+        )
     
+    def check_field_required(fld, result):
+        msg = "field '%s': null=%s, primary_key=%s, auto_now=%s, auto_now_add=%s " \
+              "should be %s"
+        auto_now = getattr(fld, 'auto_now', None)
+        auto_now_add = getattr(fld, 'auto_now_add', None)
+        assert field_is_required(fld) == result, msg % (fld.name, fld.null,
+                                                        fld.primary_key,
+                                                        auto_now, auto_now_add,
+                                                        result)
+    
+    for item in required_matrix.items():
+        fld, result = item
+        check_field_required.description = "%s required? %s" % item
+        yield check_field_required, TestMod._meta.get_field(fld), result

@@ -3,7 +3,7 @@ from django.template import RequestContext
 from django.http import Http404
 from django.views.generic import date_based, list_detail
 from django.db.models import Q
-from basic.blog.models import *
+from project.blog.models import *
 
 import datetime
 import re

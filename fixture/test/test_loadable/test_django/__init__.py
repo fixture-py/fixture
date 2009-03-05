@@ -10,4 +10,5 @@ from django.core.management import call_command
 log = logging.getLogger('nose.django_loadable')
 
 def setup():
-    call_command('reset', 'app')
+    call_command('syncdb')
+    call_command('reset', 'app', 'blog')
