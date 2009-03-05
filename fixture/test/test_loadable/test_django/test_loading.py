@@ -37,4 +37,5 @@ def test_m2m():
     finally:
         data.teardown()
     assert_empty(models)
+
     

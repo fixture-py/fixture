@@ -3,7 +3,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.sites.models import Site
 from django.contrib.syndication.feeds import Feed
 from django.core.urlresolvers import reverse
-from basic.blog.models import Post, Category
+from project.blog.models import Post, Category
 
 
 class BlogPostsFeed(Feed):

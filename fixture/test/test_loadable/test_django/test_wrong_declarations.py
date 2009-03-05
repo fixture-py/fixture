@@ -2,6 +2,7 @@ from fixture import DjangoFixture, DataSet, style
 from fixture.exc import LoadError
 from nose.tools import raises, assert_raises
 
+from util import *
 from project.app import models
 
 class ReviewerData(DataSet):
@@ -27,5 +28,14 @@ def test_wrong_relation_declaration():
     data = dj_fixture.data(BookData)
     assert_raises(LoadError, data.setup)
     data.teardown()
-        
+
+def test_invalid_m2m():
+    class ReviewerData(DataSet):
+        class ben:
+            name = 'ben'
+            reviewed = [BookData.dune, AuthorData.frank_herbert]
+    assert_empty(models)
+    data = dj_fixture.data(ReviewerData)
+    assert_raises(LoadError, data.setup)
+    data.teardown()   
 
