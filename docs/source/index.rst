@@ -147,6 +147,11 @@ documented.
 Changelog
 ---------
 
+- 1.3
+  
+  - Django support added by Ben Ford.  See :ref:`using-fixture-with-django`
+  - Using session.add() when in sqlalchemy 0.5.2+ to avoid deprecation warning (reported by Jeff Balogh)
+
 - 1.2
   
   - Added support for DataSet to JSON conversion
