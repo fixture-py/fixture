@@ -234,7 +234,11 @@ class MappedClassMedium(DBLoadableFixture.StorageMediumAdapter):
         for c, val in column_vals:
             setattr(obj, c, val)
         if obj not in self.session.new:
-            self.session.save(obj)
+            if hasattr(self.session, 'add'):
+                # sqlalchemy 0.5.2+
+                self.session.add(obj)
+            else:
+                self.session.save(obj)
         return obj
 
 

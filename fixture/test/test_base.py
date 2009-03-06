@@ -199,7 +199,7 @@ class TestFixture:
         loader = nose.loader.TestLoader()
         # 0.10 only ....
         suite = loader.loadTestsFromGenerator(some_generator, None)
-        
+
         @raises(RuntimeError)
         def run_tests():
             SilentTestRunner().run(suite)

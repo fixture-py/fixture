@@ -1,7 +1,7 @@
 """Components for loading and unloading data using
 `Django's ORM <http://www.djangoproject.com>`_.
 
-See :ref:`Using LoadableFixture<using-loadable-fixture>` for examples.
+See :ref:`Using Fixture With Django<using-fixture-with-django>` for a complete example.
 """
 
 from fixture.loadable import DBLoadableFixture
