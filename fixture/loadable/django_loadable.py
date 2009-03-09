@@ -1,7 +1,7 @@
 """Components for loading and unloading data using
 `Django's ORM <http://www.djangoproject.com>`_.
 
-See :ref:`Using Fixture With Django<using-fixture-with-django>` for a complete example.
+See :ref:`Using Fixture With Django <using-fixture-with-django>` for a complete example.
 """
 
 from fixture.loadable import DBLoadableFixture
@@ -146,7 +146,7 @@ class DjangoMedium(DBLoadableFixture.StorageMediumAdapter):
         self.transaction = loader.transaction
 
 class DjangoFixture(DBLoadableFixture):
-    """A fixture that knows how to load DataSet objects via `Django Model`_ classes.
+    """A fixture that knows how to load DataSet objects via `Django Model <http://docs.djangoproject.com/en/dev/topics/db/models/#topics-db-models>`_ classes.
     """
             
     def __init__(self, **kw):
