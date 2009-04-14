@@ -20,7 +20,6 @@ class FixtureTestCase(testcases.TransactionTestCase):
         create_test_db might not have been called
         """
         if connection.creation._rollback_works():
-            print "_rollback_works!"
             transaction.enter_transaction_management()
             transaction.managed(True)
             testcases.disable_transaction_methods()
@@ -29,7 +28,6 @@ class FixtureTestCase(testcases.TransactionTestCase):
         Site.objects.clear_cache()
     
         if hasattr(self, 'datasets'):
-            print "loading dataset"
             self.data = DjangoFixture().data(*self.datasets)
             self.data.setup()
     
