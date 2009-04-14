@@ -5,13 +5,12 @@ See :ref:`Using Fixture With Django <using-fixture-with-django>` for a complete 
 """
 
 from fixture.loadable import DBLoadableFixture
-from itertools import tee
 
 __all__ = ('DjangoMedium', 'DjangoFixture', 'DjangoEnv')
 
 DJANGO_ENV_SPLIT = '__'
 
-pretty_mod_name = lambda model: '.'.join([model._meta.app_label,
+pretty_model_name = lambda model: '.'.join([model._meta.app_label,
                                           model._meta.object_name])
 
 def field_is_required(field):
@@ -42,6 +41,35 @@ class DjangoMedium(DBLoadableFixture.StorageMediumAdapter):
         :type obj: A django model
         """
         obj.delete()
+
+    def _annotate_invalid_schema_exception(self, model, key):
+        """Try and add more context to any error message"""
+        info = ""
+        related_field_names =  set([ro.field.related_query_name() for ro in
+                                model._meta.get_all_related_many_to_many_objects() \
+                                + model._meta.get_all_related_objects()])
+        try: # Provide a nicer error message
+            if key in related_field_names:
+                # get a dict like {reverse_related_name: RelatedObject}
+                fld_lookup = dict([(ro.field.related_query_name(), ro) \
+                                        for ro in
+                            model._meta.get_all_related_many_to_many_objects() \
+                            + model._meta.get_all_related_objects()])
+                other_model = fld_lookup[key].model
+                fld_name = fld_lookup[key].field.name
+                info = ("\n**********************\n"
+                        "This is a reverse relation of %s, you "
+                        "should specifiy it there, i.e:\n"
+                        "    %sData(DataSet):\n"
+                        "        class ...:\n"
+                        "            %s = [...]\n"
+                        "**********************\n" % \
+                        ("%s.%s" % (pretty_model_name(other_model), fld_name),
+                         other_model.__name__,
+                         fld_name))
+        except:
+            pass
+        return info
         
     def _check_schema(self, column_vals):
         """Check that the column_vals given match up to this model's schema
@@ -52,47 +80,23 @@ class DjangoMedium(DBLoadableFixture.StorageMediumAdapter):
         """
                     
         model = self.medium
-        # This will include reverse relation names, and m2ms
-        all_field_names = set(model._meta.get_all_field_names())
         # This will be only localy defined fields (excluding many_to_many)
         own_field_names = set([f.name for f in model._meta.fields])
         # All locally defined fields which are required and not auto fields (id)
         required_field_names = set([f.name for f in model._meta.fields
                                     if field_is_required(f)])
         m2m_field_names = set([f.name for f in model._meta.many_to_many])
-        related_field_names =  set([ro.field.related_query_name() for ro in
-                                model._meta.get_all_related_many_to_many_objects() \
-                                + model._meta.get_all_related_objects()])
+        
         
         processed_column_values = []
         for key, val in column_vals:
             # Valid field?
             if not key in own_field_names.union(m2m_field_names):
                 msg = "Model %r doesn't have field named %s." % \
-                                    (pretty_mod_name(model), key)
-                try: # Provide a nicer error message
-                    if key in related_field_names:
-                        # {reverse_related_name: RelatedObject}
-                        fld_lookup = dict([(ro.field.related_query_name(), ro) \
-                                                for ro in
-                                    model._meta.get_all_related_many_to_many_objects() \
-                                    + model._meta.get_all_related_objects()])
-                        other_model = fld_lookup[key].model
-                        fld_name = fld_lookup[key].field.name
-                        info = ("\n**********************\n"
-                                "This is a reverse relation of %s, you "
-                                "should specifiy it there, i.e:\n"
-                                "    %sData(DataSet):\n"
-                                "        class ...:\n"
-                                "            %s = [...]\n"
-                                "**********************\n" % \
-                                ("%s.%s" % (pretty_mod_name(other_model), fld_name),
-                                 other_model.__name__,
-                                 fld_name))
-                        msg += info
-                except:
-                    pass
-                raise ValueError(msg)
+                                    (pretty_model_name(model), key)
+               
+                raise ValueError(msg + \
+                            self._annotate_invalid_schema_exception(model, key))
                 
             # Keep a track of required fields
             try:
@@ -113,7 +117,7 @@ class DjangoMedium(DBLoadableFixture.StorageMediumAdapter):
                     raise ValueError("Values for field %s must be of type %s, "
                                      "got %s" % \
                                      (key,
-                                      pretty_mod_name(field.rel.to),
+                                      pretty_model_name(field.rel.to),
                                       val))
             processed_column_values.append((key, val))
         if len(required_field_names):
@@ -127,7 +131,6 @@ class DjangoMedium(DBLoadableFixture.StorageMediumAdapter):
         field_names = [f.name for f in model._meta.fields]
         #column_vals = list(column_vals)
         m2m_field_names, column_vals = self._check_schema(column_vals)
-        #from nose.tools import set_trace; set_trace()
         # This will take care of foreignkeys too
         dbvals = {}
         for key, val in column_vals:
@@ -174,6 +177,33 @@ class DjangoFixture(DBLoadableFixture):
             self.transaction.leave_transaction_management()
         except transaction.TransactionManagementError, e:
             raise
+
+    def attach_storage_medium(self, ds):
+        """Override's superclass to look for a ``django_model`` attribute
+
+        If this class has an inner :class:`Meta <fixture.dataset.DataSetMeta>`
+        class it looks for the ``django_model`` attribute which should be
+        of the form app_label.ModelName, i.e. suitable for passing to django's
+        :func:`get_model` after being split on the dot.
+        If this isn't found it will fallback to the standard behaviour using
+        :class:`DjangoEnv`
+        """
+        django_model = getattr(ds.meta, 'django_model', None)
+        if django_model:
+            try:
+                app_label, model_name = django_model.split('.')
+            except ValueError:
+                raise ValueError("django_model must be splittable by '.'")
+            else:
+                from django.db.models.loading import get_model
+                model = get_model(app_label, model_name)
+                if not model:
+                    raise self.StorageMediaNotFound(
+                        "could not find a django model from the attribute given:"
+                        "%s" % django_model)
+                ds.meta.storage_medium = self.Medium(model, ds)
+        else:
+             super(DjangoFixture, self).attach_storage_medium(ds)
         
 class DjangoEnv(object):
     """
@@ -189,6 +219,7 @@ class DjangoEnv(object):
             will give you an app label and a model name suitable for get_model
         """
         from django.db.models.loading import get_model
+
         try:
             app_label, model_name = name.split(DJANGO_ENV_SPLIT)
         except ValueError:
@@ -196,5 +227,5 @@ class DjangoEnv(object):
                                 (DJANGO_ENV_SPLIT, name))
         else:
             return get_model(app_label, model_name)
-        
-        
+
+  

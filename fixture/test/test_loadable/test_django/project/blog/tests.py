@@ -1,22 +1,28 @@
 from fixture import DataSet, DjangoFixture
-from fixture.loadable.django_loadable import field_is_required
+from fixture.django_testcase import FixtureTestCase
 from datetime import datetime
 from project.blog.models import Post
 from project.blog.fixtures import *
 
 
-fixture = DjangoFixture()
-data = fixture.data(blog__Post)
+#fixture = DjangoFixture()
+#data = fixture.data(blog__Post)
+#
+#def setup():
+#    data.setup()
+#    
+#def teardown():
+#    data.teardown()
+#    
+#    
+#def test_loaded():
+#    assert Post.objects.filter(status=2).count() == 2
 
-def setup():
-    data.setup()
+class TestBlogLoading(FixtureTestCase):
+    datasets = [blog__Post]
     
-def teardown():
-    data.teardown()
-    
-    
-def test_loaded():
-    assert Post.objects.filter(status=2).count() == 2
+    def test_data_loaded(self):
+        self.assertEquals(Post.objects.filter(status=2).count(), 2)
     
 """
 >>> from django.test import Client

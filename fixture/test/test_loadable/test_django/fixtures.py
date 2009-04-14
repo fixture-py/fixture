@@ -37,3 +37,13 @@ class app__Reviewer(DataSet):
     class ben:
         name = 'ben'
         reviewed = [app__Book.dune, app__Book.python]
+
+class DjangoDataSetWithMeta(DataSet):
+    class Meta:
+        django_model = 'app.Author'
+    class frank_herbert:
+        first_name = "Frank"
+        last_name = "Herbert"
+    class guido:
+        first_name = "Guido"
+        last_name = "Van rossum"

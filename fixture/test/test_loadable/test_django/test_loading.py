@@ -38,4 +38,13 @@ def test_m2m():
         data.teardown()
     assert_empty(models)
 
+def test_dataset_with_meta():
+    assert_empty(models)
+    data = dj_fixture.data(DjangoDataSetWithMeta)
+    try:
+        data.setup()
+        assert models.Author.objects.count() == 2
+    finally:
+        data.teardown()
+    assert_empty(models)
     
