@@ -23,7 +23,7 @@
 
 >>> response = client.get(reverse('blog_category_list'))
 >>> response.context[-1]['object_list']
-[<Category: Django>, <Category: Rails>]
+[<Category: python>, <Category: testing>]
 >>> response.status_code
 200
 

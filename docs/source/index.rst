@@ -45,6 +45,25 @@ The source is available from the `fixture package`_ or the `fixture subversion r
 
     cd /path/to/source
     python setup.py install
+    
+Fixture is also available using buildout_::
+    
+    svn co http://fixture.googlecode.com/svn/trunk/ fixture
+    cd fixture
+    python bootstrap.py
+    ./bin/buildout
+    
+Optionaly, run the tests::
+        
+    ./bin/test-fixture
+    
+Or build the docs::
+
+    cd docs
+    ../bin/sphinx-build source build/html
+    
+.. warning:: You might actually have to have fixture installed (either into virtualenv_ of system python) to build the docs in this way
+
 
 .. note::
     The above commands may require root access
@@ -57,6 +76,7 @@ If you want to try out fixture before installing it globally, you may be interes
 .. _setuptools: http://peak.telecommunity.com/DevCenter/setuptools
 .. _fixture package: http://pypi.python.org/pypi/fixture
 .. _fixture subversion repository: http://fixture.googlecode.com/svn/trunk/#egg=fixture-dev
+.. _buildout: http://www.buildout.org/
 
 ------------
 Requirements
@@ -91,7 +111,7 @@ The fixture module simplifies this by breaking the process down to two independe
 Examples of Usage
 -----------------
 
-Fixture can be used to load :class:`DataSet <fixture.dataset.DataSet>` objects into `SQLAlchemy`_, `SQLObject`_, or `Google Datastore`_ backends (:ref:`more on that <using-loadable-fixture>`).  For a complete end-to-end example see :ref:`Using Fixture To Test A Pylons + SQLAlchemy App <using-fixture-with-pylons>` or :ref:`Using Fixture To Test A Google App Engine Site <using-fixture-with-appengine>`.  This should help you understand how to fit ``fixture`` into a finished app.
+Fixture can be used to load :class:`DataSet <fixture.dataset.DataSet>` objects into `SQLAlchemy`_, `SQLObject`_, or `Google Datastore`_ backends (:ref:`more on that <using-loadable-fixture>`).  For a complete end-to-end example see :ref:`Using Fixture To Test A Pylons + SQLAlchemy App <using-fixture-with-pylons>`, :ref:`Using Fixture To Test A Google App Engine Site <using-fixture-with-appengine>` or :ref:`using-fixture-with-django`.  This should help you understand how to fit ``fixture`` into a finished app.
 
 .. _SQLAlchemy: http://www.sqlalchemy.org/
 .. _SQLObject: http://www.sqlobject.org/

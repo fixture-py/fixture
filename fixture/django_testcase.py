@@ -13,11 +13,12 @@ class FixtureTestCase(testcases.TransactionTestCase):
     """
 
     def _fixture_setup(self):
-        """Finds an attrubute called 'datasets' and sets it up as a fixture
+        """Finds a list called :attr:`datasets` and loads them
 
-        This is done in a transaction if possible
-        I'm not using the settings.DATABASE_SUPPORTS_TRANSACTIONS as
-        create_test_db might not have been called
+        This is done in a transaction if possible.
+        I'm not using the settings.DATABASE_SUPPORTS_TRANSACTIONS as I don't
+        wnat to assume that :meth:`connection.create_test_db` might not have been
+        called
         """
         if connection.creation._rollback_works():
             transaction.enter_transaction_management()
@@ -32,7 +33,7 @@ class FixtureTestCase(testcases.TransactionTestCase):
             self.data.setup()
     
     def _fixture_teardown(self):
-        """Finds an attribute called data and runs teardown on it
+        """Finds an attribute called :attr:`data` and runs teardown on it
 
         (data is created by :meth:`_fixture_setup`)
         """
