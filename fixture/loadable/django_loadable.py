@@ -183,10 +183,9 @@ class DjangoFixture(DBLoadableFixture):
 
         If this class has an inner :class:`Meta <fixture.dataset.DataSetMeta>`
         class it looks for the ``django_model`` attribute which should be
-        of the form app_label.ModelName, i.e. suitable for passing to django's
-        :func:`get_model` after being split on the dot.
-        If this isn't found it will fallback to the standard behaviour using
-        :class:`DjangoEnv`
+        of the form ``"app_label.ModelName"``, i.e. suitable for passing to
+        django's :func:`get_model` after being split on the dot. If this isn't
+        found it will fallback to the standard behaviour using :class:`DjangoEnv`
         """
         django_model = getattr(ds.meta, 'django_model', None)
         if django_model:

@@ -12,12 +12,22 @@
 
 .. autoclass:: fixture.loadable.django_loadable.DjangoFixture
    :show-inheritance:
-   :members: create_transaction, then_finally
+   :members: create_transaction, then_finally, attach_storage_medium
    
    Django's transaction management is implemented as a module, which is returned by :meth:`create_transaction`. This means the the :meth:`~fixture.loadable.loadable.DBLoadableFixture.commit` and :meth:`~fixture.loadable.loadable.DBLoadableFixture.rollback` remain unchanged from :class:`fixture.loadable.loadable.DBLoadableFixture`.
    
-   As far as mapping DataSets to models, if you don't supply an env kwarg you'll get the :class:`~DjangoEnv` class. This simply provides a :meth:`get method <DjangoEnv.get>` that proxies through to :meth:`django.db.models.loadable.get_model`
+   As far as mapping DataSets to models, if you don't supply an env kwarg you'll get the :class:`~DjangoEnv` class. This simply provides a :meth:`get method <DjangoEnv.get>` that proxies through to :meth:`django.db.models.get_model`.
+   Alternatively you can use an inner :class:`Meta <fixture.dataset.DataSetMeta>` with the following attribute:
 
+   .. attribute:: django_model
+
+    Use this on an inner :class:`Meta <fixture.dataset.DataSetMeta>` class to specify the model.
+    It must be of a form that can be passed to ``get_model`` after being split on a ``'.'`` e.g:
+
+    .. code-block:: python
+
+        class Meta:
+            django_model = 'auth.User'
 
 .. autoclass:: fixture.loadable.django_loadable.DjangoMedium
    :show-inheritance:
@@ -54,3 +64,4 @@
       .. warning:: This will check the field names and related model types only - it won't validate field types
       
       See the :ref:`example models <django-models>`
+
