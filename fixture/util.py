@@ -203,7 +203,7 @@ def _mklog(channel, default_level=logging.CRITICAL, default_stream=None):
     return log
 
 try:
-    any
+    any = any
 except NameError:
     # 2.4-
     def any(iterable):
