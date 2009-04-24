@@ -1,0 +1,59 @@
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/83/trunk/blog/templates/blog
+END
+base_blog.html
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/32/trunk/blog/templates/blog/base_blog.html
+END
+category_detail.html
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/83/trunk/blog/templates/blog/category_detail.html
+END
+post_list.html
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/83/trunk/blog/templates/blog/post_list.html
+END
+post_archive_day.html
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/!svn/ver/83/trunk/blog/templates/blog/post_archive_day.html
+END
+post_archive_year.html
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/!svn/ver/83/trunk/blog/templates/blog/post_archive_year.html
+END
+post_detail.html
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/!svn/ver/83/trunk/blog/templates/blog/post_detail.html
+END
+category_list.html
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/83/trunk/blog/templates/blog/category_list.html
+END
+post_search.html
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/!svn/ver/83/trunk/blog/templates/blog/post_search.html
+END
+post_archive_month.html
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/!svn/ver/83/trunk/blog/templates/blog/post_archive_month.html
+END

@@ -1,0 +1,74 @@
+9
+
+dir
+102
+http://django-basic-apps.googlecode.com/svn/trunk/blog/templates
+http://django-basic-apps.googlecode.com/svn
+
+
+
+2008-10-14T15:29:28.448229Z
+90
+nathan@playgroundblues.com
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+5ae32e2a-df40-0410-a01d-45158a99d8df
+
+inlines
+dir
+
+blog
+dir
+
+feeds
+dir
+
+admin
+dir
+
+base.html
+file
+
+
+
+
+2009-03-04T15:11:19.000000Z
+6bd08ae684a2d1c88b41e3772ea9d95d
+2008-10-14T15:29:28.448229Z
+90
+nathan@playgroundblues.com
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+528
+
