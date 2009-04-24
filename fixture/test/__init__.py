@@ -1,10 +1,29 @@
 
-"""the fixture test suite.
+"""The fixture test suite.
 
-The easiest way to run this is cd into the root and type:
-$ python setup.py nosetests
+There are several things to build before you can run the tests.
+Hopefully this will be simplified in the future but for now, do this:
 
-You will need nose_ installed
+Create the buildout::
+
+    $ python2.5 bootstrap.py
+
+Check out the trunk of Django (until 1.1 is released) into a src dir for buildout ::
+    
+    $ mkdir src
+    $ svn co http://code.djangoproject.com/svn/django/trunk/ src/django
+
+Build everything ::
+    
+    $ ./bin/buildout
+
+Run syncdb on the Django test DB and create a superuser ::
+    
+    $ ./bin/manage syncdb
+
+Run the tests ::
+    
+    $ ./bin/test-fixture
 
 Environment Variables
 ---------------------
@@ -26,9 +45,10 @@ The test suite is affected by several environment variables:
   
   - a database as lite as possible, for speed
   - defaults to sqlite:///:memory:
-
-
-.. _nose: http://somethingaboutorange.com/mrl/projects/nose/
+ 
+As a shortcut, you can run this to set these variables in your shell ::
+    
+    $ source fixture/test/profile/full.sh
 
 """
 
