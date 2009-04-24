@@ -5,6 +5,7 @@ See :ref:`Using Fixture With Django <using-fixture-with-django>` for a complete 
 """
 
 from fixture.loadable import DBLoadableFixture
+from fixture.util import any
 
 __all__ = ('DjangoMedium', 'DjangoFixture', 'DjangoEnv')
 

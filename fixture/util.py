@@ -201,4 +201,15 @@ def _mklog(channel, default_level=logging.CRITICAL, default_stream=None):
         default_stream = logging.StreamHandler(_dummy_stream())
     log.addHandler(default_stream)
     return log
+
+try:
+    any
+except NameError:
+    # 2.4-
+    def any(iterable):
+        for element in iterable:
+            if element:
+                return True
+        return False
+
         
