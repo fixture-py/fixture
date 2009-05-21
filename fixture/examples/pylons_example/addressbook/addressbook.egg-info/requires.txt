@@ -1,2 +1,2 @@
 Pylons>=0.9.7
-SQLAlchemy>=0.5
+SQLAlchemy==0.4.8
