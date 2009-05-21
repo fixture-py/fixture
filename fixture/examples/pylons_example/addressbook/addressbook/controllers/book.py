@@ -1,6 +1,9 @@
 import logging
 
-from addressbook.lib.base import *
+from pylons import request, response, session, tmpl_context as c
+from pylons.controllers.util import abort, redirect_to
+
+from addressbook.lib.base import BaseController, render
 from addressbook.model import meta, Person
 
 log = logging.getLogger(__name__)
