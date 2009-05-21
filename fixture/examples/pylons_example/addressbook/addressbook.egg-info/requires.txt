@@ -1,2 +1,2 @@
-Pylons>=0.9.6.2
-fixture>=1.0
+Pylons>=0.9.7
+SQLAlchemy>=0.5
