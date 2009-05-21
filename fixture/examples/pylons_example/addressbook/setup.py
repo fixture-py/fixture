@@ -7,20 +7,26 @@ except ImportError:
 
 setup(
     name='addressbook',
-    version="",
-    #description='',
-    #author='',
-    #author_email='',
-    #url='',
-    install_requires=["Pylons>=0.9.6.2", "fixture>=1.0"],
+    version='0.1',
+    description='',
+    author='',
+    author_email='',
+    url='',
+    install_requires=[
+        "Pylons>=0.9.7",
+        "SQLAlchemy>=0.5",
+    ],
+    setup_requires=["PasteScript>=1.6.3"],
     packages=find_packages(exclude=['ez_setup']),
     include_package_data=True,
     test_suite='nose.collector',
     package_data={'addressbook': ['i18n/*/LC_MESSAGES/*.mo']},
-    #message_extractors = {'addressbook': [
+    #message_extractors={'addressbook': [
     #        ('**.py', 'python', None),
-    #        ('templates/**.mako', 'mako', None),
+    #        ('templates/**.mako', 'mako', {'input_encoding': 'utf-8'}),
     #        ('public/**', 'ignore', None)]},
+    zip_safe=False,
+    paster_plugins=['PasteScript', 'Pylons'],
     entry_points="""
     [paste.app_factory]
     main = addressbook.config.middleware:make_app
