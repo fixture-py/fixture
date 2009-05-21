@@ -30,7 +30,6 @@ addressbook/model/__init__.py
 addressbook/model/meta.py
 addressbook/public/bg.png
 addressbook/public/favicon.ico
-addressbook/public/index.html
 addressbook/public/pylons-logo.gif
 addressbook/templates/book.mako
 addressbook/tests/__init__.py

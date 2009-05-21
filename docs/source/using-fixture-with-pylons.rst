@@ -90,7 +90,7 @@ Create a ``book`` controller to show a simple list of addresses::
 This makes the files ``addressbook/controllers/book.py`` and ``addressbook/tests/functional/test_book.py``.  Edit ``routing.py`` to set it as the default page::
 
     # CUSTOM ROUTES HERE
-    map.connect('', controller='book', action='index')
+    map.connect('/', controller='book', action='index')
 
 (To avoid conflicts with the default page also be sure to remove ``addressbook/public/index.html``.)
 

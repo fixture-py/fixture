@@ -15,5 +15,6 @@ _tmp_src
 dist
 src
 fixture/examples/pylons_example/addressbook/data
+fixture/examples/pylons_example/addressbook/db.sqlite
 fixture/examples/pylons_example/addressbook/testdb.sqlite
 fixture/test/test_loadable/test_django/project/project.db
