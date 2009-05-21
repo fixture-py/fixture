@@ -18,10 +18,12 @@ def setup():
         sys.path.append(os.path.join(groot, "lib/django"))
         sys.path.append(os.path.join(groot, "lib/webob"))
         sys.path.append(os.path.join(groot, "lib/yaml/lib"))
+        sys.path.insert(0, os.path.join(groot, "lib/antlr3"))
         import google.appengine
         import webob
         import yaml
         import django
+        import antlr3
         
         from google.appengine.tools import dev_appserver
         
