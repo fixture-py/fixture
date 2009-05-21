@@ -7,11 +7,11 @@ Using Fixture To Test A Pylons + SQLAlchemy App
 
 This explains how to use ``fixture`` in the test suite of a simple Address Book application written in `Pylons`_ powered by two tables in a `SQLite`_ database via `SQLAlchemy`_.  If you're not already familiar with :ref:`Using DataSet <using-dataset>` and :ref:`Using LoadableFixture <using-loadable-fixture>` then you'll be OK but it wouldn't hurt to read those docs first.  The concepts here will probably also work with similar Python frameworks backed by `SQLAlchemy`_.  If you've got something working in another framework, please :ref:`let me know <index-contact>`.
 
-(This tutorial was written with Python 2.5.2, fixture 1.0, Pylons 0.9.6.2, and SQLAlchemy 0.4.6 but may work with other versions.)
+(This tutorial was written with Python 2.5.2, fixture 1.3, Pylons 0.9.7, and SQLAlchemy 0.4.8 but may work with other versions.)
 
 .. note:: 
 
-    SQLAlchemy 0.5 is not yet supported by fixture.  To ensure you are using the correct version for this tutorial, run ``easy_install 'SQLAlchemy==0.4.8'``
+    SQLAlchemy 0.5 is not yet supported by fixture.  To ensure you are using the correct version for this tutorial, run ``easy_install 'SQLAlchemy==0.4.8'`` and update install_requires in your setup.py.
 
 Creating An Address Book
 ------------------------
@@ -25,55 +25,16 @@ Next, configure your models to use ``SQLAlchemy`` as explained in `Using SQLAlch
 Defining The Model
 ------------------
 
-To work with the database you need to define a data model.  Place the following code just below the ``init_model()`` def you added before to ``addressbook/model/__init__.py``.  This defines the `SQLAlchemy`_ tables and mappers to hold the Address Book data.  The complete module should look like::
+To work with the database you need to define a data model.  Place the following code just below the ``init_model()`` def you added before to ``addressbook/model/__init__.py``.  This defines the `SQLAlchemy`_ tables and mappers to hold the Address Book data.  The complete module should look like:
 
-    import sqlalchemy as sa
-    from sqlalchemy import orm
+.. literalinclude:: ../../fixture/examples/pylons_example/addressbook/addressbook/model/__init__.py
+    :language: python
 
-    from addressbook.model import meta
-
-    def init_model(engine):
-        """Call me before using any of the tables or classes in the model."""
-
-        sm = orm.sessionmaker(autoflush=True, transactional=True, bind=engine)
-
-        meta.engine = engine
-        meta.Session = orm.scoped_session(sm)
-
-    t_people = sa.Table('people', meta.metadata,
-        sa.Column('id', sa.types.Integer, primary_key=True),
-        sa.Column('name', sa.types.String(100)),
-        sa.Column('email', sa.types.String(100))
-    )
-
-    t_addresses_people = sa.Table('addresses_people', meta.metadata,
-        sa.Column('id', sa.types.Integer, primary_key=True),
-        sa.Column('person_id', sa.types.Integer, sa.ForeignKey('people.id')),
-        sa.Column('address_id', sa.types.Integer, sa.ForeignKey('addresses.id'))
-    )
-
-    t_addresses = sa.Table('addresses', meta.metadata,
-        sa.Column('id', sa.types.Integer, primary_key=True),
-        sa.Column('address', sa.types.String(100))
-    )
-
-    class Person(object):
-        pass
-
-    class Address(object):
-        pass
-
-    orm.mapper(Address, t_addresses)
-    orm.mapper(Person, t_people, properties = {
-        'my_addresses' : orm.relation(Address, secondary = t_addresses_people),
-        })
-
-Per the `Pylons + SQLAlchemy documentation`_, you should also have this line in your ``development.ini`` file which configures your model to use a local SQLite database (when you start things up the database gets saved to ``db.sqlite`` in the ``addressbook`` project dir)::
+Take note that by default Pylons sets your sqlalchemy database to sqlite::
 
     [app:main]
     # ...
-    sqlalchemy.url = sqlite:///%(here)s/db.sqlite
-
+    sqlalchemy.url = sqlite:///%(here)s/development.db
 
 .. note::
     
@@ -94,59 +55,25 @@ This makes the files ``addressbook/controllers/book.py`` and ``addressbook/tests
 
 (To avoid conflicts with the default page also be sure to remove ``addressbook/public/index.html``.)
 
-Edit ``addressbook/controllers/book.py`` to select some addressed from the database and render a template instead of returning "Hello World"::
+Edit ``addressbook/controllers/book.py`` to select some addresses from the database and render a template instead of returning "Hello World":
 
-    import logging
+.. literalinclude:: ../../fixture/examples/pylons_example/addressbook/addressbook/controllers/book.py
+    :language: python
 
-    from addressbook.lib.base import *
-    from addressbook.model import meta, Person
+Add the template file as ``addressbook/templates/book.mako`` and write some Python code (via `Mako`_) to show some addresses:
 
-    log = logging.getLogger(__name__)
-
-    class BookController(BaseController):
-
-        def index(self):
-            # c, imported from addressbook/lib/base.py, is automatically 
-            # available in your template
-            c.persons = meta.Session.query(Person).join('my_addresses')
-            return render("/book.mako")
-
-Add the template file as ``addressbook/templates/book.mako`` and write some Python code (via `Mako`_) to show some addresses::
-
-    <h2>
-    Address Book
-    </h2>
-    
-    % for person in c.persons:
-        <h3>${person.name}</h3>
-        <h4>${person.email}</h4>
-        % for address in person.my_addresses:
-        <h4>${address.address}</h4>
-        % endfor
-    % endfor
+.. literalinclude:: ../../fixture/examples/pylons_example/addressbook/addressbook/templates/book.mako
+    :language: html
 
 .. _Mako: http://www.makotemplates.org/
 
 Adding Some Data Sets
 ---------------------
 
-You now have a page that lists addresses but you don't have any address data.  Fixture provides an easy way to add data to your models for automated or exploratory testing.  Define the following code in a new module at ``addressbook/datasets/__init__.py`` using a naming scheme where each :class:`DataSet <fixture.dataset.DataSet>` subclass is camel case, named after a mapped class in the model but ending in ``Data`` (:ref:`more on styles <using-loadable-fixture-style>`)::
-    
-    from fixture import DataSet
+You now have a page that lists addresses but you don't have any address data.  Fixture provides an easy way to add data to your models for automated or exploratory testing.  Define the following code in a new module at ``addressbook/datasets/__init__.py`` using a naming scheme where each :class:`DataSet <fixture.dataset.DataSet>` subclass is camel case, named after a mapped class in the model but ending in ``Data`` (:ref:`more on styles <using-loadable-fixture-style>`):
 
-    class AddressData(DataSet):
-        class joe_in_montego:
-            address = "111 St. James St, Montego Bay, Jamaica"
-        class joe_in_ny:
-            address = "111 S. 2nd Ave, New York, NY"
-
-    class PersonData(DataSet):
-        class joe_gibbs:
-            name = "Joe Gibbs"
-            email = "joe@joegibbs.com"
-            my_addresses = [
-                AddressData.joe_in_montego, 
-                AddressData.joe_in_ny]
+.. literalinclude:: ../../fixture/examples/pylons_example/addressbook/addressbook/datasets/__init__.py
+    :language: python
 
 This sets up one row to be inserted into the ``people`` table and two rows to be inserted into the ``addresses`` / ``addresses_people`` tables, declaring two addresses for our man Joe Gibbs.  See :ref:`Using DataSet <using-dataset>` for more details.  
 
@@ -157,45 +84,10 @@ Loading Initial Data
 
 If you want to fire up the dev server and start using this data, you just need to place a few lines of code in ``addressbook/websetup.py``, a Pylons convention for hooking into the ``paster setup-app devlopment.ini`` command.
 
-If you haven't already done so per the `Pylons + SQLAlchemy documentation`_ you will first need some code here to create the tables in your database.  The full code for creating tables and inserting data looks like this in ``addressbook/websetup.py``::
+If you haven't already done so per the `Pylons + SQLAlchemy documentation`_ you will first need some code here to create the tables in your database.  The full code for creating tables and inserting data looks like this in ``addressbook/websetup.py``:
 
-    """Setup the addressbook application"""
-    import logging
-
-    from paste.deploy import appconfig
-    from pylons import config
-
-    from addressbook.config.environment import load_environment
-    from addressbook import model
-    from addressbook.model import meta
-
-    from fixture import SQLAlchemyFixture
-    from fixture.style import NamedDataStyle
-    from addressbook.datasets import PersonData
-
-    log = logging.getLogger(__name__)
-
-    def setup_config(command, filename, section, vars):
-        """Place any commands to setup addressbook here"""
-        conf = appconfig('config:' + filename)
-        load_environment(conf.global_conf, conf.local_conf)
-        
-        # initialize the DB :
-        
-        log.info("Creating tables")
-        meta.metadata.create_all(bind=meta.engine)
-        log.info("Successfully setup")
-        
-        # load some initial data during setup-app :
-        
-        db = SQLAlchemyFixture(
-                env=model, style=NamedDataStyle(),
-                engine=meta.engine)
-        
-        data = db.data(PersonData)
-        log.info("Inserting initial data")
-        data.setup()
-        log.info("Done")
+.. literalinclude:: ../../fixture/examples/pylons_example/addressbook/addressbook/websetup.py
+    :language: python
 
 This will allow you to get started on your Address Book application quickly by running::
 
