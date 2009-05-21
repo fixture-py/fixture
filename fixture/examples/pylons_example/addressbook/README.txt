@@ -21,4 +21,4 @@ Then you are ready to go.
 About This Example App
 ======================
 
-SQLAlchemy support added per http://wiki.pylonshq.com/display/pylonsdocs/Using+SQLAlchemy+with+Pylons
+SQLAlchemy support added by following prompts on the command line of paster create.  Note that the requirement has been decremented to ==0.4.8 since fixture does not support 0.5+ yet.
