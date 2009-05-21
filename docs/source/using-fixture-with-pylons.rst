@@ -11,7 +11,7 @@ This explains how to use ``fixture`` in the test suite of a simple Address Book 
 
 .. note:: 
 
-    SQLAlchemy 0.5 is not yet supported by fixture.  To ensure you are using the correct version for this tutorial, run ``easy_install 'SQLAlchemy>=0.4,<0.5'``
+    SQLAlchemy 0.5 is not yet supported by fixture.  To ensure you are using the correct version for this tutorial, run ``easy_install 'SQLAlchemy==0.4.8'``
 
 Creating An Address Book
 ------------------------
