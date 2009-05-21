@@ -109,9 +109,9 @@ Edit ``addressbook/controllers/book.py`` to select some addressed from the datab
             # c, imported from addressbook/lib/base.py, is automatically 
             # available in your template
             c.persons = meta.Session.query(Person).join('my_addresses')
-            return render("/book.mak")
+            return render("/book.mako")
 
-Add the template file as ``addressbook/templates/book.mak`` and write some Python code (via `Mako`_) to show some addresses::
+Add the template file as ``addressbook/templates/book.mako`` and write some Python code (via `Mako`_) to show some addresses::
 
     <h2>
     Address Book

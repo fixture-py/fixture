@@ -29,7 +29,7 @@ addressbook/lib/base.py
 addressbook/lib/helpers.py
 addressbook/model/__init__.py
 addressbook/model/meta.py
-addressbook/templates/book.mak
+addressbook/templates/book.mako
 addressbook/tests/__init__.py
 addressbook/tests/test_models.py
 addressbook/tests/functional/__init__.py

@@ -11,4 +11,4 @@ class BookController(BaseController):
         # c, imported from addressbook/lib/base.py, is automatically 
         # available in your template
         c.persons = meta.Session.query(Person).join('my_addresses')
-        return render("/book.mak")
+        return render("/book.mako")
