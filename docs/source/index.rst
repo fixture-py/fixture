@@ -35,9 +35,16 @@ Using the easy_install_ command::
 
     easy_install fixture
 
+Or `pip <http://pypi.python.org/pypi/pip>`_ ::
+    
+    pip install fixture
+
 If you want to use decorators like :meth:`@fixture.with_data() <fixture.base.Fixture.with_data>` you need `nose`_ installed, so run::
     
     easy_install 'fixture[decorators]'
+    
+.. note::
+    The above commands may require root access
 
 For more variants on the ``easy_install`` command, such as installing database libraries, see :ref:`Using LoadableFixture <using-loadable-fixture>`.
 
@@ -60,13 +67,7 @@ Optionaly, run the tests::
 Or build the docs::
 
     cd docs
-    ../bin/sphinx-build source build/html
-    
-.. warning:: You might actually have to have fixture installed (either into virtualenv_ of system python) to build the docs in this way
-
-
-.. note::
-    The above commands may require root access
+    make html
     
 If you want to try out fixture before installing it globally, you may be interested in `virtualenv`_.
 
