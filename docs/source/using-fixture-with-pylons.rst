@@ -120,7 +120,7 @@ Before running any tests you need to configure the test suite to make a database
     use = config:development.ini
 
     # Add additional test specific configuration options as necessary.
-    sqlalchemy.url = sqlite:///%(here)s/testdb.sqlite
+    sqlalchemy.url = sqlite:///%(here)s/tests.db
 
 
 .. note::

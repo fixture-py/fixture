@@ -15,12 +15,22 @@ from pylons import config, url
 from routes.util import URLGenerator
 from webtest import TestApp
 
+# additional imports ...
+from paste.deploy import appconfig
+from addressbook.config.environment import load_environment
+
 import pylons.test
 
+# export dbfixture here for tests :
 __all__ = ['environ', 'url', 'TestController', 'dbfixture']
 
 # Invoke websetup with the current config file
-SetupCommand('setup-app').run([config['__file__']])
+##### comment this out so that initial data isn't loaded:
+# SetupCommand('setup-app').run([config['__file__']])
+
+##### but add this so that your models get configured:
+appconf = appconfig('config:' + config['__file__'])
+load_environment(appconf.global_conf, appconf.local_conf)
 
 environ = {}
 

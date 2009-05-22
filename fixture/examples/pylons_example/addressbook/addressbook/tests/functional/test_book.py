@@ -15,7 +15,7 @@ class TestBookController(TestController):
         super(TestBookController, self).tearDown()
 
     def test_index(self):
-        response = self.app.get(url_for(controller='book'))
+        response = self.app.get(url(controller='book'))
         print response
         assert PersonData.joe_gibbs.name in response
         assert PersonData.joe_gibbs.email in response
