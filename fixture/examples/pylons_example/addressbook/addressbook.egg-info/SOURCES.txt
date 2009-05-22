@@ -9,7 +9,6 @@ addressbook.egg-info/SOURCES.txt
 addressbook.egg-info/dependency_links.txt
 addressbook.egg-info/entry_points.txt
 addressbook.egg-info/not-zip-safe
-addressbook.egg-info/paste_deploy_config.ini_tmpl
 addressbook.egg-info/paster_plugins.txt
 addressbook.egg-info/requires.txt
 addressbook.egg-info/top_level.txt
