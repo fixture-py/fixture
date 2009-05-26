@@ -62,5 +62,7 @@ class TestController(TestCase):
         url._push_object(URLGenerator(config['routes.map'], environ))
         TestCase.__init__(self, *args, **kwargs)
         
-    # def setUp(self):
-    #     meta.Session.remove() # clear any stragglers from last test
+    def setUp(self):
+        # remove the session once per test so that 
+        # objects do not leak from test to test
+        meta.Session.remove()

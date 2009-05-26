@@ -118,107 +118,40 @@ Before running any tests you need to configure the test suite to make a database
     # Add additional test specific configuration options as necessary.
     sqlalchemy.url = sqlite:///%(here)s/tests.db
 
-
 .. note::
 
-    By default Pylons configures your test suite so that the same code run by ``paster setup-app test.ini`` is run before your tests start.  This can be confusing if you are creating tables and inserting data as mentioned in the previous section so replace it with this code in ``addressbook/tests/__init__.py`` :
+    By default Pylons configures your test suite so that the same code run by ``paster setup-app test.ini`` is run before your tests start.  This can be confusing if you are creating tables and inserting data as mentioned in the previous section so you'll want to comment that out and replace it with enough code to initialize your models.
+    
+Here's a version of ``addressbook/tests/__init__.py`` that initializes your Pylons test suite for use with fixture.  It creates and drops tables *once per test run* to reduce unnecessary overhead and exposes a global ``dbfixture`` object that other tests can import and use.
 
-::
-
-    # additional imports ...
-    from paste.deploy import appconfig
-    from addressbook.config.environment import load_environment
-    
-    # Invoke websetup with the current config file
-    ##### comment this out so that initial data isn't loaded:
-    # SetupCommand('setup-app').run([config['__file__']])
-
-    ##### but add this so that your models get configured:
-    appconf = appconfig('config:' + config['__file__'])
-    load_environment(appconf.global_conf, appconf.local_conf)
-    
-    # ...
-
-Also, the `Pylons + SQLAlchemy documentation`_ suggests creating and dropping tables once per test but this doesn't scale very well and Fixture already tears down data automatically.  Instead, add ``setup`` and ``teardown`` methods to ``addressbook/tests/__init__.py``.  These methods will be called by nose_ just once per every run of your test suite.  Here is the code to add to ``addressbook/tests/__init__.py``::
-    
-    # additional imports ...
-    from addressbook.model import meta
-    
-    # add this code ...
-    
-    def setup():
-        meta.metadata.create_all(meta.engine)
-
-    def teardown():
-        meta.metadata.drop_all(meta.engine)
-    
-    # ...
+.. literalinclude:: ../../fixture/examples/pylons_example/addressbook/addressbook/tests/__init__.py
+    :language: python
 
 .. note:: Fixture deletes the rows *it* inserts.  If *your application* inserts rows during a test then you will need to truncate the table or else go back to the strategy of creating / dropping tables per every test.
-
-Similar to how the `Pylons + SQLAlchemy documentation`_ suggests, you still, however, need to remove the session once *per test* so that objects do not "leak" from test to test.  This is done by making the ``setUp`` method of ``TestController`` in ``tests/__init__.py`` look like this::
-
-    class TestController(TestCase):
-        # ...
-    
-        def setUp(self):
-            meta.Session.remove() # clear any stragglers from last test
 
 Defining A Fixture
 ------------------
 
-To start using data in your tests, first define a common fixture object to use throughout your test suite by adding this code to ``addressbook/tests/__init__.py``::
-    
-    # be sure to export dbfixture :
-    __all__ = ['url_for', 'TestController', 'dbfixture']
-    
-    # add this code *AFTER* load_environment(...) :
+As illustrated by the test suite initialization code above, a common fixture can be used by all tests.  It looks like:
 
-    # additional imports ...
-    from addressbook import model
-    from addressbook.model import meta
-    from fixture import SQLAlchemyFixture
-    from fixture.style import NamedDataStyle
+.. code-block:: python
     
     dbfixture = SQLAlchemyFixture(
         env=model,
         engine=meta.engine,
         style=NamedDataStyle()
     )
-    
-    # ...
-
-.. note:: Beware that using an in-memory SQLite database would make this trickier and the above strategy won't work.  Instead you'd need to assign the engine in ``setup`` after ``metadata.create_all()`` since SQLite memory databases are only available to a single *connection*.
 
 See :ref:`Using LoadableFixture <using-loadable-fixture>` for a detailed explanation of fixture objects.  
 
 Testing With Data
 -----------------
 
-Now let's start working with the :class:`DataSet <fixture.dataset.DataSet>` objects.  Edit ``addressbook/tests/functional/test_book.py`` so that it looks like this::
-    
-    from addressbook.model import meta, Person
-    from addressbook.datasets import PersonData, AddressData
-    from addressbook.tests import *
+Now let's start working with the :class:`DataSet <fixture.dataset.DataSet>` objects.  Edit ``addressbook/tests/functional/test_book.py`` so that it looks like this:
 
-    class TestBookController(TestController):
 
-        def setUp(self):
-            super(TestBookController, self).setUp()
-            self.data = dbfixture.data(PersonData) # AddressData loads implicitly
-            self.data.setup()
-    
-        def tearDown(self):
-            self.data.teardown()
-            super(TestBookController, self).tearDown()
-        
-        def test_index(self):
-            response = self.app.get(url_for(controller='book'))
-            print response
-            assert PersonData.joe_gibbs.name in response
-            assert PersonData.joe_gibbs.email in response
-            assert AddressData.joe_in_montego.address in response
-            assert AddressData.joe_in_ny.address in response
+.. literalinclude:: ../../fixture/examples/pylons_example/addressbook/addressbook/tests/functional/test_book.py
+    :language: python
 
 Then run the test, which should pass::
 
