@@ -9,10 +9,6 @@ This explains how to use ``fixture`` in the test suite of a simple Address Book 
 
 (This tutorial was written with Python 2.5.2, fixture 1.3, Pylons 0.9.7, and SQLAlchemy 0.4.8 but may work with other versions.)
 
-.. note:: 
-
-    SQLAlchemy 0.5 is not yet supported by fixture.  To ensure you are using the correct version for this tutorial, run ``easy_install 'SQLAlchemy==0.4.8'`` and update install_requires in your setup.py.
-
 Creating An Address Book
 ------------------------
 
@@ -20,12 +16,12 @@ First, `install Pylons`_ and create a new app as described in `Getting Started`_
 
     $ paster create -t pylons addressbook
 
-Next, configure your models to use ``SQLAlchemy`` as explained in `Using SQLAlchemy with Pylons`_.  You should have added the module ``addressbook/models/meta.py``, defined ``init_model(engine)`` in ``addressbook/models/__init__.py``, set ``init_model(engine)`` to be called from ``environment.py``, and configured ``BaseController`` to call ``meta.Session.remove()``.
+Follow the prompts to use SQLAlchemy as the backend.
 
 Defining The Model
 ------------------
 
-To work with the database you need to define a data model.  Place the following code just below the ``init_model()`` def you added before to ``addressbook/model/__init__.py``.  This defines the `SQLAlchemy`_ tables and mappers to hold the Address Book data.  The complete module should look like:
+To work with the database you need to define a data model.  Place the following code just below the ``init_model()`` to define the `SQLAlchemy`_ tables and mappers for the Address Book data.  The complete module should look like:
 
 .. literalinclude:: ../../fixture/examples/pylons_example/addressbook/addressbook/model/__init__.py
     :language: python
@@ -70,12 +66,12 @@ Add the template file as ``addressbook/templates/book.mako`` and write some Pyth
 Adding Some Data Sets
 ---------------------
 
-You now have a page that lists addresses but you don't have any address data.  Fixture provides an easy way to add data to your models for automated or exploratory testing.  Define the following code in a new module at ``addressbook/datasets/__init__.py`` using a naming scheme where each :class:`DataSet <fixture.dataset.DataSet>` subclass is camel case, named after a mapped class in the model but ending in ``Data`` (:ref:`more on styles <using-loadable-fixture-style>`):
+You now have a page that lists addresses but you don't have any address data.  Fixture provides an easy way to add data to your models for automated or exploratory testing.  Define the following code in a new module at ``addressbook/datasets/__init__.py`` using a naming scheme where each :class:`DataSet <fixture.dataset.DataSet>` subclass is camel case, named after a mapped class in the model but ending in ``Data`` (:ref:`read more about styles here <using-loadable-fixture-style>`):
 
 .. literalinclude:: ../../fixture/examples/pylons_example/addressbook/addressbook/datasets/__init__.py
     :language: python
 
-This sets up one row to be inserted into the ``people`` table and two rows to be inserted into the ``addresses`` / ``addresses_people`` tables, declaring two addresses for our man Joe Gibbs.  See :ref:`Using DataSet <using-dataset>` for more details.  
+This sets up one row to be inserted into the ``people`` table and two rows to be inserted into the ``addresses`` / ``addresses_people`` tables, declaring two addresses for our man Joe Gibbs.  See :ref:`Using DataSet <using-dataset>` for the details about these classes.  
 
 Notice that the :class:`DataSet <fixture.dataset.DataSet>` classes mirror the properties we defined above for the mappers.  This is because Fixture applies the DataSets to the mapped classes ``Address`` and ``Person`` respectively to save the data.
 
@@ -84,17 +80,17 @@ Loading Initial Data
 
 If you want to fire up the dev server and start using this data, you just need to place a few lines of code in ``addressbook/websetup.py``, a Pylons convention for hooking into the ``paster setup-app devlopment.ini`` command.
 
-If you haven't already done so per the `Pylons + SQLAlchemy documentation`_ you will first need some code here to create the tables in your database.  The full code for creating tables and inserting data looks like this in ``addressbook/websetup.py``:
+The full code for creating tables and inserting data looks like this in ``addressbook/websetup.py``:
 
 .. literalinclude:: ../../fixture/examples/pylons_example/addressbook/addressbook/websetup.py
     :language: python
 
-This will allow you to get started on your Address Book application quickly by running::
+This will allow you to get started on your Address Book application by running::
 
     $ cd /path/to/addressbook
     $ paster setup-app development.ini
 
-Thus, creating all tables in the ``db.sqlite`` file and loading the data defined above.  Now, start the development server::
+Now, start the development server::
 
     paster serve --reload development.ini
 
@@ -125,7 +121,7 @@ Before running any tests you need to configure the test suite to make a database
 
 .. note::
 
-    By default Pylons configures your test suite so that the same code run by ``paster setup-app test.ini`` is run before your tests start.  This can be confusing if you are creating tables and inserting data like in the previous section so replace it with this code in ``addressbook/tests/__init__.py`` :
+    By default Pylons configures your test suite so that the same code run by ``paster setup-app test.ini`` is run before your tests start.  This can be confusing if you are creating tables and inserting data as mentioned in the previous section so replace it with this code in ``addressbook/tests/__init__.py`` :
 
 ::
 
@@ -133,14 +129,13 @@ Before running any tests you need to configure the test suite to make a database
     from paste.deploy import appconfig
     from addressbook.config.environment import load_environment
     
-    # change this code ...
-    
-    test_file = os.path.join(conf_dir, 'test.ini')
-    ## don't run setup-app
-    # cmd = paste.script.appinstall.SetupCommand('setup-app')
-    # cmd.run([test_file])
-    conf = appconfig('config:' + test_file)
-    load_environment(conf.global_conf, conf.local_conf)
+    # Invoke websetup with the current config file
+    ##### comment this out so that initial data isn't loaded:
+    # SetupCommand('setup-app').run([config['__file__']])
+
+    ##### but add this so that your models get configured:
+    appconf = appconfig('config:' + config['__file__'])
+    load_environment(appconf.global_conf, appconf.local_conf)
     
     # ...
 
