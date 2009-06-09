@@ -91,11 +91,18 @@ Doctest usage
 
 Here's an example doctest:
 
+.. testsetup::
+
+    from project.blog.fixtures import *
+    from django.test.utils import setup_test_environment
+    setup_test_environment()
+
 .. doctest::
 
+    >>> from fixture import DjangoFixture
     >>> from django.test import Client
-    >>> from project.blog.models import Post, Category
     >>> from django.core.urlresolvers import reverse
+    >>> from project.blog.models import Post, Category
     >>> client = Client()
     
     Load the data:

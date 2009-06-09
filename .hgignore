@@ -19,3 +19,4 @@ fixture/examples/pylons_example/addressbook/development.db
 fixture/examples/pylons_example/addressbook/tests.db
 fixture/examples/pylons_example/addressbook/Paste*
 fixture/test/test_loadable/test_django/project/project.db
+fixture/examples/pylons_example/addressbook/testdb.sqlite
