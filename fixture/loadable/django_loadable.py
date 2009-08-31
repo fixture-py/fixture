@@ -180,30 +180,71 @@ class DjangoFixture(DBLoadableFixture):
             raise
 
     def attach_storage_medium(self, ds):
-        """Override's superclass to look for a ``django_model`` attribute
-
-        If this class has an inner :class:`Meta <fixture.dataset.DataSetMeta>`
-        class it looks for the ``django_model`` attribute which should be
-        of the form ``"app_label.ModelName"``, i.e. suitable for passing to
-        django's :func:`get_model` after being split on the dot. If this isn't
-        found it will fallback to the standard behaviour using :class:`DjangoEnv`
+        """Attach the Django model for this DataSet.
+        
+        If the DataSet's inner Meta class contains the **django_model** attribute 
+        then this will be used to find the model.  For example::
+            
+            >>> from fixture import DataSet
+            >>> class BookData(DataSet):
+            ...     class Meta:
+            ...         django_model = "yourapp.Book"
+            ...     class dune:
+            ...         title = "Dune"
+            ... 
+        
+        If the DataSet's inner Meta class contains the **django_app_label** attribute 
+        then a model will be looked up within that app.  For example::
+            
+            >>> from fixture import DataSet
+            >>> class BookData(DataSet):
+            ...     class Meta:
+            ...         django_app_label = "app"
+            ...     class dune:
+            ...         title = "Dune"
+            ... 
+        
         """
         django_model = getattr(ds.meta, 'django_model', None)
         if django_model:
-            try:
-                app_label, model_name = django_model.split('.')
-            except ValueError:
-                raise ValueError("django_model must be splittable by '.'")
-            else:
-                from django.db.models.loading import get_model
-                model = get_model(app_label, model_name)
-                if not model:
-                    raise self.StorageMediaNotFound(
-                        "could not find a django model from the attribute given:"
-                        "%s" % django_model)
-                ds.meta.storage_medium = self.Medium(model, ds)
+            self._attach_storage_medium_from_qualified_model_name(django_model, ds)
+            return
+        
+        django_app_label = getattr(ds.meta, 'django_app_label', None)
+        if django_app_label:
+            self._attach_storage_medium_from_app_label(django_app_label, ds)
+            return
+            
+        super(DjangoFixture, self).attach_storage_medium(ds)
+    
+    def _attach_storage_medium_from_qualified_model_name(self, django_model, ds):
+        try:
+            app_label, model_name = django_model.split('.')
+        except ValueError:
+            raise ValueError(
+                "django_model must be a `.' separated combination of app label "
+                "and model name, got %s" % django_model)
         else:
-             super(DjangoFixture, self).attach_storage_medium(ds)
+            from django.db.models.loading import get_model
+            model = get_model(app_label, model_name)
+            if not model:
+                raise self.StorageMediaNotFound(
+                    "could not find a django model from the attribute given:"
+                    "%s" % django_model)
+            ds.meta.storage_medium = self.Medium(model, ds)
+    
+    def _attach_storage_medium_from_app_label(self, django_app_label, ds):
+        if not ds.meta.storable_name:
+            ds.meta.storable_name = self.style.guess_storable_name(
+                                                        ds.__class__.__name__)
+        from django.db.models.loading import get_model
+        model = get_model(django_app_label, ds.meta.storable_name)
+        if not model:
+            raise self.StorageMediaNotFound(
+                "could not find a django model using derived name %r and given app label %r" 
+                % (ds.meta.storable_name, django_app_label))
+                
+        ds.meta.storage_medium = self.Medium(model, ds)
         
 class DjangoEnv(object):
     """
@@ -223,8 +264,10 @@ class DjangoEnv(object):
         try:
             app_label, model_name = name.split(DJANGO_ENV_SPLIT)
         except ValueError:
-            raise ValueError("name must be splittable by %s, got %s" % \
-                                (DJANGO_ENV_SPLIT, name))
+            raise ValueError(
+                "DataSet class name %r must be a `%s' separated combination of app label "
+                "and model name.  Alternatively, you can set Meta.django_app_label "
+                "to match the DataSet class name to a model for that app." % (name, DJANGO_ENV_SPLIT))
         else:
             return get_model(app_label, model_name)
 
