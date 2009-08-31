@@ -37,19 +37,23 @@
 
    .. code-block:: python
 
-      class app__Book(DataSet):
+      class BookData(DataSet):
+         class Meta:
+            django_model = 'app.Book'
          class book1:
             # ...
-            author = app__Author.some_author
+            author = AuthorData.some_author
                     
    and not like this:
    
    .. code-block:: python
    
-      class app__Author(DataSet):
+      class AuthorData(DataSet):
+         class Meta:
+            django_model = 'app.Author'
          class author1:
             # ...
-            books = [app__Book.book1, app__Book.book2]
+            books = [BookData.book1, BookData.book2]
          
    .. note:: This might change in future as it looks like it should be possible to be able to do it the other way round (if desirable).
    

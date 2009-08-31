@@ -22,7 +22,9 @@ Given the above models and the following fixtures:
 .. doctest::
 
     >>> from fixture import DataSet
-    >>> class app__Author(DataSet):
+    >>> class AuthorData(DataSet):
+    ...    class Meta:
+    ...        django_model = 'app.Author'
     ...    class frank_herbert:
     ...        first_name = "Frank"
     ...        last_name = "Herbert"
@@ -30,19 +32,23 @@ Given the above models and the following fixtures:
     ...        first_name = "Guido"
     ...        last_name = "Van rossum"
     ...        
-    >>> class app__Book(DataSet):
+    >>> class BookData(DataSet):
+    ...    class Meta:
+    ...        django_model = 'app.Book'
     ...    class dune:
     ...        title = "Dune"
-    ...        author = app__Author.frank_herbert
+    ...        author = AuthorData.frank_herbert
     ...    
     ...    class python:
     ...        title = 'Python'
-    ...        author = app__Author.guido
+    ...        author = AuthorData.guido
     ...        
-    >>> class app__Reviewer(DataSet):
+    >>> class ReviewerData(DataSet):
+    ...    class Meta:
+    ...        django_model = 'app.Reviewer'
     ...    class ben:
     ...        name = 'ben'
-    ...        reviewed = [app__Book.dune, app__Book.python]
+    ...        reviewed = [BookData.dune, BookData.python]
     
 We can do the following:
 
@@ -55,7 +61,7 @@ We can do the following:
     >>> assert_empty(app)
     >>> Book = get_model('app', 'Book')
     >>> django_fixture = DjangoFixture()
-    >>> data = django_fixture.data(app__Book)
+    >>> data = django_fixture.data(BookData)
     >>> data.setup()
     
     All the books are here:
@@ -80,7 +86,7 @@ We can do the following:
     >>> get_model('app', 'Reviewer').objects.count()
     0
     
-    If we load the app__Reviewers DataSet, all of the others will be pulled in:
+    If we load the ReviewerDatas DataSet, all of the others will be pulled in:
     
 .. doctest::
 
@@ -90,7 +96,7 @@ We can do the following:
     
 .. doctest::
 
-    >>> data = django_fixture.data(app__Reviewer)
+    >>> data = django_fixture.data(ReviewerData)
     >>> data.setup()
     >>> get_model('app', 'Reviewer').objects.count()
     1

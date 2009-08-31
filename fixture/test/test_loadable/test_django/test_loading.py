@@ -10,7 +10,7 @@ dj_fixture = DjangoFixture()
     
 def test_fk_rels():
     assert_empty(models)
-    data = dj_fixture.data(app__Author, app__Book)
+    data = dj_fixture.data(AuthorData, BookData)
     try:
         data.setup()
         assert models.Author.objects.get(first_name='Frank').books.count() == 1
@@ -20,7 +20,7 @@ def test_fk_rels():
     
 def test_m2m():
     assert_empty(models)
-    data = dj_fixture.data(app__Author, app__Book, app__Reviewer)
+    data = dj_fixture.data(AuthorData, BookData, ReviewerData)
     try:
         data.setup()
         ben = models.Reviewer.objects.all()[0]

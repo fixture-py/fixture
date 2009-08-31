@@ -16,7 +16,9 @@ class InvalidNoRelationsData(DataSet):
         char = "two"
         some_other = 2
 
-class app__Author(DataSet):
+class AuthorData(DataSet):
+    class Meta:
+        django_model = 'app.Author'
     class frank_herbert:
         first_name = "Frank"
         last_name = "Herbert"
@@ -24,19 +26,23 @@ class app__Author(DataSet):
         first_name = "Guido"
         last_name = "Van rossum"
         
-class app__Book(DataSet):
+class BookData(DataSet):
+    class Meta:
+        django_model = 'app.Book'
     class dune:
         title = "Dune"
-        author = app__Author.frank_herbert
+        author = AuthorData.frank_herbert
     
     class python:
         title = 'Python'
-        author = app__Author.guido
+        author = AuthorData.guido
         
-class app__Reviewer(DataSet):
+class ReviewerData(DataSet):
+    class Meta:
+        django_model = 'app.Reviewer'
     class ben:
         name = 'ben'
-        reviewed = [app__Book.dune, app__Book.python]
+        reviewed = [BookData.dune, BookData.python]
 
 class DjangoDataSetWithMeta(DataSet):
     class Meta:
