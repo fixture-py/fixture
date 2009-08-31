@@ -5,23 +5,24 @@
 Using Fixture To Test Django
 =====================================
 
-:ref:`Back to the loadable fixture documentation <using-loadable-fixture>`
+Back to the :ref:`loadable fixture <using-loadable-fixture>` documentation.
 
-Fixture is a really good choice as a drop in replacement for django's fixtures and serialization framework.
-It's ideal for applications where the model changes frequently, as you only have to change the definition of the fixture in one place as opposed to the representation of the fixture in all the places it's been dumped out.
+Django already has its own `data fixture mechanism`_ but you can still use the Fixture module to manage data needed for a Django test.  When using Fixture, you don't have to deal with JSON or XML, you simply create :class:`DataSet <fixture.dataset.DataSet>` objects in Python code and load them with an instance of :class:`DjangoFixture <fixture.loadable.django_loadable.DjangoFixture>`.  Using Python code helps you share objects and common field definitions where as in Django you might have many JSON files with the same field definitions in separate places.  Using Python code also allows you to represent test data alongside your test code to improve readability.
+
+However, unlike Django, Fixture does not currently provide a way to auto generate (or regenerate) DataSet classes.  It is safe to mix Fixture style data loading and Django style data loading if desired.
 
 .. _example-django-project:
+.. _data fixture mechanism: fixme
 
 Example project
----------------------------------
+---------------
 
-We'll be using a simple django project and application (found in fixture/test/test_loadable/test_django/project/). The models.py is included here for reference:
+We'll be using a simple django project and application (found in fixture/test/test_loadable/test_django/project/). An excerpt of models.py is shown here for reference:
 
 .. _django-models:
 
     .. literalinclude:: ../../fixture/test/test_loadable/test_django/project/blog/models.py
         :language: python
-        :linenos:
 
 .. currentmodule:: fixture.loadable.django_loadable
 

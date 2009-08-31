@@ -68,16 +68,16 @@ We can do the following:
     
 .. doctest::
 
-    >>> Book.objects.all()
-    [<Book: Dune, Frank Herbert>, <Book: Python, Guido Van rossum>]
+    >>> [(b.title, b.author.first_name) for b in Book.objects.all()]
+    [(u'Dune', u'Frank'), (u'Python', u'Guido')]
     
     And fixture has pulled in all the Authors too:
     
 .. doctest::
 
     >>> Author = get_model('app', 'Author')
-    >>> Author.objects.all()
-    [<Author: Frank Herbert>, <Author: Guido Van rossum>]
+    >>> [a.first_name for a in Author.objects.all()]
+    [u'Frank', u'Guido']
     
     But not the Reviewers:
     
