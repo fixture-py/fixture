@@ -27,9 +27,11 @@ class FixtureTestCase(testcases.TransactionTestCase):
     
         from django.contrib.sites.models import Site
         Site.objects.clear_cache()
-    
+        
+        if not hasattr(self, 'fixture'):
+            self.fixture = DjangoFixture()
         if hasattr(self, 'datasets'):
-            self.data = DjangoFixture().data(*self.datasets)
+            self.data = self.fixture.data(*self.datasets)
             self.data.setup()
     
     def _fixture_teardown(self):

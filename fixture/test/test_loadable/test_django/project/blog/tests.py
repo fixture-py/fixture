@@ -3,11 +3,12 @@ from fixture import DataSet, DjangoFixture
 from fixture.django_testcase import FixtureTestCase
 from datetime import datetime
 from project.blog.models import Post, Category
-from project.blog.fixtures import *
+from project.blog.fixtures import django_fixture, UserData, PostData, CategoryData
 
 
 class TestBlogRelations(FixtureTestCase):
-    datasets = [blog__Post]
+    fixture = django_fixture
+    datasets = [PostData]
     
     def test_data_loaded(self):
         self.assertEquals(Post.objects.filter(status=2).count(), 2,
@@ -35,7 +36,7 @@ __test__ = {'DOCTEST' :
 >>> from project.blog.models import Post, Category
 >>> from django.core.urlresolvers import reverse
 >>> client = Client()
->>> data = DjangoFixture().data(blog__Post)
+>>> data = DjangoFixture().data(PostData)
 >>> data.setup()
 >>> Post.objects.all()
 [<Post: 3rd test post>, <Post: 2nd test post>, <Post: 1st test post>]

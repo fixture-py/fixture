@@ -1,7 +1,10 @@
 from fixture import DataSet, DjangoFixture
+from fixture.style import NamedDataStyle
 from datetime import datetime
 
-class auth__User(DataSet):
+class UserData(DataSet):
+    class Meta:
+        django_app_label = 'auth'
     class ben:
         first_name = 'Ben'
         last_name = 'Ford'
@@ -13,8 +16,13 @@ class auth__User(DataSet):
         is_superuser = 'True'
         #last_login = '2009-03-03 12:51:02.086360'
         date_joined = datetime(2009, 03, 05)
-        
-class blog__Category(DataSet):
+
+class BlogMeta:
+    django_app_label = 'blog'
+    
+class CategoryData(DataSet):
+    class Meta(BlogMeta):
+        pass
     class python:
         title = 'python'
         slug = 'py'
@@ -23,15 +31,17 @@ class blog__Category(DataSet):
         title = 'testing'
         slug = 'test'
 
-class blog__Post(DataSet):
+class PostData(DataSet):
+    class Meta(BlogMeta):
+        pass
     class first_post:
         title           = "1st test post"
         slug            = '1st'
         body            = "this one's about python"
         status          = 1 # Draft
         allow_comments  = True
-        author          = auth__User.ben
-        categories      = blog__Category.python
+        author          = UserData.ben
+        categories      = CategoryData.python
         
     class second_post(first_post):
         title           = "2nd test post"
@@ -44,6 +54,6 @@ class blog__Post(DataSet):
         slug            = '3rd'
         body            = "this one's about both"
         status          = 2 # Public
-        categories      = [blog__Category.python, blog__Category.testing]
+        categories      = [CategoryData.python, CategoryData.testing]
 
-fixture = DjangoFixture()
+django_fixture = DjangoFixture(style=NamedDataStyle())
