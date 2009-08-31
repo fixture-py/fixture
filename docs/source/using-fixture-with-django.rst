@@ -7,12 +7,11 @@ Using Fixture To Test Django
 
 Back to the :ref:`loadable fixture <using-loadable-fixture>` documentation.
 
-Django already has its own `data fixture mechanism`_ but you can still use the Fixture module to manage data needed for a Django test.  When using Fixture, you don't have to deal with JSON or XML, you simply create :class:`DataSet <fixture.dataset.DataSet>` objects in Python code and load them with an instance of :class:`DjangoFixture <fixture.loadable.django_loadable.DjangoFixture>`.  Using Python code helps you share objects and common field definitions where as in Django you might have many JSON files with the same field definitions in separate places.  Using Python code also allows you to represent test data alongside your test code to improve readability.
+Django already has its own `data loading mechanism`_ but you can still use the Fixture module to manage data needed for a Django test.  When using Fixture, you don't have to deal with JSON or XML, you simply create :class:`DataSet <fixture.dataset.DataSet>` objects in Python code and load them with an instance of :class:`DjangoFixture <fixture.loadable.django_loadable.DjangoFixture>`.  Using Python code helps you share objects and common field definitions where as in Django you might have many JSON files with the same field definitions in separate places.  Using Python code also allows you to represent test data alongside your test code to improve readability.
 
 However, unlike Django, Fixture does not currently provide a way to auto generate (or regenerate) DataSet classes.  It is safe to mix Fixture style data loading and Django style data loading if desired.
 
 .. _example-django-project:
-.. _data fixture mechanism: fixme
 
 Example project
 ---------------
@@ -192,5 +191,6 @@ The FixtureTestCase class
         Any :attr:`datasets` found are loaded and refereneced here for later teardown
 
 
+.. _data loading mechanism: http://docs.djangoproject.com/en/dev/topics/testing/
 .. _django's testing framework: http://docs.djangoproject.com/en/dev/topics/testing/
 .. [1] `Django changeset 9756 <http://code.djangoproject.com/changeset/9756>`_
