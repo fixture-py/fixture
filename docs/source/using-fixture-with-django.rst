@@ -190,8 +190,6 @@ The FixtureTestCase class
 
         Any :attr:`datasets` found are loaded and refereneced here for later teardown
 
-There are also some old :ref:`doctests <django-doctests>` you can look at.
-
 
 .. _django's testing framework: http://docs.djangoproject.com/en/dev/topics/testing/
 .. [1] `Django changeset 9756 <http://code.djangoproject.com/changeset/9756>`_
