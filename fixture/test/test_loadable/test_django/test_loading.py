@@ -2,7 +2,7 @@
 from fixture import DjangoFixture
 from fixture import DataSet, style
 
-from project.app import models
+from fixture.examples.django_example.app import models
 from fixtures import *
 from util import *
 

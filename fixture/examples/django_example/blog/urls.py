@@ -1,5 +1,5 @@
 from django.conf.urls.defaults import *
-from project.blog import views as blog_views
+from fixture.examples.django_example.blog import views as blog_views
 
 
 urlpatterns = patterns('',

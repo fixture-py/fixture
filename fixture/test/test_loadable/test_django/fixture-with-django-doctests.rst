@@ -7,11 +7,11 @@ Old django doctests
 
 Back to :ref:`using-fixture-with-django`
 
-We'll be using a simple django project and application (found in fixture/test/test_loadable/test_django/project/). The models.py is included here for reference:
+We'll be using a simple django project and application (found in fixture/examples/django_example/). The models.py is included here for reference:
 
 .. _doctest-models:
 
-    .. literalinclude:: ../../fixture/test/test_loadable/test_django/project/app/models.py
+    .. literalinclude:: ../../fixture/examples/django_example/app/models.py
         :language: python
         :linenos:
 

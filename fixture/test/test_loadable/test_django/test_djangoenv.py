@@ -1,6 +1,6 @@
 from nose.tools import raises, assert_raises, assert_equal
 from fixture.loadable.django_loadable import DjangoEnv, DjangoFixture
-from project.app.models import Book
+from fixture.examples.django_example.app.models import Book
 from fixture import DataSet
 from fixture.style import NamedDataStyle
 

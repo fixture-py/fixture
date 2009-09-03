@@ -2,8 +2,8 @@ from django.contrib.auth.models import User
 from fixture import DataSet, DjangoFixture
 from fixture.django_testcase import FixtureTestCase
 from datetime import datetime
-from project.blog.models import Post, Category
-from project.blog.fixtures import django_fixture, UserData, PostData, CategoryData
+from fixture.examples.django_example.blog.models import Post, Category
+from fixture.examples.django_example.blog.fixtures import django_fixture, UserData, PostData, CategoryData
 
 
 class TestBlogRelations(FixtureTestCase):
@@ -33,10 +33,11 @@ __test__ = {'DOCTEST' :
 >>> #import interlude
 >>> #interlude.interact(locals())
 >>> from django.test import Client
->>> from project.blog.models import Post, Category
+>>> from fixture.style import NamedDataStyle
+>>> from fixture.examples.django_example.blog.models import Post, Category
 >>> from django.core.urlresolvers import reverse
 >>> client = Client()
->>> data = DjangoFixture().data(PostData)
+>>> data = DjangoFixture(style=NamedDataStyle()).data(PostData)
 >>> data.setup()
 >>> Post.objects.all()
 [<Post: 3rd test post>, <Post: 2nd test post>, <Post: 1st test post>]

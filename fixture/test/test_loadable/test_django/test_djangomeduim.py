@@ -5,7 +5,7 @@ from fixture.loadable.django_loadable import field_is_required
 from fixtures import *
 from util import *
 from nose.tools import raises
-from project.app import models
+from fixture.examples.django_example.app import models
 from django.db import models as django_models
 
 def _check_row(medium, column_vals):

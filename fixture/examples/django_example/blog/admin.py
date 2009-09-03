@@ -1,5 +1,5 @@
 from django.contrib import admin
-from project.blog.models import *
+from fixture.examples.django_example.blog.models import *
 
 
 class CategoryAdmin(admin.ModelAdmin):

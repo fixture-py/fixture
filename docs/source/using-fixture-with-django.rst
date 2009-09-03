@@ -16,16 +16,20 @@ However, unlike Django, Fixture does not currently provide a way to auto generat
 Example project
 ---------------
 
-We'll be using a simple django project and application (found in fixture/test/test_loadable/test_django/project/). An excerpt of models.py is shown here for reference:
+We'll be using a simple django project and application (found in fixture/examples/django_example/). An excerpt of models.py is shown here for reference:
 
 .. _django-models:
 
-    .. literalinclude:: ../../fixture/test/test_loadable/test_django/project/blog/models.py
+    .. literalinclude:: ../../fixture/examples/django_example/blog//blog/models.py
         :language: python
 
 .. currentmodule:: fixture.loadable.django_loadable
 
 As with `django's testing framework`_ you can use fixture in doctests or in a unittest style, additionally you can use them within nose.
+
+.. note::
+    
+    A complete version of this can be found in fixture/examples/django_example/blog/
 
 .. _django-fixtures:
 
@@ -93,7 +97,7 @@ Here's an example doctest:
 
 .. testsetup::
 
-    from project.blog.fixtures import *
+    from fixture.examples.django_example.blog.fixtures import *
     from django.test.utils import setup_test_environment
     setup_test_environment()
 
@@ -102,7 +106,7 @@ Here's an example doctest:
     >>> from fixture import DjangoFixture
     >>> from django.test import Client
     >>> from django.core.urlresolvers import reverse
-    >>> from project.blog.models import Post, Category
+    >>> from fixture.examples.django_example.blog.models import Post, Category
     >>> client = Client()
     
     Load the data:
