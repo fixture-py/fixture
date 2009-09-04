@@ -36,24 +36,17 @@ class PostData(DataSet):
         pass
     class first_post:
         title           = "1st test post"
-        slug            = '1st'
         body            = "this one's about python"
-        status          = 1 # Draft
-        allow_comments  = True
         author          = UserData.ben
-        categories      = CategoryData.python
+        categories      = [CategoryData.python]
         
     class second_post(first_post):
         title           = "2nd test post"
-        slug            = '2nd'
         body            = "this one's also about python"
-        status          = 2 # Public
         
     class third_post(first_post):
         title           = "3rd test post"
-        slug            = '3rd'
         body            = "this one's about both"
-        status          = 2 # Public
         categories      = [CategoryData.python, CategoryData.testing]
 
 django_fixture = DjangoFixture(style=NamedDataStyle())

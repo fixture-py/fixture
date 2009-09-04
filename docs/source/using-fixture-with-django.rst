@@ -16,16 +16,14 @@ However, unlike Django, Fixture does not currently provide a way to auto generat
 Example project
 ---------------
 
-We'll be using a simple django project and application (found in fixture/examples/django_example/). An excerpt of models.py is shown here for reference:
+Here's a simple blog application written in Django.  The data model consists of Post objects that belong to Category objects.
 
 .. _django-models:
 
-    .. literalinclude:: ../../fixture/examples/django_example/blog//blog/models.py
+    .. literalinclude:: ../../fixture/examples/django_example/blog/models.py
         :language: python
 
 .. currentmodule:: fixture.loadable.django_loadable
-
-As with `django's testing framework`_ you can use fixture in doctests or in a unittest style, additionally you can use them within nose.
 
 .. note::
     
@@ -88,55 +86,6 @@ This is an extract from the :ref:`example django project <example-django-project
             categories      = blog__Category.python
 
 Here ``first_post`` is in the category python defined above and it's author is ben (the auth__User fixture is not included for brevity)
-
-
-Doctest usage
-------------------
-
-Here's an example doctest:
-
-.. testsetup::
-
-    from fixture.examples.django_example.blog.fixtures import *
-    from django.test.utils import setup_test_environment
-    setup_test_environment()
-
-.. doctest::
-
-    >>> from fixture import DjangoFixture
-    >>> from django.test import Client
-    >>> from django.core.urlresolvers import reverse
-    >>> from fixture.examples.django_example.blog.models import Post, Category
-    >>> client = Client()
-    
-    Load the data:
-    
-    >>> data = DjangoFixture().data(blog__Post)
-    >>> data.setup()
-    
-    Model API tests
-    
-    >>> Post.objects.all()
-    [<Post: 3rd test post>, <Post: 2nd test post>, <Post: 1st test post>]
-    >>> Post.objects.published()
-    [<Post: 3rd test post>, <Post: 2nd test post>]
-    
-    Using the test client
-    
-    >>> response = client.get(reverse('blog_index'))
-    >>> response.status_code
-    200
-    >>> response.context[-1]['object_list']
-    [<Post: 3rd test post>, <Post: 2nd test post>]
-    >>> response = client.get(reverse('blog_category_list'))
-    >>> response.status_code
-    200
-    >>> response.context[-1]['object_list']
-    [<Category: python>, <Category: testing>]
-    
-    Teardown the data
-    
-    >>> data.teardown()
 
 
 Unittest usage
