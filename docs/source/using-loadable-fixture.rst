@@ -36,8 +36,8 @@ DataSet classes can be loaded into `Table`_ objects or `mapped classes`_ via the
     import os
     if os.path.exists('/tmp/fixture_example.db'):
         os.unlink('/tmp/fixture_example.db')
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'fixture.test.test_loadable.test_django.project.settings'
-    from fixture.test.test_loadable.test_django.project.app import models
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'fixture.examples.django_example.settings'
+    from fixture.examples.django_example.blog import models
 
 .. doctest:: loading
 
