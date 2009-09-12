@@ -3,7 +3,8 @@ from fixture import DataSet, DjangoFixture
 from fixture.django_testcase import FixtureTestCase
 from datetime import datetime
 from fixture.examples.django_example.blog.models import Post, Category
-from fixture.examples.django_example.blog.fixtures import django_fixture, UserData, PostData, CategoryData
+from fixture.examples.django_example.blog.datasets.blog_data import (
+                                        django_fixture, UserData, PostData, CategoryData)
 
 
 class TestBlogRelations(FixtureTestCase):

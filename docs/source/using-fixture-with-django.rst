@@ -99,7 +99,6 @@ Here's how you use it:
 .. code-block:: python
 
     from fixture.django_testcase import FixtureTestCase
-    # from path.to.fixtures import *
 
     class TestBlogRelations(FixtureTestCase):
         datasets = [blog__Post]
