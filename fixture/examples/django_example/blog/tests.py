@@ -1,14 +1,16 @@
 from django.contrib.auth.models import User
 from fixture import DataSet, DjangoFixture
+from fixture.style import NamedDataStyle
 from fixture.django_testcase import FixtureTestCase
 from datetime import datetime
 from fixture.examples.django_example.blog.models import Post, Category
 from fixture.examples.django_example.blog.datasets.blog_data import (
-                                        django_fixture, UserData, PostData, CategoryData)
+                                        UserData, PostData, CategoryData)
 
+db_fixture = DjangoFixture(style=NamedDataStyle())
 
 class TestBlogRelations(FixtureTestCase):
-    fixture = django_fixture
+    fixture = db_fixture
     datasets = [PostData]
     
     def test_data_loaded(self):

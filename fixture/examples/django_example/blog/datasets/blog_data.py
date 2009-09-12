@@ -1,5 +1,4 @@
 from fixture import DataSet, DjangoFixture
-from fixture.style import NamedDataStyle
 from blog.datasets.user_data import UserData
 
 class BlogMeta:
@@ -33,5 +32,3 @@ class PostData(DataSet):
         title           = "3rd test post"
         body            = "this one's about both"
         categories      = [CategoryData.python, CategoryData.testing]
-
-django_fixture = DjangoFixture(style=NamedDataStyle())
