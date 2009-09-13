@@ -12,6 +12,8 @@
 # serve to show the default value.
 
 import sys, os
+# for doctests of Django examples to work 
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'fixture', 'examples', 'django_example'))
 
 # register some docutils directives
 # (there's probably a better way to do this)

@@ -5,20 +5,22 @@
 Using Fixture To Test Django
 =====================================
 
-Back to the :ref:`loadable fixture <using-loadable-fixture>` documentation.
+.. contents:: :local:
 
-Django already has its own `data loading mechanism`_ but you can still use the Fixture module to manage data needed for a Django test.  When using Fixture, you don't have to deal with JSON or XML, you simply create :class:`DataSet <fixture.dataset.DataSet>` objects in Python code and load them with an instance of :class:`DjangoFixture <fixture.loadable.django_loadable.DjangoFixture>`.  Using Python code helps you share objects and common field definitions where as in Django you might have many JSON files with the same field definitions in separate places.  Using Python code also allows you to represent test data alongside your test code to improve readability.
+The `Django's ORM <http://www.djangoproject.com>`_ already has its own `data loading mechanism`_ for testing but you can use the Fixture module as an alternative.  When using Fixture, you don't have to deal with JSON or XML, you simply create :class:`DataSet <fixture.dataset.DataSet>` objects in Python code and load them with an instance of :class:`DjangoFixture <fixture.loadable.django_loadable.DjangoFixture>`.  Using Python code helps you share objects and common field definitions whereas in Django you might have many JSON files with the same field definitions in separate places.  Using Python code also allows you to represent test data alongside your test code, take advantage of inheritance, and improve readability.
 
-However, unlike Django, Fixture does not currently provide a way to auto generate (or regenerate) DataSet classes.  It is safe to mix Fixture style data loading and Django style data loading if desired.
+However, unlike Django, Fixture does not currently provide a way to auto generate DataSet classes from a real database.  It is safe to mix Fixture style data loading and Django style data loading if desired.
 
-.. _example-django-project:
+This feature was contributed by `Ben Ford <http://twitter.com/boothead>`_.
 
-Example project
----------------
-
-Here's a simple blog application written in Django.  The data model consists of Post objects that belong to Category objects.
+.. note:: Fixture can only be used with `Django version 1.0.2 <http://www.djangoproject.com/download/>`_ and greater.
 
 .. _django-models:
+
+Example Django application
+---------------------------
+
+Here's a simple blog application written in Django.  The data model consists of Post objects that belong to Category objects.
 
     .. literalinclude:: ../../fixture/examples/django_example/blog/models.py
         :language: python
@@ -27,30 +29,18 @@ Here's a simple blog application written in Django.  The data model consists of 
 
 .. note::
     
-    A complete version of this can be found in fixture/examples/django_example/blog/
+    A complete version of this blog app with fixtures and tests can be found in fixture/examples/django_example/blog/
 
 .. _django-fixtures:
 
-Defining fixtures
------------------------
+Defining datasets
+-----------------
 
-Fixture has two different ways to associate :class:`DataSets <fixture.dataset.DataSet>` with django models,
-by the making the name of the dataset class being the app and the model separated by a double underscore,
-or using the inner :class:`Meta <fixture.dataset.DataSetMeta>` and giving it a :attr:`~fixture.loadable.django_loadable.DjangoFixture.django_model` attribute.
-This means that the following two are equivalent ways to define some data to insert into django's user table:
+To load data into the test database, you first create some :class:`DataSet <fixture.dataset.DataSet>` subclasses in Python code:
 
 .. code-block:: python
 
-    class auth__User(DataSet):
-        class ben:
-            first_name = 'Ben'
-            last_name = 'Ford'
-            username = 'ben'
-            # ...
-
-.. code-block:: python
-
-    class UserDataSet(DataSet):
+    class UserData(DataSet):
         class Meta:
             django_model = 'auth.User'
         class ben:
@@ -58,91 +48,74 @@ This means that the following two are equivalent ways to define some data to ins
             last_name = 'Ford'
             # ...
 
+In this example, the nested class ``ben`` will be used to create a row in django's ``auth.User`` model.  Fixture knows to load into that model because of the ``django_model`` attribute of the inner :class:`Meta <fixture.dataset.DataSetMeta>` class.  A couple other ways to link each DataSet to a specfic Django model are shown later on.
 
-Relationships between models
----------------------------------
+Defining relationships between models
+--------------------------------------
 
-At the moment you can only specify a relationship from the direction that the field is defined *not* from the reverse.
-There are plans to fix this, but for a first shot at fixture support in django I wanted to contrain the scope of it a bit.
-See :class:`~fixture.loadable.django_loadable.DjangoMedium` for more details about this. Here's how to define a relationship:
+More realistically you would need to load one or more foreign key dependencies as part of each DataSet.  Here are the DataSets for testing the blog application, taken from ``fixture/examples/django_example/blog/datasets/blog_data.py`` 
 
-This is an extract from the :ref:`example django project <example-django-project>` fixtures.py file.
+.. literalinclude:: ../../fixture/examples/django_example/blog/datasets/blog_data.py
+    :language: python
 
-.. code-block:: python
+Here ``first_post`` is a blog entry posted in the Python category and authored by Ben (notice the UserData class has been imported from the user_data module).
 
-    class blog__Category(DataSet):
-        class python:
-            title = 'python'
-            slug = 'py'
+In this style, each DataSet class name starts with that of the Django model it should be loaded into and a shared class BlogMeta has the attribute ``django_app_label='blog'`` to tell the loader which app to find models in.
 
-    class blog__Post(DataSet):
-        class first_post:
-            title           = "1st test post"
-            slug            = '1st'
-            body            = "this one's about python"
-            status          = 1 # Draft
-            allow_comments  = True
-            author          = auth__User.ben
-            categories      = blog__Category.python
-
-Here ``first_post`` is in the category python defined above and it's author is ben (the auth__User fixture is not included for brevity)
-
-
-Unittest usage
+.. note:: 
+    In the current release of fixture you can only specify a relationship from the direction that the field is defined, *not* from the reverse (see :class:`DjangoMedium <fixture.loadable.django_loadable.DjangoMedium>` for more details). 
+    
+Loading some data
 ------------------
-
-There's a subclass of django TransactionTestCase available which is fixture aware :class:`fixture.django_testcase.FixtureTestCase`. This can be straight swap for existing testcases and will autoload fixtures.
-Fixtures are loaded and torn down for each test method, this should be quicker than running the django flush command each time.
-
-Here's how you use it:
-
-.. code-block:: python
-
-    from fixture.django_testcase import FixtureTestCase
-
-    class TestBlogRelations(FixtureTestCase):
-        datasets = [blog__Post]
-        
-        def test_data_loaded(self):
-            self.assertEquals(Post.objects.filter(status=2).count(), 2,
-                              "There are 2 published blog posts")
-            post = Post.objects.get(slug='3rd')
-            self.assertEquals(post.categories.count(), 2,
-                              "The 3rd test post is in 2 categories")
     
-        def test_reverse_relations(self):
-            py = Category.objects.get(slug='py')
-            self.assertEquals(py.post_set.count(), 3,
-                              "There are 3 posts in python category")
+
+.. doctest::
+    :hide:
     
-        def test_published_for_author(self):
-            ben = User.objects.get(username='ben')
-            self.assertEquals(ben.post_set.published().count(), 2,
-                              "Ben has published 2 posts")
-                              
-The :attr:`~fixture.django_testcase.FixtureTestCase.datasets` attribute is a list of datasets that you want available for this set of tests. As with django's json/xml/yaml fixtures, these are loaded into the database in the setup method and then torn down for each test. The :class:`~fixture.django_testcase.FixtureTestCase` also makes use of django's recent transactional test case refactoring [1]_ so it should be pretty fast.
+    >>> import os
+    >>> os.environ['DJANGO_SETTINGS_MODULE'] = 'fixture.examples.django_example.settings'
+    >>> from django.core.management import call_command
+    >>> call_command('syncdb', interactive=False)
+    >>> call_command('reset', 'blog', interactive=False)
+    ...
+    >>> from fixture.examples.django_example.blog.datasets.blog_data import CategoryData, PostData
+    >>> from fixture.examples.django_example.blog.models import Post
+    
+To load these records programatically you'd use a :class:`DjangoFixture <fixture.loadable.django_loadable.DjangoFixture>` instance and a :class:`NamedDataStyle <fixture.style.NamedDataStyle>` instance:
+    
+.. doctest::
+    
+    >>> from fixture import DjangoFixture
+    >>> from fixture.style import NamedDataStyle
+    >>> db_fixture = DjangoFixture(style=NamedDataStyle())
 
-Note in the above example we've only specified *one* dataset to be loaded but from that fixure knows that it needs to go and fetch the categories dataset and the user dataset because they are refered to.
+You would insert each defined row into its target database table via setup() :
+    
+.. doctest::
 
-Now consider what happens if you're developing a few related django applications, and the schema for one of them changes. If you're using some dumped fixtures to express your data for testing then you now have to go and manually edit all fixtures that contain this model. If you're building something with some models that a lot of others relate to (for example a Profile object in a social networking site with blog posts, forums posts contacts etc) then you've just made a lot of work for yourself! However if you've developed a fixture for your Profile that you or other developers are importing and relating to when writing fixtures for their own related models, then you only need to change **one** fixture and your data model is up to date again. (The tests might still break, but you'll know that there's a consistent set of data representing cononical Profiles in the database). This for me is the killer feature of declarative fixtures versus a textual representation of the database at some point in time. 
+    >>> data = db_fixture.data(CategoryData, PostData)
+    >>> data.setup()
+    >>> Post.objects.filter(author__first_name='Ben').count()
+    3
+    >>> data.teardown()
+    >>> Post.objects.all()
+    []
 
-The FixtureTestCase class
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Foreign DataSet classes like UserData need not be mentioned in data() since they are loaded automatically when referenced.
+    
+Loading data in a test
+-----------------------
 
-.. autoclass:: fixture.django_testcase.FixtureTestCase
-    :show-inheritance:
-    :members: _fixture_setup, _fixture_teardown
+Here is an example of how to create a unittest style class to test with data.  This is taken directly from ``fixture.examples.django_example.blog.tests``:
 
-    .. attribute:: datasets
+.. literalinclude:: ../../fixture/examples/django_example/blog/tests.py
+    :language: python
 
-        This is a list of :class:`DataSets <fixture.dataset.DataSet>` that will be created and destroyed for each test method.
-        The result of setting them up will be referenced by the :attr:`data`
+.. note:: This test case uses Django's fast data loading strategy introduced in 1.1 whereby data is removed by rolling back the transaction.  If you need to test specific transactional behavior in your code then don't use this test case.
 
-    .. attribute:: data
+See :class:`fixture.django_testcase.FixtureTestCase` for details on how to configure the test case.
 
-        Any :attr:`datasets` found are loaded and refereneced here for later teardown
-
+For further reading, check the API docs for :mod:`fixture.django_testcase` and :mod:`fixture.loadable.django_loadable`
 
 .. _data loading mechanism: http://docs.djangoproject.com/en/dev/topics/testing/
 .. _django's testing framework: http://docs.djangoproject.com/en/dev/topics/testing/
-.. [1] `Django changeset 9756 <http://code.djangoproject.com/changeset/9756>`_

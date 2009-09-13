@@ -126,7 +126,7 @@ Django support for loading datasets work with `django version 1.0.2 <http://www.
 
     >>> from fixture import DjangoFixture
     >>> from fixture.style import NamedDataStyle
-    >>> django_fixture = DjangoFixture()
+    >>> dbfixture = DjangoFixture()
     
 By default :class:`~DjangoFixture` uses a special class for it's env (:class:`~DjangoEnv`). If you don't pass in an env keyword argument then :class:`~DjangoFixture` will use this class to resolve fixtures to models. You can of course still pass an env and style if you want to change this, see :ref:`using-loadable-fixture-style` for more details
 

@@ -10,6 +10,8 @@ class FixtureTestCase(testcases.TransactionTestCase):
     
     Starts a transaction at the begining of a test and rolls it back at the
     end.
+    
+    See :ref:`Using Fixture With Django <using-fixture-with-django>` for a complete example.
     """
 
     def _fixture_setup(self):
