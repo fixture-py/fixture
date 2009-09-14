@@ -10,30 +10,10 @@ import re
 from nose.plugins import Plugin
 import nose.case
 
-# Force settings.py pointer
-# search the current working directory and all parent directories to find
-# the settings file
 from nose.importer import add_path
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-import re
-NT_ROOT = re.compile(r"^[a-zA-Z]:\\$")
-def get_SETTINGS_PATH():
-    '''
-    Hunt down the settings.py module by going up the FS path
-    '''
-    cwd = os.getcwd()
-    while cwd:
-        if 'settings.py' in os.listdir(cwd):
-            break
-        cwd = os.path.split(cwd)[0]
-        if os.name == 'nt' and NT_ROOT.match(cwd):
-            return None
-        elif cwd == '/':
-            return None
-    return cwd
 
-SETTINGS_PATH = get_SETTINGS_PATH()
-
+SETTINGS_PATH = None
 
 class NoseDjango(Plugin):
     """

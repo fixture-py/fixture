@@ -1,18 +1,6 @@
-Nose django helper plugin
-=========================
 
-nosetests -v --with-django --with-doctest --doctest-tests 
+This is a temporary, impatient hack of the NoseDjango plugin purely to allow for testing of fixture's Django functionality.  It is a fork of VictorNG's latest plugin but removes most of the functionality.
 
-This is a rewrite of Jason Pellerin's original nose-django plugin.
+The original lives on at http://www.assembla.com/spaces/nosedjango
 
-This plugin will work with Django trunk (0.97-pre SVN revision 6669)
-
-Features:
-
-    * automatic settings.py detection in current or parent directory
-    * fixture support
-    * database setup/teardown
-
-Contact: 
-    Victor Ng <crankycoder@gmail.com>
- 
+- Kumar McMillan
