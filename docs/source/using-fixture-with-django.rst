@@ -11,7 +11,7 @@ The `Django's ORM <http://www.djangoproject.com>`_ already has its own `data loa
 
 However, unlike Django, Fixture does not currently provide a way to auto generate DataSet classes from a real database.  It is safe to mix Fixture style data loading and Django style data loading if desired.
 
-This feature was contributed by `Ben Ford <http://twitter.com/boothead>`_.
+This feature was contributed by `Ben Ford <http://bitbucket.org/boothead/>`_.
 
 .. note:: Fixture can only be used with `Django version 1.0.2 <http://www.djangoproject.com/download/>`_ and greater.
 

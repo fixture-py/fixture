@@ -162,7 +162,7 @@ Changelog
 
 - 1.3
   
-  - Django support added by `Ben Ford <http://twitter.com/boothead>`_.  See :ref:`using-fixture-with-django`
+  - Django support added by `Ben Ford <http://bitbucket.org/boothead/>`_.  See :ref:`using-fixture-with-django`
   - Using session.add() when in sqlalchemy 0.5.2+ to avoid deprecation warning (reported by Jeff Balogh)
   - Google Code repository migrated from Subversion to `Mercurial <http://code.google.com/p/fixture/source/browse/>`_.
 
