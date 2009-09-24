@@ -6,11 +6,10 @@ Hopefully this will be simplified in the future but for now, do this:
 
 Create the buildout::
 
-    $ python2.5 bootstrap.py
+    $ python2.5 setup_test_buildout.py
 
 Check out the trunk of Django (until 1.1 is released) into a src dir for buildout ::
     
-    $ mkdir src
     $ svn co http://code.djangoproject.com/svn/django/trunk/ src/django
 
 Build everything ::

@@ -48,35 +48,26 @@ If you want to use decorators like :meth:`@fixture.with_data() <fixture.base.Fix
 
 For more variants on the ``easy_install`` command, such as installing database libraries, see :ref:`Using LoadableFixture <using-loadable-fixture>`.
 
-The source is available from the `fixture package`_ or the `fixture subversion repository`_ and the following command works with or without setuptools_::
+The source is available from the `fixture package`_ or the `fixture repository`_ and the following command works with or without setuptools_::
 
     cd /path/to/source
     python setup.py install
+
+To run Fixture's own test suite you need to create a buildout ::
     
-Fixture is also available using buildout_::
-    
-    svn co http://fixture.googlecode.com/svn/trunk/ fixture
-    cd fixture
-    python bootstrap.py
+    python setup_test_buildout.py
     ./bin/buildout
-    
-Optionaly, run the tests::
+
+Then you can run the tests with ::
         
     ./bin/test-fixture
-    
-Or build the docs::
-
-    cd docs
-    make html
-    
-If you want to try out fixture before installing it globally, you may be interested in `virtualenv`_.
 
 .. _nose: http://somethingaboutorange.com/mrl/projects/nose/
 .. _virtualenv: http://pypi.python.org/pypi/virtualenv
 .. _easy_install: http://peak.telecommunity.com/DevCenter/EasyInstall
 .. _setuptools: http://peak.telecommunity.com/DevCenter/setuptools
 .. _fixture package: http://pypi.python.org/pypi/fixture
-.. _fixture subversion repository: http://fixture.googlecode.com/svn/trunk/#egg=fixture-dev
+.. _fixture repository: http://fixture.googlecode.com/hg/#egg=fixture-dev
 .. _buildout: http://www.buildout.org/
 
 ------------
@@ -112,11 +103,12 @@ The fixture module simplifies this by breaking the process down to two independe
 Examples of Usage
 -----------------
 
-Fixture can be used to load :class:`DataSet <fixture.dataset.DataSet>` objects into `SQLAlchemy`_, `SQLObject`_, or `Google Datastore`_ backends (:ref:`more on that <using-loadable-fixture>`).  For a complete end-to-end example see :ref:`Using Fixture To Test A Pylons + SQLAlchemy App <using-fixture-with-pylons>`, :ref:`Using Fixture To Test A Google App Engine Site <using-fixture-with-appengine>` or :ref:`using-fixture-with-django`.  This should help you understand how to fit ``fixture`` into a finished app.
+Fixture can be used to load :class:`DataSet <fixture.dataset.DataSet>` objects into `SQLAlchemy`_, `SQLObject`_, `Google Datastore`_, or `Django ORM`_ backends (:ref:`more on loading data <using-loadable-fixture>`).  For a complete end-to-end example see :ref:`Using Fixture To Test A Pylons + SQLAlchemy App <using-fixture-with-pylons>`, :ref:`Using Fixture To Test A Google App Engine Site <using-fixture-with-appengine>` or :ref:`using-fixture-with-django`.  This should help you understand how to fit ``fixture`` into a finished app.
 
 .. _SQLAlchemy: http://www.sqlalchemy.org/
 .. _SQLObject: http://www.sqlobject.org/
 .. _Google Datastore: http://code.google.com/appengine/docs/datastore/
+.. _Django ORM: http://docs.djangoproject.com/
 
 Now, on to the knitty gritty details ...
 
@@ -172,7 +164,7 @@ Changelog
   
   - Django support added by `Ben Ford <http://twitter.com/boothead>`_.  See :ref:`using-fixture-with-django`
   - Using session.add() when in sqlalchemy 0.5.2+ to avoid deprecation warning (reported by Jeff Balogh)
-  - Google Code repository migrated from Subversion to Mercurial.
+  - Google Code repository migrated from Subversion to `Mercurial <http://code.google.com/p/fixture/source/browse/>`_.
 
 - 1.2
   

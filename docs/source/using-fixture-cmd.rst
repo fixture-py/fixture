@@ -14,6 +14,8 @@ There are several issues you may run into while working with fixtures:
 
 ``fixture`` is a shell command to address these and other issues.  It gets installed along with this module.  Specifically, the ``fixture`` command accepts a path to a single object and queries that object using the command options.  The output is python code that you can use in a test to reload the data retrieved by the query.  
 
+.. note:: WARNING: This feature is not fully implemented and doesn't support all backends.
+
 Usage
 ~~~~~
 
