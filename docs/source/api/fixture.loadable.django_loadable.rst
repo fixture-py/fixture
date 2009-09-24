@@ -1,5 +1,5 @@
 ------------------------------------------
-:mod:`fixture.loadable.django_loadable`
+fixture.loadable.django_loadable
 ------------------------------------------
 
 .. automodule:: fixture.loadable.django_loadable

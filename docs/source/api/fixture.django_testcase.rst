@@ -1,5 +1,5 @@
 ------------------------------------------
-:mod:`fixture.django_testcase`
+fixture.django_testcase
 ------------------------------------------
 
 .. automodule:: fixture.django_testcase
