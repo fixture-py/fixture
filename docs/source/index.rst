@@ -136,7 +136,7 @@ API Documentation
 Status
 ------
 
-fixture is a reimplementation of `testtools.fixtures`_ which was my first attempt at the idea.  As of July 2008 the fixture module is used in several test suites by my development teams at work.  One project is a data migration (ETL) framework using SQLObject and another is an in-house Pylons + Ext JS application using SQLAlchemy and Elixir.  It has been open source for a while but with only a few contributors so I'm not sure how much it's used outside of that.  
+fixture was originally a reimplementation of `testtools.fixtures`_, the first attempt at the idea.  As of September 2009 the fixture module is used in several test suites by the author's development team at work using the SQLAlchemy backend.  Several contributors seem to be using it in their own projects as well for various backends like Google App Engine and Django.  The project started in 2007.
 
 .. _testtools.fixtures : http://testtools.python-hosting.com/
 
@@ -154,7 +154,7 @@ Where to submit issues, patches, bugs
 
 Please submit any issues, patches, failing tests, and/or bugs using the `Issue
 Tracker`_ on the `fixture project site`_.  If your code is used, your contribution will be
-documented.
+acknowledged in the docs.
 
 ---------
 Changelog
