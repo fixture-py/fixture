@@ -17,7 +17,7 @@ If you are reading this from a `source checkout`_ then you may want to build the
 
 Then open ``build/html/index.html`` in your web browser.  If that fails, you can read the reST files starting at ``docs/source/index.rst``
 
-.. _source checkout: http://fixture.googlecode.com/svn/trunk/#egg=fixture-dev
+.. _source checkout: http://fixture.googlecode.com/hg/#egg=fixture-dev
 .. _Sphinx: http://sphinx.pocoo.org/
 
 """
