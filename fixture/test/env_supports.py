@@ -15,3 +15,4 @@ def module_exists(mod):
 sqlobject = module_exists('sqlobject')
 sqlalchemy = module_exists('sqlalchemy')
 elixir = module_exists('elixir')
+storm = module_exists('storm')

@@ -9,6 +9,7 @@ develop-eggs
 _build
 _env
 env-*
+*~
 .DS_Store
 *.egg-info
 _tmp_src

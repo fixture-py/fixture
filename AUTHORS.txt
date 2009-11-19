@@ -12,3 +12,4 @@ Contributors
 - Alex Marandon
 - Tomas Holas
 - Ben Ford
+- Bozo Dragojevic
