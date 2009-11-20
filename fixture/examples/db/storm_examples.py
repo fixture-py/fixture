@@ -37,18 +37,18 @@ def setup_db(conn):
     conn.rollback()
     # NOTE: this SQL works in postgres and sqlite:
     conn.execute(SQL("""CREATE TABLE fixture_storm_category (
-      id serial primary key,
+      id integer primary key,
       name varchar(60)
       )"""))
     assert conn.find(Category).count() == 0
     conn.execute(SQL("""CREATE TABLE fixture_storm_product (
-       id serial primary key,
+       id integer primary key,
        name varchar(60),
        category_id integer
       )"""))
     assert conn.find(Product).count() == 0
     conn.execute(SQL("""CREATE TABLE fixture_storm_offer (
-       id serial primary key,
+       id integer primary key,
        name varchar(60),
        category_id integer,
        product_id integer
