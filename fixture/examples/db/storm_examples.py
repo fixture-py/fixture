@@ -35,24 +35,33 @@ if storm:
 def setup_db(conn):
     assert conn is not None
     conn.rollback()
+    backend = conn._connection.__class__.__name__
+    tmpl = {
+        'pk': {'PostgresConnection' : 'serial primary key',
+                }.get(backend, 'integer primary key'),
+        'str_type': {'PostgresConnection' : 'bytea',
+                }.get(backend, 'text collate binary')
+    }
     # NOTE: this SQL works in postgres and sqlite:
+    conn.execute(SQL("""DROP TABLE IF EXISTS fixture_storm_category"""))
     conn.execute(SQL("""CREATE TABLE fixture_storm_category (
-      id integer primary key,
-      name varchar(60)
-      )"""))
+      id %(pk)s,
+      name %(str_type)s
+      )""" % tmpl))
     assert conn.find(Category).count() == 0
     conn.execute(SQL("""CREATE TABLE fixture_storm_product (
-       id integer primary key,
-       name varchar(60),
+       id %(pk)s,
+       name %(str_type)s,
        category_id integer
-      )"""))
+      )""" % tmpl))
     assert conn.find(Product).count() == 0
+    conn.execute(SQL("""DROP TABLE IF EXISTS fixture_storm_offer"""))
     conn.execute(SQL("""CREATE TABLE fixture_storm_offer (
-       id integer primary key,
-       name varchar(60),
+       id %(pk)s,
+       name %(str_type)s,
        category_id integer,
        product_id integer
-      )"""))
+      )""" % tmpl))
     assert conn.find(Offer).count() == 0
     conn.commit()
 
