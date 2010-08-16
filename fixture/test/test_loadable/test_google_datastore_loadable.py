@@ -31,6 +31,7 @@ def setup():
         dev_appserver.SetupStubs(appid, 
                 clear_datastore = False, # just removes the files when True
                 datastore_path = tmp.join("datastore.data"), 
+                blobstore_path = tmp.join("blobstore.data"), 
                 history_path = tmp.join("history.data"), 
                 login_url = None)
     else:
