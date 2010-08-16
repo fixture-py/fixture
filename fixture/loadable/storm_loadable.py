@@ -1,4 +1,11 @@
 
+"""Components for loading and unloading data using `Storm`_.
+
+See :ref:`Using LoadableFixture<using-loadable-fixture>` for examples.
+
+.. _Storm: https://storm.canonical.com/
+
+"""
 
 from fixture.loadable import DBLoadableFixture
 from fixture.util import _mklog

@@ -103,12 +103,21 @@ The fixture module simplifies this by breaking the process down to two independe
 Examples of Usage
 -----------------
 
-Fixture can be used to load :class:`DataSet <fixture.dataset.DataSet>` objects into `SQLAlchemy`_, `SQLObject`_, `Google Datastore`_, or `Django ORM`_ backends (:ref:`more on loading data <using-loadable-fixture>`).  For a complete end-to-end example see :ref:`Using Fixture To Test A Pylons + SQLAlchemy App <using-fixture-with-pylons>`, :ref:`Using Fixture To Test A Google App Engine Site <using-fixture-with-appengine>` or :ref:`using-fixture-with-django`.  This should help you understand how to fit ``fixture`` into a finished app.
+Fixture can be used to load :class:`DataSet <fixture.dataset.DataSet>` objects into the following backends: 
+
+- `SQLAlchemy`_
+- `SQLObject`_
+- `Google Datastore`_
+- `Django ORM`_
+- `Storm`_
+
+You can read the section on :ref:`loading data <using-loadable-fixture>` for general information.  For a complete end-to-end example see :ref:`Using Fixture To Test A Pylons + SQLAlchemy App <using-fixture-with-pylons>`, :ref:`Using Fixture To Test A Google App Engine Site <using-fixture-with-appengine>` or :ref:`using-fixture-with-django`.  This should help you understand how to fit ``fixture`` into a finished app.
 
 .. _SQLAlchemy: http://www.sqlalchemy.org/
 .. _SQLObject: http://www.sqlobject.org/
 .. _Google Datastore: http://code.google.com/appengine/docs/datastore/
 .. _Django ORM: http://docs.djangoproject.com/
+.. _Storm: http://storm.canonical.com/
 
 Now, on to the knitty gritty details ...
 
@@ -159,6 +168,10 @@ acknowledged in the docs.
 ---------
 Changelog
 ---------
+
+- 1.4
+  
+  - `Storm ORM <https://storm.canonical.com/>`_ support added by Bozo Dragojevic
 
 - 1.3
   

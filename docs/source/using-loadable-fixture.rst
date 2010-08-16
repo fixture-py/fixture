@@ -126,11 +126,25 @@ Django support for loading datasets work with `django version 1.0.2 <http://www.
 
     >>> from fixture import DjangoFixture
     >>> from fixture.style import NamedDataStyle
-    >>> dbfixture = DjangoFixture()
+    >>> dbfixture = DjangoFixture(env=globals(), style=NamedDataStyle())
     
 By default :class:`~DjangoFixture` uses a special class for it's env (:class:`~DjangoEnv`). If you don't pass in an env keyword argument then :class:`~DjangoFixture` will use this class to resolve fixtures to models. You can of course still pass an env and style if you want to change this, see :ref:`using-loadable-fixture-style` for more details
 
 For more info see :mod:`~fixture.loadable.django_loadable` especially :class:`~DjangoFixture` and the more extended guide: :ref:`using-fixture-with-django`
+
+Storm
++++++
+
+Data can be loaded using `Storm ORM <http://storm.canonical.com/>`_ objects.
+
+.. currentmodule:: fixture.loadable.storm_loadable
+
+.. doctest:: loading
+
+    >>> from fixture import StormFixture
+    >>> from fixture.style import NamedDataStyle
+    >>> dbfixture = StormFixture(env=globals(), style=NamedDataStyle())
+
 
 An Example of Loading Data Using SQLAlchemy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -447,3 +461,5 @@ API Documentation
 - :mod:`fixture.loadable`
 - :mod:`fixture.loadable.sqlalchemy_loadable`
 - :mod:`fixture.loadable.sqlobject_loadable`
+- :mod:`fixture.loadable.google_datastore_loadable`
+- :mod:`fixture.loadable.storm_loadable`
