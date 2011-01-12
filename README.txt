@@ -9,4 +9,5 @@ For info on running tests, see fixture/test/__init__.py
 To run tests ::
     
     $ python setup_test_buildout.py
+    $ ./bin/buildout
     $ ./bin/test-fixture
