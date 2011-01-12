@@ -13,7 +13,8 @@ setup(
     author_email='',
     url='',
     install_requires=[
-        "Pylons>=0.9.7",
+        "Routes==1.10.3",
+        "Pylons==0.9.7",
         "SQLAlchemy==0.4.8",
     ],
     setup_requires=["PasteScript>=1.6.3"],

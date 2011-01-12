@@ -71,18 +71,11 @@ setup(
     entry_points = { 
         'console_scripts': [ 'fixture = fixture.command.generate:main' ] 
         },
-    tests_require=[
-        'testtools', 'psycopg2', 'SQLObject>=0.8', 'Elixir>=0.5', 'simplejson', 
-        'nose>=0.10.3', 'SQLAlchemy==0.4.8', 'Sphinx>=0.4', 'Pylons==0.9.7',
-        # for some easy_install weirdness, the django 
-        # version check is not working on PyPI :
-        'django'], # >=1.0.2
-    
     # the following allows e.g. easy_install fixture[django]
     extras_require = {
         'decorators': ['nose>=0.9.2'],
         'sqlalchemy': ['SQLAlchemy>=0.4'],
-        'sqlobject': ['SQLObject>=0.8'],
+        'sqlobject': ['SQLObject==0.8'],
         'django': ['django'],
         },
     )
