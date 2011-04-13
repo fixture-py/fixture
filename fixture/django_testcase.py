@@ -1,3 +1,4 @@
+import django
 from django.conf import settings
 from django.db import transaction
 from django.db.models import connection
@@ -5,6 +6,14 @@ from django.test import testcases
 from fixture import DjangoFixture
 
 
+if django.VERSION[:2] < (1, 3):
+    check_supports_transactions = lambda conn: conn.creation._rollback_works()
+else:
+    def check_supports_transactions(conn):
+        conn.features.confirm()
+        return conn.features.supports_transactions
+
+    
 class FixtureTestCase(testcases.TransactionTestCase):
     """Overrides django's fixture setup and teardown code to use DataSets.
     
@@ -22,7 +31,7 @@ class FixtureTestCase(testcases.TransactionTestCase):
         wnat to assume that :meth:`connection.create_test_db` might not have been
         called
         """
-        if connection.creation._rollback_works():
+        if check_supports_transactions(connection):
             transaction.enter_transaction_management()
             transaction.managed(True)
             testcases.disable_transaction_methods()
@@ -44,7 +53,7 @@ class FixtureTestCase(testcases.TransactionTestCase):
         if hasattr(self, 'data'):
             self.data.teardown()
 
-        if connection.creation._rollback_works():
+        if check_supports_transactions(connection):
             testcases.restore_transaction_methods()
             transaction.rollback()
             transaction.leave_transaction_management()
