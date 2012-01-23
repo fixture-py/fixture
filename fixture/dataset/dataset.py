@@ -558,6 +558,13 @@ class DataSet(DataContainer):
                     for c in col_val:
                         if is_rowlike(c):
                             add_ref_from_rowlike(c)
+                        # NOP for Google Datastore (String)ListProperty
+                        # could definitely break any other storage mediums
+                        # ListProperty supports quite a few more types than these
+                        # see appengine.ext.db._ALLOWED_PROPERTY_TYPES
+                        elif type(c) in (types.StringType, types.UnicodeType, types.BooleanType,
+                                         types.FloatType, types.IntType):
+                             continue
                         else:
                             raise TypeError(
                                 "multi-value columns can only contain "
