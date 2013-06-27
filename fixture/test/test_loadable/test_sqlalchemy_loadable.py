@@ -521,7 +521,12 @@ class TestTableObjectsExplicitConn(object):
 
 
 def test_fixture_can_be_disposed():
-    from sqlalchemy.exceptions import InvalidRequestError
+    try:
+        # <0.5
+        from sqlalchemy.exceptions import InvalidRequestError
+    except ImportError:
+        # > 0.5
+        from sqlalchemy.exc import InvalidRequestError
     engine = create_engine(conf.LITE_DSN)
     metadata.bind = engine
     metadata.create_all()
