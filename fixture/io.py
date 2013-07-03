@@ -8,7 +8,9 @@ __all__ = ['TempIO']
 
 import os, sys
 from os import path
-from os.path import join, exists, split, basename
+from os.path import join, split, basename
+from os.path import exists as path_exists
+
 from tempfile import mkdtemp
 import atexit
 _tmpdirs = set()
@@ -40,15 +42,17 @@ def TempIO(deferred=False, **kw):
 
 def _expunge(tmpdir):
     """called internally to remove a tmp dir."""
-    if exists(tmpdir):
+    if path_exists(tmpdir):
         import shutil
         shutil.rmtree(tmpdir)
         
 def _expunge_all():
     """exit function to remove all registered tmp dirs."""
-    if exists(_tmpdirs):
-        for d in _tmpdirs:
-            _expunge(d)
+    if _tmpdirs is None:
+        return
+
+    for d in _tmpdirs:
+        _expunge(d)
     
 # this seems to be a safer way to clean up since __del__ can
 # be called in an unpredictable environment :
@@ -72,7 +76,8 @@ def mkdirall(path, mkdir=os.mkdir):
                 continue # slash prefix will cause this
             accum = join(accum, p)
             abs = join(root, accum)
-            if not exists(abs): mkdir(abs)
+            if not path_exists(abs):
+                mkdir(abs)
     
     mkdir(path)
 
@@ -87,7 +92,7 @@ def putfile(filename, contents, filelike=None, mode=None):
         mode = 'w'
     if filelike is None:
         parent = split(filename)[0]
-        if parent and not exists(parent):
+        if parent and not path_exists(parent):
             mkdirall(parent)
         filelike = open(filename, mode)
         
@@ -135,7 +140,7 @@ class DirPath(str):
         
     def exists(self):
         """``os.path.exists(self)``"""
-        return path.exists(self)
+        return path_exists(self)
     
     def join(self, *dirs):
         """``os.path.join(self, *dirs)``"""
