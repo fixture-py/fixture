@@ -5,13 +5,17 @@ from django.db.models import connection
 from django.test import testcases
 from fixture import DjangoFixture
 
+_DJANGO_MAJOR_MINOR_VERSION = django.VERSION[:2]
 
-if django.VERSION[:2] < (1, 3):
+if _DJANGO_MAJOR_MINOR_VERSION < (1, 3):
     check_supports_transactions = lambda conn: conn.creation._rollback_works()
 else:
     def check_supports_transactions(conn):
-        conn.features.confirm()
+        if _DJANGO_MAJOR_MINOR_VERSION < (1, 5):
+            conn.features.confirm()
+
         return conn.features.supports_transactions
+
 
     
 class FixtureTestCase(testcases.TransactionTestCase):
