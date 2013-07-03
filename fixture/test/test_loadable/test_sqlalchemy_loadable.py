@@ -14,9 +14,37 @@ from fixture.loadable.sqlalchemy_loadable import *
 
 def get_transactional_session():
     if sa_major < 0.5:
-        return scoped_session(sessionmaker(autoflush=False, transactional=True), scopefunc=lambda:__name__)
+        session = scoped_session(
+            sessionmaker(
+                autoflush=False,
+                transactional=True,
+                ),
+            scopefunc=lambda:__name__
+            )
+        return session
     else:
-        return scoped_session(sessionmaker(autoflush=False, autocommit=False), scopefunc=lambda:__name__)
+        session = scoped_session(
+            sessionmaker(
+                autoflush=True,
+                autocommit=False,
+                ),
+            scopefunc=lambda:__name__
+            )
+        return session
+
+def clear_session(session):
+    """ This method has a different name from version 0.5 """
+    if sa_major < 0.5:
+        session.clear()
+    else:
+        session.expunge_all()
+
+def save_session(session, object):
+    """ This method has a different name from version 0.5 """
+    if sa_major < 0.5:
+        session.save(object)
+    else:
+        session.add(object)
 
 def setup():
     if not env_supports.sqlalchemy: raise SkipTest
@@ -125,13 +153,13 @@ class TestSetupTeardown(unittest.TestCase):
         
         data = self.fixture.data(self.CategoryData)
         data.setup()
-        self.session.clear()
+        clear_session(self.session)
         cats = self.session.query(Category).order_by('name').all()
         eq_(cats[0].name, 'cars')
         eq_(cats[1].name, 'get free stuff')
         
         data.teardown()
-        self.session.clear()
+        clear_session(self.session)
         eq_(list(self.session.query(Category)), [])
 
 
@@ -167,18 +195,18 @@ class TestImplicitSABinding(unittest.TestCase):
     
     @attr(functional=1)
     def test_setup_then_teardown(self):
-        eq_(self.session.query(Category).all(), [])        
+        eq_(self.session.query(Category).all(), [])
         
         data = self.fixture.data(self.CategoryData)
         data.setup()
         
-        self.session.clear()
+        clear_session(self.session)
         cats = self.session.query(Category).order_by('name').all()
         eq_(cats[0].name, 'cars')
         eq_(cats[1].name, 'get free stuff')
         
         data.teardown()
-        self.session.clear()
+        clear_session(self.session)
         eq_(list(self.session.query(Category)), [])
         
 class CategoryData(DataSet):
@@ -249,7 +277,7 @@ class TestCascadingReferences(unittest.TestCase):
         
         data = self.fixture.data(self.OfferData)
         data.setup()
-        self.session.clear()
+        clear_session(self.session)
         
         cats = self.session.query(Category).order_by('name').all()
         eq_(cats[0].name, 'cars')
@@ -273,7 +301,7 @@ class TestCascadingReferences(unittest.TestCase):
         eq_(off[2].category, cats[1])
         
         data.teardown()
-        self.session.clear()
+        clear_session(self.session)
         
         eq_(self.session.query(Category).all(), [])
         eq_(self.session.query(Product).all(), [])
@@ -313,7 +341,7 @@ class TestCollidingSessions(unittest.TestCase):
         
         data = self.fixture.data(self.CategoryData)
         data.setup()
-        self.session.clear()
+        clear_session(self.session)
         
         cats = self.session.query(Category).order_by('name').all()
         eq_(cats[0].name, 'cars')
@@ -322,12 +350,12 @@ class TestCollidingSessions(unittest.TestCase):
         # simulate the application running into some kind of error:
         new_cat = Category()
         new_cat.name = "doomed to non-existance"
-        self.session.save(new_cat)
+        save_session(self.session, new_cat)
         self.session.rollback()
         self.ScopedSession.remove()
         
         data.teardown()
-        self.session.clear()
+        clear_session(self.session)
         
         print [(c.id, c.name) for c in self.session.query(Category).all()]
         eq_(list(self.session.query(Category)), [])
@@ -363,13 +391,13 @@ class TestScopedSessions(unittest.TestCase):
         
         data = self.fixture.data(self.CategoryData)
         data.setup()
-        self.session.clear()
+        clear_session(self.session)
         cats = self.session.query(Category).order_by('name').all()
         eq_(cats[0].name, 'cars')
         eq_(cats[1].name, 'get free stuff')
         
         data.teardown()
-        self.session.clear()
+        clear_session(self.session)
         eq_(list(self.session.query(Category)), [])
 
 class TestElixir(unittest.TestCase):
@@ -455,14 +483,14 @@ class TestTableObjects(unittest.TestCase):
         
         data = self.fixture.data(self.CategoryData)
         data.setup()
-        self.session.clear()
+        clear_session(self.session)
         
         cats = self.session.execute(categories.select()).fetchall()
         eq_(cats[0].name, 'cars')
         eq_(cats[1].name, 'get free stuff')
         
         data.teardown()
-        self.session.clear()
+        clear_session(self.session)
         eq_(self.session.execute(categories.select()).fetchall(), [])
 
 class TestTableObjectsExplicitConn(object):
@@ -521,11 +549,9 @@ class TestTableObjectsExplicitConn(object):
 
 
 def test_fixture_can_be_disposed():
-    try:
-        # <0.5
+    if sa_major < 0.5:
         from sqlalchemy.exceptions import InvalidRequestError
-    except ImportError:
-        # > 0.5
+    else:
         from sqlalchemy.exc import InvalidRequestError
     engine = create_engine(conf.LITE_DSN)
     metadata.bind = engine
