@@ -46,8 +46,9 @@ def _expunge(tmpdir):
         
 def _expunge_all():
     """exit function to remove all registered tmp dirs."""
-    for d in _tmpdirs:
-        _expunge(d)
+    if exists(_tmpdirs):
+        for d in _tmpdirs:
+            _expunge(d)
     
 # this seems to be a safer way to clean up since __del__ can
 # be called in an unpredictable environment :
