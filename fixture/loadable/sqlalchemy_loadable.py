@@ -15,13 +15,6 @@ import logging
 log = logging.getLogger('fixture.loadable.sqlalchemy_loadable')
 
 try:
-    # >0.5
-    from sqlalchemy import exc as sqlalchemy_exc
-except ImportError:
-    # <0.5
-    from sqlalchemy import exceptions as sqlalchemy_exc
-
-try:
     from sqlalchemy.orm import sessionmaker, scoped_session
 except ImportError:
     Session = None
@@ -357,6 +350,11 @@ def is_assigned_mapper(obj):
         def is_assigned(obj):
             return hasattr(obj, 'mapper') and isinstance(obj.mapper, Mapper)
     else:
+        if sa_major < 0.5:
+            from sqlalchemy import exceptions as sqlalchemy_exc
+        else:
+            from sqlalchemy import exc as sqlalchemy_exc
+
         # 0.4 and 0.5 +
         from sqlalchemy.orm.mapper import class_mapper
         def is_assigned(obj):
