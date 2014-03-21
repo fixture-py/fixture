@@ -267,6 +267,9 @@ class LoadableFixture(Fixture):
             if type(val) in (types.ListType, types.TupleType):
                 # i.e. categories = [python, ruby]
                 setattr(row, name, map(resolve_stored_object, val))
+            elif type(val) is set:
+                # i.e. categories = {python, ruby}
+                setattr(row, name, set(resolve_stored_object(v) for v in val))
             elif is_rowlike(val):
                 # i.e. category = python
                 setattr(row, name, resolved_rowlike(val))
