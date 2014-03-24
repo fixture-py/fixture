@@ -554,7 +554,7 @@ class DataSet(DataContainer):
                 if isinstance(col_val, Ref):
                     # the .ref attribute
                     continue
-                elif type(col_val) in (types.ListType, types.TupleType):
+                elif type(col_val) in (types.ListType, types.TupleType, set):
                     for c in col_val:
                         if is_rowlike(c):
                             add_ref_from_rowlike(c)
