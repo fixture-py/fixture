@@ -1,8 +1,8 @@
 
 """fixture is a python module for loading and referencing test data
 
-It provides several utilities for achieving a *fixed state* when testing 
-Python programs.  Specifically, these utilities setup / teardown databases and 
+It provides several utilities for achieving a *fixed state* when testing
+Python programs.  Specifically, these utilities setup / teardown databases and
 work with temporary file systems.
 
 You may want to start by reading the `End User Documentation`_.
@@ -22,7 +22,7 @@ Then open ``build/html/index.html`` in your web browser.  If that fails, you can
 
 """
 
-__version__ = "1.5"
+__version__ = "1.5.1"
 
 import logging
 import sys
@@ -37,4 +37,4 @@ def setup_test_not_supported():
     """hook for setup for the test command."""
     raise NotImplementedError("use: `python setup.py nosetests` instead")
 setup_test_not_supported.__test__ = False
-    
+
