@@ -22,7 +22,7 @@ Then open ``build/html/index.html`` in your web browser.  If that fails, you can
 
 """
 
-__version__ = "1.5.1"
+__version__ = "1.5.2"
 
 import logging
 import sys

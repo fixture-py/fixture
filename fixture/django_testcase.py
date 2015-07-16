@@ -1,6 +1,6 @@
 import django
 from django.db import transaction
-from django.db.models import connection
+from django.db import connection
 from django.test import testcases
 from fixture import DjangoFixture
 
