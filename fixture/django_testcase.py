@@ -43,6 +43,8 @@ class FixtureTestCase(testcases.TransactionTestCase):
             transaction.managed(True)
             testcases.disable_transaction_methods()
 
+        import django
+        django.setup()
         from django.contrib.sites.models import Site
         Site.objects.clear_cache()
 
