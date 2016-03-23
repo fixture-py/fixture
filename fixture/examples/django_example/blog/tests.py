@@ -1,19 +1,15 @@
 
-from fixture import DataSet, DjangoFixture
-from fixture.style import NamedDataStyle
-from fixture.django_testcase import FixtureTestCase
-from datetime import datetime
 from django.contrib.auth.models import User
-from fixture.examples.django_example.blog.models import Post, Category
-from fixture.examples.django_example.blog.datasets.blog_data import (
-                                        UserData, PostData, CategoryData)
 
-db_fixture = DjangoFixture(style=NamedDataStyle())
+from fixture.django_testcase import FixtureTestCase
+from blog.datasets.blog_data import UserData, PostData, CategoryData
+from blog.models import Post, Category
+
 
 class TestBlogWithData(FixtureTestCase):
-    fixture = db_fixture
+
     datasets = [PostData]
-    
+
     def test_blog_posts(self):
         self.assertEquals(Post.objects.all().count(), 3,
                           "There are 3 blog posts")
@@ -30,7 +26,3 @@ class TestBlogWithData(FixtureTestCase):
         ben = User.objects.get(username=UserData.ben.username)
         self.assertEquals(ben.post_set.all().count(), 3,
                           "Ben has published 3 posts")
-        
-
-
-

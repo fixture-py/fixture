@@ -25,3 +25,4 @@ fixture/examples/pylons_example/addressbook/tests.db
 fixture/examples/pylons_example/addressbook/Paste*
 fixture/examples/django_example/project.db
 fixture/examples/pylons_example/addressbook/testdb.sqlite
+/fixture/examples/django_example/db.sqlite3

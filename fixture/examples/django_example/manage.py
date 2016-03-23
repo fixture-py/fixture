@@ -1,17 +1,22 @@
 #!/usr/bin/env python
-import sys
 import os
-sys.path.append(os.path.dirname(__file__))
-from django.core.management import execute_manager
-try:
-    import settings # Assumed to be in the same directory.
-except ImportError:
-    import sys
-    sys.stderr.write("Error: Can't find the file 'settings.py' in the directory containing %r. It appears you've customized things.\nYou'll have to run django-admin.py, passing it your settings module.\n(If the file settings.py does indeed exist, it's causing an ImportError somehow.)\n" % __file__)
-    sys.exit(1)
+import sys
 
-def main():
-    execute_manager(settings)
+import fixture.examples
+
+_EXAMPLE_PROJECT_DIR = os.path.dirname(fixture.examples.__file__)
+
+_EXAMPLE_PROJECT_PATH = os.path.join(_EXAMPLE_PROJECT_DIR, 'django_example')
+
+sys.path.append(_EXAMPLE_PROJECT_PATH)
+
 
 if __name__ == "__main__":
-    main()
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "django_example.settings")
+
+    from django.core.management import execute_from_command_line, call_command
+    import django
+    django.setup()
+    call_command('migrate', interactive=False, verbosity=0)
+
+    execute_from_command_line(sys.argv)

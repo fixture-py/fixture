@@ -1,17 +1,18 @@
 import os
 import sys
-import logging
-import fixture.examples.django_example
 
-sys.path.append(os.path.dirname(fixture.examples.django_example.__file__))
-## this is set by the test script?
-# os.environ['DJANGO_SETTINGS_MODULE'] = 'project.settings'
+import django
+from django.core.management import call_command
+
+import fixture.examples
 
 
-## handled by NoseDjango now?
-# from django.core.management import call_command
-# log = logging.getLogger('nose.django_loadable')
-# 
-# def setup():
-#     call_command('syncdb', interactive=False)
-#     call_command('reset', 'app', 'blog', interactive=False)
+_EXAMPLE_PROJECT_DIR = os.path.dirname(fixture.examples.__file__)
+
+_EXAMPLE_PROJECT_PATH = os.path.join(_EXAMPLE_PROJECT_DIR, 'django_example')
+
+sys.path.append(_EXAMPLE_PROJECT_PATH)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'django_example.settings'
+django.setup()
+
+call_command('migrate', interactive=False, verbosity=0)

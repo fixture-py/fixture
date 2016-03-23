@@ -1,49 +1,51 @@
+from app.models import Author, Book, Reviewer
+from fixtures import DjangoDataSetWithMeta, AuthorData, BookData, ReviewerData
+from util import assert_empty
 
 from fixture import DjangoFixture
-from fixture import DataSet, style
+from fixture.test.test_loadable.test_django.util import assert_empty
 
-from fixture.examples.django_example.app import models
-from fixtures import *
-from util import *
 
 dj_fixture = DjangoFixture()
-    
+
+
 def test_fk_rels():
-    assert_empty(models)
-    data = dj_fixture.data(AuthorData, BookData)
+    assert_empty('app')
     try:
+        data = dj_fixture.data(AuthorData, BookData)
         data.setup()
-        assert models.Author.objects.get(first_name='Frank').books.count() == 1
+        assert Author.objects.get(first_name='Frank').books.count() == 1
     finally:
         data.teardown()
-    assert_empty(models)
-    
+    assert_empty('app')
+
+
 def test_m2m():
-    assert_empty(models)
-    data = dj_fixture.data(AuthorData, BookData, ReviewerData)
+    assert_empty('app')
     try:
+        data = dj_fixture.data(AuthorData, BookData, ReviewerData)
         data.setup()
-        ben = models.Reviewer.objects.all()[0]
+        ben = Reviewer.objects.all()[0]
         # Reviewed have been added as a list
         assert ben.reviewed.count() == 2
-        dune = models.Book.objects.get(title='Dune')
+        dune = Book.objects.get(title='Dune')
         # Reverse relations work
         assert ben in dune.reviewers.all()
         # A single object passed to a many to many also works
-        frank = models.Author.objects.get(first_name='Frank')
+        frank = Author.objects.get(first_name='Frank')
         assert frank.books.count() == 1
         assert dune in frank.books.all()
     finally:
         data.teardown()
-    assert_empty(models)
+    assert_empty('app')
+
 
 def test_dataset_with_meta():
-    assert_empty(models)
-    data = dj_fixture.data(DjangoDataSetWithMeta)
+    assert_empty('app')
     try:
+        data = dj_fixture.data(DjangoDataSetWithMeta)
         data.setup()
-        assert models.Author.objects.count() == 2
+        assert Author.objects.count() == 2
     finally:
         data.teardown()
-    assert_empty(models)
-    
+    assert_empty('app')
