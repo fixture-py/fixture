@@ -5,7 +5,10 @@ See :ref:`Using Fixture With Django <using-fixture-with-django>` for a
 complete example.
 """
 
-from django.apps.registry import apps
+try:
+    from django.apps.registry import apps
+except ImportError:
+    pass
 
 from fixture.loadable import DBLoadableFixture
 from fixture.loadable.loadable import EnvLoadableFixture
