@@ -169,6 +169,11 @@ acknowledged in the docs.
 Changelog
 ---------
 
+
+- 1.5.4
+
+  - Fixed issue that required Django everytime a Fixture was imported, caused by changes in previous version.
+
 - 1.5.3
 
   - Added support for Django 1.8 and 1.9
