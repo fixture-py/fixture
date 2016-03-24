@@ -5,9 +5,9 @@ Using the fixture module
 
 fixture is a python module for loading and referencing test data
 
-It provides several utilities for achieving a *fixed state* when testing 
-Python programs.  Specifically, these utilities setup / teardown databases and 
-work with temporary file systems.  This is useful for testing and came about to 
+It provides several utilities for achieving a *fixed state* when testing
+Python programs.  Specifically, these utilities setup / teardown databases and
+work with temporary file systems.  This is useful for testing and came about to
 fulfill stories like these:
 
 - I want to load data into a test database and easily reference that data when making assertions.
@@ -36,13 +36,13 @@ Using the easy_install_ command::
     easy_install fixture
 
 Or `pip <http://pypi.python.org/pypi/pip>`_ ::
-    
+
     pip install fixture
 
 If you want to use decorators like :meth:`@fixture.with_data() <fixture.base.Fixture.with_data>` you need `nose`_ installed, so run::
-    
+
     easy_install 'fixture[decorators]'
-    
+
 .. note::
     The above commands may require root access
 
@@ -54,12 +54,12 @@ The source is available from the `fixture package`_ or the `fixture repository`_
     python setup.py install
 
 To run Fixture's own test suite you need to create a buildout ::
-    
+
     python setup_test_buildout.py
     ./bin/buildout
 
 Then you can run the tests with ::
-        
+
     ./bin/test-fixture
 
 .. _nose: http://somethingaboutorange.com/mrl/projects/nose/
@@ -74,16 +74,16 @@ Then you can run the tests with ::
 Requirements
 ------------
 
-At the moment fixture is only tested on Python 2.4, 2.5, and 2.6 so it may or may not 
-work with other versions.  The module does not depend on external libraries for its core functionality but 
-to do something interesting you will need one of several 3rd party libraries 
+At the moment fixture is only tested on Python 2.4, 2.5, and 2.6 so it may or may not
+work with other versions.  The module does not depend on external libraries for its core functionality but
+to do something interesting you will need one of several 3rd party libraries
 (explained later in the documentation).
 
 ---------------------------------
 Loading and referencing test data
 ---------------------------------
 
-There are a couple ways to test a database-backed application.  You can create `mock objects`_ and concentrate entirely on `unit testing`_ individual components without testing the database layer itself, or you can simply load up sample data before you run a test.  Thanks to ``sqlite`` in-memory connections, the latter may be more efficient than you think.  
+There are a couple ways to test a database-backed application.  You can create `mock objects`_ and concentrate entirely on `unit testing`_ individual components without testing the database layer itself, or you can simply load up sample data before you run a test.  Thanks to ``sqlite`` in-memory connections, the latter may be more efficient than you think.
 
 But it's easy enough to insert data line by line in code, right?  Or simply load a SQL file?  Yes, but this has two major downsides: you often have to worry about and manage complex chains of foreign keys manually; and when referencing data values later on, you either have to copy / paste the values or pass around lots of variables.
 
@@ -103,7 +103,7 @@ The fixture module simplifies this by breaking the process down to two independe
 Examples of Usage
 -----------------
 
-Fixture can be used to load :class:`DataSet <fixture.dataset.DataSet>` objects into the following backends: 
+Fixture can be used to load :class:`DataSet <fixture.dataset.DataSet>` objects into the following backends:
 
 - `SQLAlchemy`_
 - `SQLObject`_
@@ -123,7 +123,7 @@ Now, on to the knitty gritty details ...
 
 .. toctree::
    :maxdepth: 2
-   
+
    using-dataset
    using-loadable-fixture
    using-fixture-with-pylons
@@ -131,14 +131,14 @@ Now, on to the knitty gritty details ...
    using-fixture-with-django
    using-fixture-cmd
    using-temp-io
-   
+
 -----------------
 API Documentation
 -----------------
 
 .. toctree::
    :glob:
-   
+
    api/*
 
 ------
@@ -149,7 +149,7 @@ fixture was originally a reimplementation of `testtools.fixtures`_, the first at
 
 .. _testtools.fixtures : http://testtools.python-hosting.com/
 
-.. _index-contact: 
+.. _index-contact:
 
 -------
 Contact
@@ -169,31 +169,47 @@ acknowledged in the docs.
 Changelog
 ---------
 
+- 1.5.3
+
+  - Added support for Django 1.8 and 1.9
+  - **Backwards incompatible change**: Removed support for Django models ``app_label``
+
+- 1.5.1
+
+  - Fixed django testcase transactions not being properly encapsulated
+  - Sets now can be assigned to multi-value columns
+  - Fixed sqlalchemy requirement accidentally added.
+  - Fixed method "exists" issue
+  - Fixed issue where _expunge_all would try to cycle through None variables
+  - Fixed test for transaction support for django 1.5
+  - Fixed some tests regarding the newer versions of SQLAlchemy
+  - Added alias to release this package to pypi
+
 - 1.4
-  
+
   - `Storm ORM <https://storm.canonical.com/>`_ support added by Bozo Dragojevic
 
 - 1.3
-  
+
   - Django support added by `Ben Ford <http://bitbucket.org/boothead/>`_.  See :ref:`using-fixture-with-django`
   - Using session.add() when in sqlalchemy 0.5.2+ to avoid deprecation warning (reported by Jeff Balogh)
   - Google Code repository migrated from Subversion to `Mercurial <http://code.google.com/p/fixture/source/browse/>`_.
 
 - 1.2
-  
+
   - Added support for DataSet to JSON conversion
-  
+
 - 1.1.2
-  
+
   - Fixed bugs relating to SQLAlchemy 0.5 support (still not fully complete)
-  
+
 - 1.1.1
 
   - Fixed bugs in :mod:`Google App Engine Datastore <fixture.loadable.google_datastore_loadable>` thanks to reports and patches by Tomas Holas
   - Fixed installation bug thanks to report by bslesinsky
   - Made progress on SQLAlchemy 0.5 support (not yet complete) thanks to reports and patches from Alex Marandon
   - Improved scoped session handling for :mod:`SQLAlchemy <fixture.loadable.sqlalchemy_loadable>`
-  
+
 - 1.1
 
   - Added support for loading data into the :mod:`Google App Engine Datastore <fixture.loadable.google_datastore_loadable>`
@@ -202,11 +218,11 @@ Changelog
   - A couple bugs fixed
 
 - 1.0
-  
+
   - First release where :mod:`SQLAlchemy components <fixture.loadable.sqlalchemy_loadable>` worked well for 0.4, everything else was pretty stable
 
-- 0.9 
-  
+- 0.9
+
   - First release where everything "kinda worked"
 
 .. _Testing In Python: http://lists.idyll.org/listinfo/testing-in-python
