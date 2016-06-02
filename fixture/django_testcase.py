@@ -13,5 +13,9 @@ class FixtureTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         fixture = DjangoFixture()
-        data = fixture.data(*cls.datasets)
-        data.setup()
+        cls.data = fixture.data(*cls.datasets)
+        cls.data.setup()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.data.teardown()
