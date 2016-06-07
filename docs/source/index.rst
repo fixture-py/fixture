@@ -170,6 +170,10 @@ Changelog
 ---------
 
 
+- 1.5.6
+
+  - Added calls to `super` in setup/teardown in FixtureTestCase for Django
+
 - 1.5.4
 
   - Fixed issue that required Django everytime a Fixture was imported, caused by changes in previous version.

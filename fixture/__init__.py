@@ -22,16 +22,17 @@ Then open ``build/html/index.html`` in your web browser.  If that fails, you can
 
 """
 
-__version__ = "1.5.5"
+__version__ = "1.5.6"
 
 import logging
 import sys
 
-from fixture.loadable import *
 from fixture.dataset import *
-from fixture.util import *
 from fixture.io import *
+from fixture.loadable import *
 from fixture.style import *
+from fixture.util import *
+
 
 def setup_test_not_supported():
     """hook for setup for the test command."""
