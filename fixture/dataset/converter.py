@@ -3,7 +3,6 @@
 
 import datetime
 import decimal
-import types
 from fixture.dataset import DataSet, DataRow
 json = None
 try:
@@ -15,11 +14,13 @@ except ImportError:
     except ImportError:
         pass
 
+
 def _obj_items(obj):
     for name in dir(obj):
         if name.startswith('__'):
             continue
         yield name, getattr(obj, name)
+
 
 def default_json_converter(obj):
     """converts obj to a value safe for JSON serialization."""
@@ -27,24 +28,25 @@ def default_json_converter(obj):
         return str(obj)
     raise TypeError("%r is not JSON serializable" % (obj,))
 
+
 def dataset_to_json(dataset, fp=None, default=default_json_converter, wrap=None):
-    """Converts a :class:`DataSet <fixture.dataset.DataSet>` class or 
+    """Converts a :class:`DataSet <fixture.dataset.DataSet>` class or
     instance to JSON (JavaScript Object Notation).
-    
+
     See :ref:`using-dataset-to-json` for detailed usage.
-    
+
     Keyword Arguments
-    
-    **fp**  
+
+    **fp**
       An optional file-like object (must implement ``fp.write()``).  When
-      this is not None, the output is written to the fp object, otherwise 
-      the output is returned  
-    
+      this is not None, the output is written to the fp object, otherwise
+      the output is returned
+
     **default**
-      A callable that takes one argument (an object) and returns output 
-      suitable for JSON serialization.  This will *only* be called if the 
+      A callable that takes one argument (an object) and returns output
+      suitable for JSON serialization.  This will *only* be called if the
       object cannot be serialized.  For example::
-        
+
         >>> def encode_complex(obj):
         ...     if isinstance(obj, complex):
         ...         return [obj.real, obj.imag]
@@ -54,27 +56,27 @@ def dataset_to_json(dataset, fp=None, default=default_json_converter, wrap=None)
         >>> class ComplexData(DataSet):
         ...     class math_stuff:
         ...         complex = 2 + 1j
-        ... 
+        ...
         >>> dataset_to_json(ComplexData, default=encode_complex)
         '[{"complex": [2.0, 1.0]}]'
-    
+
     **wrap**
-      A callable that takes one argument, the list of dictionaries before 
+      A callable that takes one argument, the list of dictionaries before
       they are converted to JSON.  For example::
-      
+
         >>> def wrap_in_dict(objects):
         ...     return {'data': objects}
-        ... 
+        ...
         >>> from fixture import DataSet
         >>> class ColorData(DataSet):
         ...     class red:
         ...         color = "red"
-        ... 
+        ...
         >>> dataset_to_json(ColorData, wrap=wrap_in_dict)
         '{"data": [{"color": "red"}]}'
-    
+
     Returns a JSON encoded string unless you specified the **fp** keyword
-    
+
     """
     assert json, (
         "You must have the simplejson or json module installed.  "
