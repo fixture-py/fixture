@@ -1,4 +1,3 @@
-
 """Representations of Data
 
 The main class you will work with is :class:`DataSet` but there are a 
@@ -6,7 +5,7 @@ few variations on it: :class:`SuperSet` and :class:`MergedSuperSet`
 
 """
 
-import sys, types
+import sys, types, datetime
 from fixture.util import ObjRegistry
 
 class DataContainer(object):
@@ -563,7 +562,8 @@ class DataSet(DataContainer):
                         # ListProperty supports quite a few more types than these
                         # see appengine.ext.db._ALLOWED_PROPERTY_TYPES
                         elif type(c) in (types.StringType, types.UnicodeType, types.BooleanType,
-                                         types.FloatType, types.IntType):
+                                         types.FloatType, types.IntType, datetime.date,
+                                         datetime.time, datetime.datetime):
                              continue
                         else:
                             raise TypeError(
