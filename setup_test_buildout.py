@@ -21,18 +21,10 @@ $Id: bootstrap.py 85041 2008-03-31 15:57:30Z andreasjung $
 """
 
 import os, shutil, sys, tempfile, urllib2
+import pkg_resources
 
 tmpeggs = tempfile.mkdtemp()
 
-try:
-    import pkg_resources
-except ImportError:
-    ez = {}
-    exec urllib2.urlopen('http://peak.telecommunity.com/dist/ez_setup.py'
-                         ).read() in ez
-    ez['use_setuptools'](to_dir=tmpeggs, download_delay=0)
-
-    import pkg_resources
 
 if sys.platform == 'win32':
     def quote(c):
