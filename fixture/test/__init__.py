@@ -1,28 +1,6 @@
 
 """The fixture test suite.
 
-There are several things to build before you can run the tests.
-Hopefully this will be simplified in the future but for now, do this:
-
-Create the buildout::
-
-    $ python2.5 setup_test_buildout.py
-
-Check out the trunk of Django (until 1.1 is released) into a src dir for buildout ::
-    
-    $ svn co http://code.djangoproject.com/svn/django/trunk/ src/django
-
-Build everything ::
-    
-    $ ./bin/buildout
-
-Run syncdb on the Django test DB and create a superuser ::
-    
-    $ ./bin/manage syncdb
-
-Run the tests ::
-    
-    $ ./bin/test-fixture
 
 Environment Variables
 ---------------------
@@ -51,8 +29,13 @@ As a shortcut, you can run this to set these variables in your shell ::
 
 """
 
-import unittest, nose, os
+import os
+import unittest
+
+from six import reraise
+
 from fixture.test import conf
+
 
 def setup():
     # super hack:
@@ -78,8 +61,8 @@ class PrudentTestResult(unittest.TestResult):
     """A test result that raises an exception immediately"""
     def _raise_err(self, err):
         exctype, value, tb = err
-        raise Exception("%s: %s" % (exctype, value)), None, tb
-        
+        reraise(Exception, Exception("%s: %s" % (exctype, value)), tb)
+
     def addFailure(self, test, err):
         self._raise_err(err)
     def addError(self, test, err):

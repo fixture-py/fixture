@@ -2,9 +2,11 @@
 """Fixture utilties."""
 
 import sys
-import unittest
 import types
 import logging
+
+from six import reraise
+
 
 __all__ = ['DataTestCase']
 
@@ -58,8 +60,7 @@ class ObjRegistry:
         try:
             return self.registry[self.id(obj)]
         except KeyError:
-            etype, val, tb = sys.exc_info()
-            raise KeyError("object %s is not in registry" % obj), None, tb
+            reraise(KeyError, KeyError("object %s is not in registry" % obj))
     
     def __contains__(self, object):
         return self.has(object)

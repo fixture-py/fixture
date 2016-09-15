@@ -1,10 +1,13 @@
-
-from cStringIO import StringIO
 import sys
-import nose.tools, nose.case, nose.loader
-from nose.tools import eq_, raises
-from fixture.test import attr, SilentTestRunner
+
+import nose.case
+import nose.loader
+import nose.tools
 from fixture.base import Fixture
+from fixture.test import attr, SilentTestRunner
+from nose.tools import eq_, raises
+from six import StringIO
+
 
 mock_call_log = []
 
@@ -209,7 +212,7 @@ class TestFixture:
         try:
             try:
                 run_tests()
-            except Exception, e:
+            except Exception:
                 etype, val, tb = sys.exc_info()
                 assert 'error raised from some_generator' in str(val), (
                     "Unexpected: %s" % val)

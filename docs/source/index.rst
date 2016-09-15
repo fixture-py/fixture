@@ -170,6 +170,11 @@ Changelog
 ---------
 
 
+- 1.5.7
+
+  - Added support for Python 3.
+
+
 - 1.5.6
 
   - Added calls to `super` in setup/teardown in FixtureTestCase for Django

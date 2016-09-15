@@ -1,10 +1,11 @@
-
 import sys
-import os
-from nose.tools import eq_
-from nose.exc import SkipTest
+
+from fixture.command.generate import dataset_generator
 from fixture.test import conf
-from fixture.command.generate import DataSetGenerator, dataset_generator
+from nose.exc import SkipTest
+from nose.tools import eq_
+from six import print_
+
 
 def setup():
     # every tests needs a real db conn :
@@ -63,7 +64,7 @@ class GenerateTest(object):
             data = self.load_env(self.env)
             self.assert_data_loaded(data)
         except:
-            print code
+            print_(code)
             raise
     
     def test_query(self):        
@@ -78,9 +79,9 @@ class GenerateTest(object):
         try:
             try:
                 self.dataset_generator(['-w', "name = 'fooobzarius'"])
-            except SystemExit, e:
+            except SystemExit as e:
                 eq_(e.code, 2)
-            except Exception, e:
+            except Exception as e:
                 wrong_exc(e)
             else:
                 wrong_exc()

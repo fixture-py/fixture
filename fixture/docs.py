@@ -3,25 +3,15 @@
 """fixture documentation utilities
 """
 
-import os, sys
-from os import path
-import optparse
 import subprocess
+import sys
+
 import re
-import inspect, pydoc, doctest
 from docutils import statemachine
 from docutils.parsers.rst import directives
-from docutils.core import (
-    publish_file, publish_string, publish_doctree, publish_from_doctree)
-from docutils.parsers import rst
-from docutils.nodes import SparseNodeVisitor
-from docutils.readers.standalone import Reader
-from docutils.writers.html4css1 import HTMLTranslator, Writer
-from docutils import nodes
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from os import path
+from six import StringIO
+
 
 heredir = path.dirname(__file__)
 srcdir = path.join(heredir, '..', 'docs')
@@ -113,7 +103,7 @@ def shell(
         try:
             try:
                 main(cmdlist[1:])
-            except SystemExit, e:
+            except SystemExit as e:
                 returncode = e.code
             else:
                 returncode = 0
@@ -167,14 +157,7 @@ directives.register_directive('shell', shell)
 
 def setup_command_data():
     import os
-    from fixture import SQLObjectFixture
-    from fixture.examples.db import sqlobject_examples
-    from sqlalchemy import (
-        MetaData, create_engine, Table, Integer, String, ForeignKey, Column)
-    from sqlalchemy.orm import (scoped_session, sessionmaker, mapper, relation)
-    from fixture import DataSet
-    from fixture import SQLAlchemyFixture
-    
+
     if os.path.exists('/tmp/fixture_example.db'):
         os.unlink('/tmp/fixture_example.db')
     if os.path.exists('/tmp/fixture_generate.db'):

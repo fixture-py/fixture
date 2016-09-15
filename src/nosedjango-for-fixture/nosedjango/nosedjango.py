@@ -54,7 +54,7 @@ class NoseDjango(Plugin):
             return
 
         if self.conf.addPaths:
-            map(add_path, self.conf.where)
+            list(map(add_path, self.conf.where))
 
         add_path(SETTINGS_PATH)
         sys.path.append(SETTINGS_PATH)
@@ -69,7 +69,6 @@ class NoseDjango(Plugin):
         from django.core import mail
         self.mail = mail
         from django.conf import settings
-        from django.core import management
         from django.test.utils import setup_test_environment
         from django.db import connection
 

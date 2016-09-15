@@ -1,5 +1,8 @@
 
 import sys, inspect
+
+from six import reraise
+
 from fixture.command.generate import (
         DataHandler, register_handler, FixtureSet, NoData, UnsupportedHandler)
 from fixture import SQLAlchemyFixture
@@ -33,9 +36,11 @@ class TableEnv(object):
                             module = __import__(modpath)
                     except:
                         etype, val, tb = sys.exc_info()
-                        raise (
-                            ImportError("%s: %s (while importing %s)" % (
-                                etype, val, modpath)), None, tb)
+                        reraise(
+                            ImportError,
+                            ImportError("%s: %s (while importing %s)" %
+                                (etype, val, modpath)),
+                            )
                 else:
                     module = sys.modules[modpath]
                     obj = module
@@ -50,12 +55,13 @@ class TableEnv(object):
         try:
             return self.tablemap[table]
         except KeyError:
-            etype, val, tb = sys.exc_info()
-            raise LookupError, (
-                "Could not locate original declaration of Table %s "
-                "(looked in: %s)  You might need to add "
-                "--env='path.to.module'?" % (
-                        table, ", ".join([repr(p) for p in self.objects]))), tb
+            reraise(
+                LookupError,
+                LookupError("Could not locate original declaration of Table %s "
+                    "(looked in: %s)  You might need to add "
+                    "--env='path.to.module'?" % (
+                            table, ", ".join([repr(p) for p in self.objects]))),
+                )
     
     def _find_objects(self, obj, module):
         from sqlalchemy.schema import Table

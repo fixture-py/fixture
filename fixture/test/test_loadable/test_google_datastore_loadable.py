@@ -4,6 +4,9 @@ import os
 from nose.exc import SkipTest
 from nose.tools import eq_
 import unittest
+
+from six import print_
+
 from fixture import DataSet, TempIO, GoogleDatastoreFixture
 from fixture.util import reset_log_level
 from fixture.test import conf, attr
@@ -182,7 +185,7 @@ class TestListOfRelationships(unittest.TestCase):
         
         eq_(books[0].title, "Man of Two Worlds")
         authors = [self.Author.get(k) for k in books[0].authors]
-        print authors
+        print_(authors)
         eq_(len(authors), 2)
         authors.sort(key=lambda a:a.name )
         eq_(authors[0].name, "Brian Herbert")

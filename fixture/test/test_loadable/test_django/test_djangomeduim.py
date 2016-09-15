@@ -1,16 +1,13 @@
 from datetime import datetime
 
 from django.db import models as django_models
-from fixtures import *
-from nose.tools import raises
-from util import *
-
 from fixture import DjangoFixture
 from fixture.loadable.django_loadable import field_is_required
 from fixture.test.test_loadable.test_django.fixtures import \
     InvalidNoRelationsData
 from fixture.test.test_loadable.test_django.fixtures import ValidNoRelationsData
 from fixture.test.test_loadable.test_django.util import get_column_vals
+from nose.tools import raises
 
 
 def _check_row(medium, column_vals):

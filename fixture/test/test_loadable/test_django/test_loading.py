@@ -1,9 +1,7 @@
 from app.models import Author, Book, Reviewer
-from fixtures import DjangoDataSetWithMeta, AuthorData, BookData, ReviewerData
-from util import assert_empty
-
 from fixture import DjangoFixture
 from fixture.test.test_loadable.test_django.util import assert_empty
+from fixture.test.test_loadable.test_django.fixtures import DjangoDataSetWithMeta, AuthorData, BookData, ReviewerData
 
 
 dj_fixture = DjangoFixture()

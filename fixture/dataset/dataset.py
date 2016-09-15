@@ -7,7 +7,17 @@ few variations on it: :class:`SuperSet` and :class:`MergedSuperSet`
 """
 
 import sys, types
+from inspect import isclass
+
+from six import reraise, with_metaclass, PY3
+
 from fixture.util import ObjRegistry
+
+if PY3:
+    class_factory = type
+else:
+    from types import ClassType as class_factory
+
 
 class DataContainer(object):
     """
@@ -144,8 +154,7 @@ class Ref(object):
             self.row.__name__, hex(id(self)))
 
 def is_row_class(attr):
-    attr_type = type(attr)
-    return ((attr_type==types.ClassType or attr_type==type) and 
+    return (isclass(attr) and
                 attr.__name__ != 'Meta' and 
                 not issubclass(attr, DataContainer.Meta))
 
@@ -237,10 +246,9 @@ class DataType(type):
                 base_pos += 1
         new_bases = [b for b in row.__bases__]
         for base_c, base_pos in bases_to_replace:
-            # this may not work if the row's base was a new-style class
-            new_base = types.ClassType(
-                            base_c.__name__, base_c.__bases__, 
-                            dict([(k, getattr(base_c, k)) for k in dir(base_c) \
+            new_base = class_factory(
+                base_c.__name__, base_c.__bases__,
+                dict([(k, getattr(base_c, k)) for k in dir(base_c) \
                                     if not k.startswith('_') and \
                                     k not in names_to_uninherit]))
             new_bases[base_pos] = new_base
@@ -319,9 +327,12 @@ class DataSetStore(list):
         try:
             return self[ self._ds_key_map[key] ]
         except (IndexError, KeyError):
-            etype, val, tb = sys.exc_info()
-            raise etype("row '%s' hasn't been loaded for %s (loaded: %s)" % (
-                                        key, self.dataset, self)), None, tb
+            etype = sys.exc_info()[0]
+            reraise(
+                etype,
+                etype("row '%s' hasn't been loaded for %s (loaded: %s)" % (
+                    key, self.dataset, self)),
+            )
         
     def store(self, key, obj):
         self.append(obj)
@@ -378,7 +389,8 @@ class DataSetMeta(DataContainer.Meta):
     _stored_objects = None
     _built = False
 
-class DataSet(DataContainer):
+
+class DataSet(with_metaclass(DataType, DataContainer)):
     """
     Defines data to be loaded
     
@@ -429,7 +441,6 @@ class DataSet(DataContainer):
     See :ref:`Using Dataset <using-dataset>` for more examples of usage.
     
     """
-    __metaclass__ = DataType
     _reserved_attr = DataContainer._reserved_attr + ('data', 'shared_instance')
     ref = None
     Meta = DataSetMeta
@@ -554,7 +565,7 @@ class DataSet(DataContainer):
                 if isinstance(col_val, Ref):
                     # the .ref attribute
                     continue
-                elif type(col_val) in (types.ListType, types.TupleType, set):
+                elif isinstance(col_val, (list, tuple, set)):
                     for c in col_val:
                         if is_rowlike(c):
                             add_ref_from_rowlike(c)
@@ -643,6 +654,7 @@ class DataSetContainer(object):
         self.meta._cache.register(dataset)
         return True
 
+
 class SuperSet(DataContainer, DataSetContainer):
     """
     A set of :class:`DataSet` classes.
@@ -662,9 +674,9 @@ class SuperSet(DataContainer, DataSetContainer):
         ...         type = "cast-iron"
         ... 
         >>> s = SuperSet(RecipeData(), CookwareData())
-    
+
     Now each instance is available by class name::
-    
+
         >>> s.RecipeData.tomato_bisque.name
         'Tomato Bisque'
         >>> s.CookwareData.pots.type

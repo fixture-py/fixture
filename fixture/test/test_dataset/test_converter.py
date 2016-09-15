@@ -1,16 +1,15 @@
 from decimal import Decimal
 
-from nose.tools import eq_, raises
-
 from fixture.dataset.converter import *
 from fixture.test import attr
+from nose.tools import eq_, raises
+from six import StringIO
 
 
 try:
     import json
 except ImportError:
     import simplejson as json
-from cStringIO import StringIO
 
 
 class FooData(DataSet):
@@ -49,12 +48,12 @@ class TestDatasetToJson(object):
         eq_(dataset_to_json(FooData),
             json.dumps(
                 [{
-                     'name': "call me bar",
-                     'is_alive': False
+                    'name': "call me bar",
+                    'is_alive': False,
                      },
                  {
                      'name': "name's foo",
-                     'is_alive': True
+                     'is_alive': True,
                      }]))
 
     @attr(unit=1)

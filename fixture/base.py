@@ -4,7 +4,13 @@
 The more useful bits are in :mod:`fixture.loadable`
 
 """
-import sys, traceback
+import sys
+import traceback
+from inspect import isgeneratorfunction
+
+from six import reraise
+
+
 try:
     from functools import wraps
 except ImportError:
@@ -19,13 +25,7 @@ except ImportError:
         return wrap_with_f
         
 from fixture.dataset import SuperSet
-from compiler.consts import CO_GENERATOR
 
-def is_generator(func):
-    try:
-        return func.func_code.co_flags & CO_GENERATOR != 0
-    except AttributeError:
-        return False
 
 class FixtureData(object):
     """
@@ -155,9 +155,8 @@ class Fixture(object):
                 except KeyboardInterrupt:
                     # user wants to abort everything :
                     raise
-                except Exception, exc:
+                except Exception as exc:
                     # caught exception, so try to teardown but do it safely :
-                    etype, val, tb = sys.exc_info()
                     try:
                         teardown_data(data)
                     except:
@@ -166,7 +165,7 @@ class Fixture(object):
                         sys.stderr.write("\n\n%s\n" % t_ident)
                         traceback.print_exc()
                         sys.stderr.write("%s\n\n" % t_ident)
-                    raise exc, None, tb
+                    reraise(exc.__class__, exc)
                 else:
                     teardown_data(data)
     
@@ -188,8 +187,7 @@ class Fixture(object):
                         genargs = (data,) + genargs
                         try:
                             fn(*genargs, **kw)
-                        except Exception, exc:
-                            etype, val, tb = sys.exc_info()
+                        except Exception as exc:
                             try:
                                 teardown_data(data)
                             except:
@@ -199,14 +197,14 @@ class Fixture(object):
                                 sys.stderr.write("\n\n%s\n" % t_ident)
                                 traceback.print_exc()
                                 sys.stderr.write("%s\n\n" % t_ident)
-                            raise exc, None, tb
+                            reraise(exc.__class__, exc)
                         else:
                             teardown_data(data)
                     
                     restack = (atomic_routine, setup_data) + args
                     yield restack
-            
-            if is_generator(routine):
+
+            if isgeneratorfunction(routine):
                 wrapped_routine = iter_routine
             else:
                 wrapped_routine = call_routine

@@ -1,13 +1,11 @@
-
-import nose
-from nose.tools import raises, eq_
-from nose.exc import SkipTest
-import unittest
 from fixture import DataSet, NamedDataStyle
+from fixture import TempIO
 from fixture.loadable import (
     LoadableFixture, EnvLoadableFixture, DBLoadableFixture)
-from fixture.test import attr, env_supports, PrudentTestResult
-from fixture import TempIO
+from fixture.test import attr, PrudentTestResult
+from nose.exc import SkipTest
+from nose.tools import raises, eq_
+
 
 def exec_if_supported(code, globals={}, locals={}):
     # seems that for using from __future__ exec needs to think it's compiling a 
@@ -69,8 +67,8 @@ class LoadableTest(object):
         inspector.assert_data_torndown()
     
     def test_with_data(self):
-        import nose, unittest
-        
+        import nose
+
         class ns:
             was_setup=False
             was_torndown=False

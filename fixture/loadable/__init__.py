@@ -3,12 +3,11 @@
 
 __all__ = ['SQLAlchemyFixture', 'SQLObjectFixture', 'GoogleDatastoreFixture',
            'DjangoFixture', 'StormFixture']
-import loadable
+from fixture.loadable import loadable
 __doc__ = loadable.__doc__
-from loadable import *
-from sqlalchemy_loadable import SQLAlchemyFixture
-from sqlobject_loadable import SQLObjectFixture
-from google_datastore_loadable import GoogleDatastoreFixture
-from django_loadable import DjangoFixture
-from storm_loadable import StormFixture
-
+from fixture.loadable.loadable import *
+from fixture.loadable.sqlalchemy_loadable import SQLAlchemyFixture
+from fixture.loadable.sqlobject_loadable import SQLObjectFixture
+from fixture.loadable.google_datastore_loadable import GoogleDatastoreFixture
+from fixture.loadable.django_loadable import DjangoFixture
+from fixture.loadable.storm_loadable import StormFixture

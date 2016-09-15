@@ -6,9 +6,18 @@ See :ref:`Using the fixture command <using-fixture-command>` for examples.
 
 """
 
-import sys, os, optparse, inspect, pkg_resources
-from warnings import warn
+import inspect
+import optparse
+import os
+import pkg_resources
+import sys
+
+from six import with_metaclass
+
 from fixture.command.generate.template import templates, is_template
+from warnings import warn
+
+
 handler_registry = []
 
 class NoData(LookupError):
@@ -88,7 +97,7 @@ class DataSetGenerator(object):
         for h in handler_registry:
             try:
                 recognizes_obj = h.recognizes(object_path, obj=obj)
-            except UnsupportedHandler, e:
+            except UnsupportedHandler as e:
                 warn("%s is unsupported (%s)" % (h, e))
                 continue
             if recognizes_obj:
@@ -96,7 +105,7 @@ class DataSetGenerator(object):
                             obj=obj, template=self.template, **kw)
                 break
         if handler is None:
-            raise UnrecognizedObject, (
+            raise UnrecognizedObject(
                     "no handler recognizes object %s at %s (importable? %s); "
                     "tried handlers %s" %
                         (obj, object_path, (importable and "YES" or "NO"), 
@@ -252,10 +261,11 @@ class HandlerType(type):
         # split camel class name into something readable?
         return self.__name__
 
-class DataHandler(object):
+
+class DataHandler(with_metaclass(HandlerType)):
     """handles an object that can provide fixture data.
     """
-    __metaclass__ = HandlerType
+
     loadable_fxt_class = None
         
     def __init__(self, object_path, options, obj=None, template=None):

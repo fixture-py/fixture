@@ -1,16 +1,12 @@
-
 import unittest
-from nose.tools import eq_, raises
-from nose.exc import SkipTest
-from fixture import SQLAlchemyFixture
-from fixture.dataset import MergedSuperSet
-from fixture import (
-    SQLAlchemyFixture, NamedDataStyle, CamelAndUndersStyle, TrimmedNameStyle)
-from fixture.exc import UninitializedError
-from fixture.test import conf, env_supports, attr
-from fixture.test.test_loadable import *
+
+from six import print_
+
 from fixture.examples.db.sqlalchemy_examples import *
 from fixture.loadable.sqlalchemy_loadable import *
+from fixture.test import conf, env_supports
+from fixture.test.test_loadable import *
+
 
 def get_transactional_session():
     if sa_major < 0.5:
@@ -357,7 +353,7 @@ class TestCollidingSessions(unittest.TestCase):
         data.teardown()
         clear_session(self.session)
         
-        print [(c.id, c.name) for c in self.session.query(Category).all()]
+        print_([(c.id, c.name) for c in self.session.query(Category).all()])
         eq_(list(self.session.query(Category)), [])
 
 class TestScopedSessions(unittest.TestCase):

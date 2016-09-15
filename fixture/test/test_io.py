@@ -177,7 +177,7 @@ class TestTempIO(object):
         
     @attr(unit=True)
     def test_putfile_mode(self):
-        self.tmp.putfile('frenchy.txt', "", 'wb')
+        self.tmp.putfile('frenchy.txt', b"", 'wb')
         f = open(join(self.tmp, 'frenchy.txt'), 'rb')
         f.read()
     

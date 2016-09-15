@@ -1,58 +1,29 @@
-import ez_setup
+import os
 
-
-ez_setup.use_setuptools()
 from setuptools import setup, find_packages
-import compiler
-import pydoc
-from compiler import visitor
 
 
-class ModuleVisitor(object):
-    def __init__(self):
-        self.mod_doc = None
-        self.mod_version = None
+_CURRENT_DIR_PATH = os.path.abspath(os.path.dirname(__file__))
+_VERSION = \
+    open(os.path.join(_CURRENT_DIR_PATH, 'VERSION.txt')).readline().rstrip()
 
-    def default(self, node):
-        for child in node.getChildNodes():
-            self.visit(child)
+_LONG_DESCRIPTION = """
+It provides several utilities for achieving a *fixed state* when testing
+Python programs.  Specifically, these utilities setup / teardown databases and
+work with temporary file systems.
 
-    def visitModule(self, node):
-        self.mod_doc = node.doc
-        self.default(node)
+You may want to start by reading the `End User Documentation`_.
 
-    def visitAssign(self, node):
-        if self.mod_version:
-            return
-        asn = node.nodes[0]
-        assert asn.name == '__version__', (
-            "expected __version__ node: %s" % asn)
-        self.mod_version = node.expr.value
-        self.default(node)
+.. _End User Documentation: http://farmdev.com/projects/fixture/docs/
+"""
 
-
-def get_module_meta(modfile):
-    ast = compiler.parseFile(modfile)
-    modnode = ModuleVisitor()
-    visitor.walk(ast, modnode)
-    if modnode.mod_doc is None:
-        raise RuntimeError(
-            "could not parse doc string from %s" % modfile)
-    if modnode.mod_version is None:
-        raise RuntimeError(
-            "could not parse __version__ from %s" % modfile)
-    return (modnode.mod_version,) + pydoc.splitdoc(modnode.mod_doc)
-
-
-version, description, long_description = \
-    get_module_meta("./fixture/__init__.py")
 
 setup(
     name='fixture',
-    version=version,
+    version=_VERSION,
     author='Kumar McMillan',
     author_email='kumar dot mcmillan / gmail.com',
-    description=description,
+    description='fixture is a package for loading and referencing test data',
     classifiers=['Environment :: Other Environment',
                  'Intended Audience :: Developers',
                  ('License :: OSI Approved :: GNU Library or Lesser '
@@ -63,7 +34,7 @@ setup(
                  'Topic :: Software Development :: Testing',
                  'Topic :: Software Development :: Quality Assurance',
                  'Topic :: Utilities'],
-    long_description=long_description,
+    long_description=_LONG_DESCRIPTION,
     license='GNU Lesser General Public License (LGPL)',
     keywords=('test testing tools unittest fixtures setup teardown '
               'database stubs IO tempfile'),
@@ -75,6 +46,9 @@ setup(
     entry_points={
         'console_scripts': ['fixture = fixture.command.generate:main']
     },
+    install_requires=[
+        'six >= 1.10.0',
+    ],
     # the following allows e.g. easy_install fixture[django]
     extras_require={
         'decorators': ['nose>=0.9.2'],

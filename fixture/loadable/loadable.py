@@ -6,13 +6,17 @@ See :ref:`Using LoadableFixture<using-loadable-fixture>` for examples.
 """
 # from __future__ import with_statement
 __all__ = ['LoadableFixture', 'EnvLoadableFixture', 'DBLoadableFixture', 'DeferredStoredObject']
-import sys, types
+import sys
+import types
+
+from six import reraise
+
 from fixture.base import Fixture
-from fixture.util import ObjRegistry, _mklog
-from fixture.style import OriginalStyle
 from fixture.dataset import Ref, dataset_registry, DataRow, is_rowlike
 from fixture.exc import UninitializedError, LoadError, UnloadError, StorageMediaNotFound
-import logging
+from fixture.style import OriginalStyle
+from fixture.util import ObjRegistry, _mklog
+
 
 log     = _mklog("fixture.loadable")
 treelog = _mklog("fixture.loadable.tree")
@@ -44,10 +48,12 @@ class StorageMediumAdapter(object):
         for obj in self.dataset.meta._stored_objects:
             try:
                 self.clear(obj)
-            except Exception, e:
+            except Exception:
                 etype, val, tb = sys.exc_info()
-                raise UnloadError(etype, val, self.dataset, 
-                                     stored_object=obj), None, tb
+                reraise(
+                    UnloadError,
+                    UnloadError(etype, val, self.dataset, stored_object=obj),
+                )
         
     def save(self, row, column_vals):
         """Given a DataRow, must save it somehow.
@@ -122,8 +128,7 @@ class LoadQueue(ObjRegistry):
     def to_unload(self):
         """yields a list of objects in an order suitable for unloading.
         """
-        level_nums = self.tree.keys()
-        level_nums.sort()
+        level_nums = sorted(self.tree.keys())
         treelog.info("*** unload order ***")
         for level in level_nums:
             unload_queue = self.tree[level]
@@ -240,9 +245,9 @@ class LoadableFixture(Fixture):
                     self.loaded.register(ds, level)
                     registered = True
                 
-            except Exception, e:
+            except Exception:
                 etype, val, tb = sys.exc_info()
-                raise LoadError(etype, val, ds, key=key, row=row), None, tb
+                reraise(LoadError, LoadError(etype, val, ds, key=key, row=row))
     
     def resolve_row_references(self, current_dataset, row):        
         """resolve this DataRow object's referenced values.
@@ -264,10 +269,10 @@ class LoadableFixture(Fixture):
                 
         for name in row.columns():
             val = getattr(row, name)
-            if type(val) in (types.ListType, types.TupleType):
+            if isinstance(val, (list, tuple)):
                 # i.e. categories = [python, ruby]
-                setattr(row, name, map(resolve_stored_object, val))
-            elif type(val) is set:
+                setattr(row, name, list(map(resolve_stored_object, val)))
+            elif isinstance(val, set):
                 # i.e. categories = {python, ruby}
                 setattr(row, name, set(resolve_stored_object(v) for v in val))
             elif is_rowlike(val):

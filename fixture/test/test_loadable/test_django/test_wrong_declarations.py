@@ -1,5 +1,5 @@
 from nose.tools import assert_raises
-from util import assert_empty
+from fixture.test.test_loadable.test_django.util import assert_empty
 
 from fixture import DjangoFixture, DataSet, style
 from app import models

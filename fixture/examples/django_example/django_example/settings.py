@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/1.9/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.9/ref/settings/
 """
+from tempfile import NamedTemporaryFile
 
 import os
 
@@ -76,10 +77,15 @@ WSGI_APPLICATION = 'django_example.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
 
+def _generate_temporary_file_path():
+    temp_file = NamedTemporaryFile(delete=False)
+    return temp_file.name
+
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'NAME': _generate_temporary_file_path(),
     }
 }
 

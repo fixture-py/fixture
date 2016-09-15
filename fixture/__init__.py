@@ -22,7 +22,9 @@ Then open ``build/html/index.html`` in your web browser.  If that fails, you can
 
 """
 
-__version__ = "1.5.6"
+from pkg_resources import get_distribution
+
+__version__ = get_distribution("fixture").version
 
 import logging
 import sys
