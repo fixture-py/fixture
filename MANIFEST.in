@@ -1,2 +1,2 @@
 prune presentations
-include ez_setup.py
+include VERSION.txt
