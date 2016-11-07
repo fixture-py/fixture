@@ -170,6 +170,11 @@ Changelog
 ---------
 
 
+- 1.5.9
+
+  - Fixed missing case in Python 3.
+
+
 - 1.5.7
 
   - Added support for Python 3.
