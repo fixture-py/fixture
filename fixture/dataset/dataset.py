@@ -6,10 +6,10 @@ few variations on it: :class:`SuperSet` and :class:`MergedSuperSet`
 
 """
 
-import sys, types
+import sys
 from inspect import isclass
 
-from six import reraise, with_metaclass, PY3
+from six import reraise, with_metaclass, PY3, string_types
 
 from fixture.util import ObjRegistry
 
@@ -573,8 +573,7 @@ class DataSet(with_metaclass(DataType, DataContainer)):
                         # could definitely break any other storage mediums
                         # ListProperty supports quite a few more types than these
                         # see appengine.ext.db._ALLOWED_PROPERTY_TYPES
-                        elif type(c) in (types.StringType, types.UnicodeType, types.BooleanType,
-                                         types.FloatType, types.IntType):
+                        elif isinstance(c, (string_types, bool, float, int)):
                              continue
                         else:
                             raise TypeError(
