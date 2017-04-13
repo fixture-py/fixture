@@ -230,9 +230,7 @@ class MappedClassMedium(DBLoadableFixture.StorageMediumAdapter):
         
     def save(self, row, column_vals):
         """Save a new object to the session if it doesn't already exist in the session."""
-        obj = self.medium()
-        for c, val in column_vals:
-            setattr(obj, c, val)
+        obj = self.medium(**dict(column_vals))
         if obj not in self.session.new:
             if hasattr(self.session, 'add'):
                 # sqlalchemy 0.5.2+
