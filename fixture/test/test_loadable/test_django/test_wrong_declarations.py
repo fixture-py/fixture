@@ -29,7 +29,7 @@ dj_fixture = DjangoFixture(env=models, style=style.NamedDataStyle())
 
 def test_wrong_relation_declaration():
     assert_empty('app')
-    assert 'reviewers' in models.Book._meta.get_all_field_names()
+    assert 'reviewers' in {f.name for f in models.Book._meta.get_fields()}
     data = dj_fixture.data(BookData)
     assert_raises(LoadError, data.setup)
     data.teardown()

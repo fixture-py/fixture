@@ -56,16 +56,11 @@ class DjangoMedium(DBLoadableFixture.StorageMediumAdapter):
     def _annotate_invalid_schema_exception(self, model, key):
         """Try and add more context to any error message"""
         info = ""
-        related_field_names = set([ro.field.related_query_name() for ro in
-                                   model._meta.get_all_related_many_to_many_objects()
-                                   + model._meta.get_all_related_objects()])
+        related_objects = self._get_related_objects_for_model(model)
+        fld_lookup = \
+            {ro.field.related_query_name(): ro for ro in related_objects}
         try:  # Provide a nicer error message
-            if key in related_field_names:
-                # get a dict like {reverse_related_name: RelatedObject}
-                fld_lookup = dict([(ro.field.related_query_name(), ro)
-                                   for ro in
-                                   model._meta.get_all_related_many_to_many_objects()
-                                   + model._meta.get_all_related_objects()])
+            if key in fld_lookup:
                 other_model = fld_lookup[key].model
                 fld_name = fld_lookup[key].field.name
                 info = ("\n**********************\n"
@@ -81,6 +76,14 @@ class DjangoMedium(DBLoadableFixture.StorageMediumAdapter):
         except:
             pass
         return info
+
+    @staticmethod
+    def _get_related_objects_for_model(model):
+        return [
+            f for f in model._meta.get_fields(include_hidden=True)
+            if (f.one_to_many or f.one_to_one or f.many_to_many)
+               and f.auto_created
+        ]
 
     def _check_schema(self, column_vals):
         """Check that the column_vals given match up to this model's schema
