@@ -139,7 +139,6 @@ class HandlerQueryTest(object):
             self.hnd.commit()
         assert rs, "unexpected record set: %s" % rs
         names = set([o.name for o in rs])
-        print names
         assert self.data.CategoryData.bumpy.name in names
         assert self.data.CategoryData.curvy.name in names
         assert self.data.CategoryData.jagged.name in names

@@ -55,7 +55,7 @@ def test_requires_option():
         try:
             dataset_generator([ 'bad.object.path', 
                 '--require-egg=foo==1.0', '--require-egg=baz>=2.0b'])
-        except SystemExit, e:
+        except SystemExit:
             pass
     finally:
         pkg_resources.require = orig_require    
