@@ -43,9 +43,13 @@ class TestDatasetToJson(object):
 
         dataset_to_json(NotADataSet)
 
+    def _sorted_eq(self, a, b, msg=None):
+        eq_(sorted(a), sorted(b), msg)
+
     @attr(unit=1)
     def test_convert_cls(self):
-        eq_(dataset_to_json(FooData),
+        self._sorted_eq(
+            dataset_to_json(FooData),
             json.dumps(
                 [{
                     'name': "call me bar",
@@ -54,12 +58,15 @@ class TestDatasetToJson(object):
                  {
                      'name': "name's foo",
                      'is_alive': True,
-                     }]))
+                     }]
+            )
+        )
 
     @attr(unit=1)
     def test_convert_instance(self):
         foo = FooData()
-        eq_(dataset_to_json(foo),
+        self._sorted_eq(
+            dataset_to_json(foo),
             json.dumps(
                 [{
                      'name': "call me bar",
@@ -68,13 +75,16 @@ class TestDatasetToJson(object):
                  {
                      'name': "name's foo",
                      'is_alive': True
-                     }]))
+                     }]
+            )
+        )
 
     @attr(unit=1)
     def test_dump_to_file(self):
         fp = StringIO()
         dataset_to_json(FooData, fp=fp)
-        eq_(fp.getvalue(),
+        self._sorted_eq(
+            fp.getvalue(),
             json.dumps(
                 [{
                      'name': "call me bar",
@@ -83,17 +93,21 @@ class TestDatasetToJson(object):
                  {
                      'name': "name's foo",
                      'is_alive': True
-                     }]))
+                }]
+            )
+        )
 
     @attr(unit=1)
     def test_types(self):
-        eq_(json.loads(dataset_to_json(MuchoData)),
+        self._sorted_eq(
+            json.loads(dataset_to_json(MuchoData)),
             [{
                 'd': "2008-01-01",
                 "dt": "2008-01-01 02:30:59",
                 "dec": "1.45667",
                 "fl": 1.45667
-            }])
+            }]
+        )
 
     @attr(unit=1)
     @raises(DummyError)
@@ -110,7 +124,8 @@ class TestDatasetToJson(object):
         def wrap_in_dict(objects):
             return {'data': objects}
 
-        eq_(dataset_to_json(FooData, wrap=wrap_in_dict),
+        self._sorted_eq(
+            dataset_to_json(FooData, wrap=wrap_in_dict),
             json.dumps({
                 'data':
                     [{
@@ -121,4 +136,5 @@ class TestDatasetToJson(object):
                          'name': "name's foo",
                          'is_alive': True
                          }]
-            }))
+            })
+        )

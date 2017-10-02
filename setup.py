@@ -54,6 +54,6 @@ setup(
         'decorators': ['nose>=0.9.2'],
         'sqlalchemy': ['SQLAlchemy>=0.4'],
         'sqlobject': ['SQLObject==0.8'],
-        'django': ['django>=1.8,<1.10'],
+        'django': ['django>=1.8'],
     },
 )
