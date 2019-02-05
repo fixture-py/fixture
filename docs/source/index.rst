@@ -67,7 +67,7 @@ Then you can run the tests with ::
 .. _easy_install: http://peak.telecommunity.com/DevCenter/EasyInstall
 .. _setuptools: http://peak.telecommunity.com/DevCenter/setuptools
 .. _fixture package: http://pypi.python.org/pypi/fixture
-.. _fixture repository: http://fixture.googlecode.com/hg/#egg=fixture-dev
+.. _fixture repository: https://github.com/fixture-py/fixture
 .. _buildout: http://www.buildout.org/
 
 ------------
@@ -245,6 +245,6 @@ Changelog
   - First release where everything "kinda worked"
 
 .. _Testing In Python: http://lists.idyll.org/listinfo/testing-in-python
-.. _issues: http://code.google.com/p/fixture/issues/list
-.. _Issue Tracker: http://code.google.com/p/fixture/issues/list
-.. _fixture project site: http://code.google.com/p/fixture/
+.. _issues: https://github.com/fixture-py/fixture/issues
+.. _Issue Tracker: https://github.com/fixture-py/fixture/issues
+.. _fixture project site: https://github.com/fixture-py/fixture
