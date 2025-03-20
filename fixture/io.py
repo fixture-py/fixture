@@ -72,7 +72,7 @@ def mkdirall(path, mkdir=os.mkdir):
     if len(paths):
         accum = ''
         for p in paths:
-            if p is '':
+            if p == '':
                 continue # slash prefix will cause this
             accum = join(accum, p)
             abs = join(root, accum)
