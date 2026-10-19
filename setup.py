@@ -48,6 +48,7 @@ setup(
     },
     install_requires=[
         'six >= 1.10.0',
+        'packaging',
     ],
     # the following allows e.g. easy_install fixture[django]
     extras_require={

@@ -47,9 +47,12 @@ def test_requires_option():
     required_idents = []
     def mock_require(ident):
         required_idents.append(ident)
-    import pkg_resources
-    orig_require = pkg_resources.require
-    pkg_resources.require = mock_require
+    import importlib
+    generate_module = importlib.import_module(
+        'fixture.command.generate.generate'
+    )
+    orig_require = generate_module.require_distribution
+    generate_module.require_distribution = mock_require
     sys.stderr = sys.stdout
     try:
         try:
@@ -58,7 +61,7 @@ def test_requires_option():
         except SystemExit:
             pass
     finally:
-        pkg_resources.require = orig_require    
+        generate_module.require_distribution = orig_require
         sys.stderr = sys.__stderr__
     eq_(required_idents, ['foo==1.0', 'baz>=2.0b'])
 

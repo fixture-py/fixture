@@ -22,9 +22,9 @@ Then open ``build/html/index.html`` in your web browser.  If that fails, you can
 
 """
 
-from pkg_resources import get_distribution
+from importlib.metadata import version
 
-__version__ = get_distribution("fixture").version
+__version__ = version("fixture")
 
 import logging
 import sys

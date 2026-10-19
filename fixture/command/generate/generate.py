@@ -9,9 +9,10 @@ See :ref:`Using the fixture command <using-fixture-command>` for examples.
 import inspect
 import optparse
 import os
-import pkg_resources
 import sys
+from importlib.metadata import version
 
+from packaging.requirements import Requirement
 from six import with_metaclass
 
 from fixture.command.generate.template import templates, is_template
@@ -460,12 +461,23 @@ def resolve_function_path(path):
         fn = last_attr
     return fn
 
+def require_distribution(egg):
+    requirement = Requirement(egg)
+    installed_version = version(requirement.name)
+    if not requirement.specifier.contains(
+        installed_version, prereleases=True
+    ):
+        raise ValueError(
+            "%s %s does not satisfy %s"
+            % (requirement.name, installed_version, requirement.specifier)
+        )
+
 def get_object_data(object_path, options, setup_callbacks=None):
     """query object at object_path and return generated code 
     representing its data
     """
     for egg in options.required_eggs:
-        pkg_resources.require(egg)
+        require_distribution(egg)
     generate = DataSetGenerator(options)
 
     if is_template(options.template):
